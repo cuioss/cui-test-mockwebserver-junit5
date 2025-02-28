@@ -16,7 +16,9 @@ https://cuioss.github.io/cui-test-mockwebserver-junit5/about.html[Generated Docu
 
 == What is it?
 
- A junit 5 extension for link:https://github.com/square/okhttp/tree/master/mockwebserver[MockWebServer]  providing some convenience, compared to the original
+A junit 5 extension for link:https://github.com/square/okhttp/tree/master/mockwebserver[MockWebServer]
+ providing some convenience,
+compared to the original.
 
 === Maven Coordinates
 
