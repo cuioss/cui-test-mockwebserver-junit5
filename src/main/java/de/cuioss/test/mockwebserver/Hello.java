@@ -1,4 +1,4 @@
-package de.cuioss.template;
+package de.cuioss.test.mockwebserver;
 
 import lombok.ToString;
 
