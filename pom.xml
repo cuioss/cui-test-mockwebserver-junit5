@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>de.cuioss</groupId>
@@ -9,12 +9,13 @@
         <version>0.9.0</version>
         <relativePath/>
     </parent>
+    <groupId>de.cuioss.test</groupId>
     <artifactId>cui-test-mockwebserver-junit5</artifactId>
-    <name>mockwebserver junit5 plugin</name>
     <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+    <name>mockwebserver junit5 plugin</name>
     <description>A junit 5 extension for MockWebServer providing some convenience, compared to the original.
     </description>
-    <packaging>jar</packaging>
     <url>https://github.com/cuioss/cui-test-mockwebserver-junit5/</url>
     <scm>
         <url>https://github.com/cuioss/cui-test-mockwebserver-junit5/</url>
@@ -33,6 +34,7 @@
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.test.mockwebserver</maven.jar.plugin.automatic.module.name>
         <version.okhttp3>5.0.0-alpha.14</version.okhttp3>
+        <version.jakarta.servlet-api>6.0.0</version.jakarta.servlet-api>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -47,6 +49,12 @@
                 <artifactId>okhttp-tls</artifactId>
                 <version>${version.okhttp3}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${version.jakarta.servlet-api}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -69,11 +77,19 @@
             <groupId>de.cuioss</groupId>
             <artifactId>cui-java-tools</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+        </dependency>
 
         <!-- Unit testing -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>de.cuioss.test</groupId>
+            <artifactId>cui-test-juli-logger</artifactId>
         </dependency>
     </dependencies>
 </project>

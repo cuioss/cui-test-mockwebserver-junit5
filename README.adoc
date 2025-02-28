@@ -4,7 +4,7 @@
 
 image:https://github.com/cuioss/cui-test-mockwebserver-junit5/actions/workflows/maven.yml/badge.svg[Java CI with Maven,link=https://github.com/cuioss/cui-test-mockwebserver-junit5/actions/workflows/maven.yml]
 image:http://img.shields.io/:license-apache-blue.svg[License,link=http://www.apache.org/licenses/LICENSE-2.0.html]
-image:https://maven-badges.herokuapp.com/maven-central/de.cuioss/cui-test-mockwebserver-junit5/badge.svg[Maven Central,link=https://maven-badges.herokuapp.com/maven-central/de.cuioss/cui-test-mockwebserver-junit5]
+image:https://maven-badges.herokuapp.com/maven-central/de.cuioss.test/cui-test-mockwebserver-junit5/badge.svg[Maven Central,link=https://maven-badges.herokuapp.com/maven-central/de.cuioss.test/cui-test-mockwebserver-junit5]
 
 https://sonarcloud.io/summary/new_code?id=cuioss_cui-test-mockwebserver-junit5[image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_cui-test-mockwebserver-junit5&metric=alert_status[Quality
 Gate Status]]
@@ -16,27 +16,166 @@ https://cuioss.github.io/cui-test-mockwebserver-junit5/about.html[Generated Docu
 
 == What is it?
 
-This is a template repository for creating java-modules for cui-open-source-projects. This incorporates all necessary java-structures, including `pom.xml`, sensible project-documentation, 
-an predefined github pipelines. 
-
-It is meant to be used as copy-paste-template.
+ A junit 5 extension for link:https://github.com/square/okhttp/tree/master/mockwebserver[MockWebServer]  providing some convenience, compared to the original
 
 === Maven Coordinates
 
 [source,xml]
 ----
     <dependency>
-        <groupId>de.cuioss</groupId>
+        <groupId>de.cuioss.test</groupId>
         <artifactId>cui-test-mockwebserver-junit5</artifactId>
     </dependency>
 ----
 
-=== Further Steps
+== Using MockWebServer
 
-* `pom.xml`: Adjust `name` and `description` elements
-* Adjust `module-info` accordingly
-* `pom.xml`: Adjust property `maven.jar.plugin.automatic.module.name` according to your `module-info`
-* `src/site/asciidoc/about.adoc`: Adjust content
-* Review / Enable the elements under 'Security' Tab
-* Review / Add Collaborators
-* Add (link) the resulting maven-documentation: https://github.com/cuioss/cuioss.github.io/edit/main/README.md[github.io-documentation] 
+=== Basic usage
+
+[source,java]
+----
+@EnableMockWebServer
+class MockWebServerExtensionTest implements MockWebServerHolder {
+
+    @Setter
+    private MockWebServer mockWebServer;
+
+    @Test
+    void shouldHandleMockWebServer() {
+        assertNotNull(mockWebServer);
+    }
+}
+----
+
+=== Dispatching Requests
+
+Implement custom request handling by extending `MockWebServerHolder.getDispatcher()`:
+
+[source,java]
+----
+@EnableMockWebServer
+class ValueSetClientImplFhirTest implements MockWebServerHolder {
+
+    static final FileLoader CONFORMANCE =
+        CuiFileUtil.getLoaderForPath(FileTypePrefix.CLASSPATH + "/fhir/conformance.xml");
+
+    @Override
+    public Dispatcher getDispatcher() {
+        return new Dispatcher() {
+
+            @Override
+            public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
+                switch (request.getPath()) {
+                    case "/metadata":
+                        return new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+                                .addHeader("Content-Type", "application/fhir+xml")
+                                .setBody(CuiFileUtil.toStringUnchecked(CONFORMANCE));
+                    case "/ValueSet/C_GE_DRR_PRACTICESETTING_CODE":
+                        return new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
+                                .addHeader("Content-Type", "application/fhir+xml")
+                                .setBody(CuiFileUtil.toStringUnchecked(CONTENT));
+                    default:
+                        return new MockResponse().setResponseCode(HttpServletResponse.SC_NOT_FOUND);
+                }
+            }
+        };
+    }
+}
+----
+
+=== ModuleDispatcherElement
+
+`ModuleDispatcherElement` enables reusable request handling in `EnableMockWebServer` contexts. It returns an `Optional<MockResponse>` for matching requests.
+
+Example JWKS endpoint dispatcher:
+
+[source,java]
+----
+/**
+ * Handles JWKS file resolution from the mock OAuth server, serving
+ * "src/test/resources/token/test-public-key.jwks"
+ */
+public class JwksResolveDispatcher implements ModuleDispatcherElement {
+
+    /** "/oidc/jwks.json" */
+    public static final String LOCAL_PATH = "/oidc/jwks.json";
+
+    @Getter
+    @Setter
+    private int callCounter = 0;
+
+    @Override
+    public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
+        callCounter++;
+        return Optional.of(new MockResponse().addHeader("Content-Type", "application/json")
+                .setBody(FileLoaderUtility
+                        .toStringUnchecked(FileLoaderUtility.getLoaderForPath(PUBLIC_KEY_JWKS)))
+                .setResponseCode(SC_OK));
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return LOCAL_PATH;
+    }
+
+    /**
+     * Verifies request count
+     *
+     * @param expected Expected number of requests
+     */
+    public void assertCallsAnswered(int expected) {
+        assertEquals(expected, callCounter);
+    }
+}
+----
+
+Implementation example:
+
+[source,java]
+----
+@EnableAutoWeld
+@EnablePortalConfiguration
+@EnableMockWebServer
+class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer>, MockWebServerHolder {
+
+    @Setter
+    private MockWebServer mockWebServer;
+
+    protected int mockserverPort;
+
+    private JwksResolveDispatcher jwksResolveDispatcher = new JwksResolveDispatcher();
+
+    @Getter
+    private final CombinedDispatcher dispatcher = new CombinedDispatcher().addDispatcher(jwksResolveDispatcher);
+
+    @BeforeEach
+    void setupMockServer() {
+        mockserverPort = mockWebServer.getPort();
+        configuration.put(VERIFY_SIGNATURE_JWKS_URL,
+                "http://localhost:" + mockserverPort + jwksResolveDispatcher.getBaseUrl());
+        configuration.update(VERIFY_SIGNATURE_ISSUER, TestTokenProducer.ISSUER);
+        configuration.update(VERIFY_SIGNATURE_REFRESH_INTERVAL, "60");
+        jwksResolveDispatcher.setCallCounter(0);
+    }
+
+    @Test
+    void shouldCacheMultipleCalls() {
+        jwksResolveDispatcher.assertCallsAnswered(0);
+        String token = validSignedJWTWithClaims(PATIENT_ACCESS_TOKEN);
+        JWTParser parser = parserProvider.get();
+
+        for (int i = 0; i < 100; i++) {
+            JsonWebToken jsonWebToken = assertDoesNotThrow(() -> ParsedToken.jsonWebTokenFrom(token, parser, LOGGER));
+            assertValidJsonWebToken(jsonWebToken, token);
+        }
+        // Note: Initial implementation results in 2 calls instead of 1
+        assertTrue(jwksResolveDispatcher.getCallCounter() < 3);
+
+        for (int i = 0; i < 100; i++) {
+            JsonWebToken jsonWebToken = assertDoesNotThrow(() -> ParsedToken.jsonWebTokenFrom(token, parser, LOGGER));
+            assertValidJsonWebToken(jsonWebToken, token);
+        }
+        assertTrue(jwksResolveDispatcher.getCallCounter() < 3);
+    }
+}
+----
