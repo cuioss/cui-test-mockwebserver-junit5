@@ -32,7 +32,7 @@
     <properties>
         <maven.jar.plugin.automatic.module.name>de.cuioss.test.mockwebserver</maven.jar.plugin.automatic.module.name>
         <version.okhttp3>5.0.0-alpha.14</version.okhttp3>
-        <version.jakarta.servlet-api>6.0.0</version.jakarta.servlet-api>
+        <version.jakarta.servlet-api>6.1.0</version.jakarta.servlet-api>
     </properties>
     <dependencyManagement>
         <dependencies>
