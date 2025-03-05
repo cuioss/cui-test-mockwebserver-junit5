@@ -1,0 +1,372 @@
+= TODO: Extending MockWebServerExtension and EnableMockWebServer
+:toc:
+:toclevels: 3
+:sectnums:
+
+== Overview
+
+This document outlines the steps required to extend the MockWebServerExtension and EnableMockWebServer with the following features:
+
+1. Implement ParameterResolver in MockWebServerExtension to provide the ability to inject the locally stored MockWebServer
+2. Add HTTPS support, configurable via the annotation
+3. Enhance MockWebServerHolder with additional injectable parameters
+
+== Requirements
+
+=== Implement ParameterResolver Interface
+
+* Extend MockWebServerExtension to implement ParameterResolver
+* Allow injection of MockWebServer instance directly into test methods
+* Support for different parameter types (MockWebServer, port, base URL)
+* Maintain backward compatibility with existing MockWebServerHolder approach
+
+=== HTTPS Support
+
+* Add HTTPS configuration options to EnableMockWebServer annotation
+* Implement certificate handling for HTTPS connections using `de.cuioss.tools.net.ssl` classes
+* Provide a mechanism to configure and use custom certificates
+* Support both HTTP and HTTPS protocols
+* Allow tests to access the certificate information for client configuration
+
+=== Enhanced MockWebServerHolder
+
+* Add additional parameters to MockWebServerHolder
+* Implement default methods for new parameters
+* Support port, base URL, and key material injection using `KeyMaterialHolder`
+* Maintain backward compatibility with existing implementations
+* Follow the same pattern as the existing `setMockWebServer` method
+
+== Implementation Tasks
+
+[cols="1,3,1", options="header"]
+|===
+|Task |Description |Status
+|1 |Update EnableMockWebServer annotation with HTTPS configuration |[x]
+|2 |Integrate CUI key material types for certificate handling |[x]
+|3 |Implement ParameterResolver in MockWebServerExtension |[ ]
+|4 |Enhance MockWebServerHolder interface |[x]
+|5 |Update MockWebServerExtension to support HTTPS |[ ]
+|6 |Add tests for new functionality |[ ]
+|7 |Update documentation |[ ]
+|===
+
+== Detailed Tasks
+
+=== 1. Update EnableMockWebServer Annotation
+
+* [x] Add `useHttps` boolean parameter to control HTTPS usage (default: false)
+* [x] Add `keyMaterialProviderIsTestClass` boolean parameter to indicate test class provides key material (default: false)
+* [x] Add `keyMaterialProviderMethod` String parameter to specify method name that provides key material (default: "provideKeyMaterial")
+* [x] Add `keyMaterialProviderIsSelfSigned` boolean parameter to enable auto-generated self-signed certificates (default: false)
+* [x] Add `keyStoreType` parameter to specify `KeyStoreType` (TRUST_STORE or KEY_STORE, default: KEY_STORE)
+* [x] Add `certificateDuration` parameter to control certificate validity period (default: 365 days)
+* [x] Add `keyAlgorithm` parameter to specify the `KeyAlgorithm` to use (default: RSA)
+* [x] Add validation logic to ensure at least one key material provider is specified when HTTPS is enabled
+* [x] Update JavaDoc to document all new parameters and their default values
+
+=== 2. Integrate CUI Key Material Types for Certificate Handling
+
+* [x] Create a utility class `KeyMaterialUtil` to handle certificate operations
+* [x] Use `KeyMaterialHolder` for storing certificate data
+* [x] Use `KeyStoreProvider` for loading and managing certificates
+* [x] Implement adapter between CUI key material types and OkHttp's HandshakeCertificates
+* [x] Support both `KeyHolderType.SINGLE_KEY` and `KeyHolderType.KEY_STORE` options
+* [x] Create utility methods for converting between formats
+* [x] Implement two distinct key material provision approaches:
+  ** `KeyMaterialProviderIsTestClass`: Obtain key material from test class method
+  ** `KeyMaterialProviderIsSelfSigned`: Generate self-signed certificates automatically
+* [x] Implement reflection-based method invocation for `keyMaterialProviderMethod`
+* [x] Create validation to ensure at least one provider is specified when HTTPS is enabled
+* [x] Add proper exception handling with descriptive error messages
+
+=== 3. Implement ParameterResolver in MockWebServerExtension
+
+* [ ] Add ParameterResolver interface to MockWebServerExtension
+* [ ] Implement `supportsParameter` method to check parameter types:
+  ** Support MockWebServer.class
+  ** Support Integer.class (for port)
+  ** Support String.class (for baseUrl)
+  ** Support KeyMaterialHolder.class
+* [ ] Implement `resolveParameter` method to provide parameter values
+* [ ] Add caching mechanism to avoid creating multiple instances
+* [ ] Add proper exception handling for unsupported parameter types
+* [ ] Ensure thread safety for concurrent test execution
+* [ ] Maintain backward compatibility with existing MockWebServerHolder approach
+
+=== 4. Enhance MockWebServerHolder Interface
+
+* [ ] Add `setPort(int port)` method with default implementation
+* [ ] Add `setBaseUrl(String baseUrl)` method with default implementation
+* [ ] Add `setKeyMaterial(KeyMaterialHolder keyMaterial)` method with default implementation (for extension use only with self-signed certificates)
+* [ ] Ensure backward compatibility by making all new methods default methods
+* [ ] Update MockWebServerExtension to call these setter methods when initializing
+* [ ] Add comprehensive JavaDoc for all new methods
+
+=== 5. Update MockWebServerExtension to Support HTTPS
+
+* [ ] Modify `beforeEach` method to check for HTTPS configuration
+* [ ] Implement validation to ensure at least one key material provider is specified when HTTPS is enabled
+* [ ] For `KeyMaterialProviderIsTestClass`:
+  ** Use reflection to invoke the specified method on the test instance
+  ** Default to method name "provideKeyMaterial" if not specified
+  ** Method must return KeyMaterialHolder or compatible type
+  ** Add proper error handling for reflection failures
+* [ ] For `KeyMaterialProviderIsSelfSigned`:
+  ** Implement certificate generation using `HeldCertificate`
+  ** Convert generated certificate to KeyMaterialHolder
+  ** Call `setKeyMaterial` on the holder to store the generated certificates
+* [ ] Configure MockWebServer with HTTPS using the appropriate SSL socket factory
+* [ ] Implement logic to determine certificate source priority (test class method vs. self-signed)
+* [ ] Add proper logging for HTTPS configuration steps
+* [ ] Handle cleanup of resources in `afterEach` method
+
+=== 6. Add Tests for New Functionality
+
+* [ ] Create tests for ParameterResolver functionality:
+  ** Test injection of MockWebServer
+  ** Test injection of port (Integer)
+  ** Test injection of baseUrl (String)
+  ** Test injection of KeyMaterialHolder
+* [ ] Create tests for HTTPS support with both auto-generated and custom certificates:
+  ** Test with KeyMaterialProviderIsTestClass
+  ** Test with KeyMaterialProviderIsSelfSigned
+  ** Test with both providers enabled (precedence)
+* [ ] Create tests for enhanced MockWebServerHolder with key material:
+  ** Test setPort
+  ** Test setBaseUrl
+  ** Test setKeyMaterial
+* [ ] Test backward compatibility with existing implementations
+* [ ] Test different key algorithms and store types
+* [ ] Test error cases and validation logic
+* [ ] Ensure minimum 80% code coverage
+
+=== 7. Update Documentation
+
+* [ ] Update JavaDoc for all modified classes
+* [ ] Update README.adoc with new features
+* [ ] Create usage examples for new functionality:
+  ** Basic HTTP example
+  ** Basic HTTPS example with self-signed certificates
+  ** Advanced HTTPS example with custom certificates
+  ** Parameter injection examples
+* [ ] Document certificate handling approach using CUI key material types
+* [ ] Create LogMessage.md documentation for any new log messages
+* [ ] Add troubleshooting section for common issues
+
+== Implementation Notes
+
+=== Certificate Handling Approach
+
+For handling certificates, we will:
+
+1. Use the CUI key material types from `de.cuioss.tools.net.ssl` package:
+   * `KeyMaterialHolder`: For storing certificate data and metadata
+   * `KeyStoreProvider`: For loading and managing certificates
+   * `KeyStoreType`: To specify the type of key store (TRUST_STORE or KEY_STORE)
+   * `KeyHolderType`: To specify whether we're dealing with a single key or a key store
+   * `KeyAlgorithm`: To specify the algorithm used for the key
+
+2. Implement two distinct approaches for key material provision:
+
+   a. **KeyMaterialProviderIsTestClass**:
+      * Test class provides key material through a designated instance method
+      * Method name specified via `keyMaterialProviderMethod` parameter (default: "provideKeyMaterial")
+      * Method must return a `KeyMaterialHolder` or compatible type
+      * Extension uses reflection to invoke the method on the test instance
+      * Gives tests full control over certificate generation/loading
+      * Example method signature: `public KeyMaterialHolder provideKeyMaterial()`
+      * Example implementation:
+        ```java
+        @EnableMockWebServer(useHttps = true, keyMaterialProviderIsTestClass = true)
+        class CustomCertificateTest implements MockWebServerHolder {
+            @Getter @Setter
+            private MockWebServer mockWebServer;
+            
+            public KeyMaterialHolder provideKeyMaterial() {
+                // Custom implementation to provide certificates
+                return KeyMaterialHolder.builder()
+                    .keyAlias("test-cert")
+                    .keyMaterial(certificateBytes)
+                    .keyHolderType(KeyHolderType.SINGLE_KEY)
+                    .build();
+            }
+        }
+        ```
+
+   b. **KeyMaterialProviderIsSelfSigned**:
+      * Extension automatically generates self-signed certificates
+      * Uses `HeldCertificate` for certificate generation
+      * Configurable via `certificateDuration` and `keyAlgorithm` parameters
+      * Generated certificates are converted to `KeyMaterialHolder`
+      * Simplest approach for tests that don't need specific certificates
+      * Example usage:
+        ```java
+        @EnableMockWebServer(
+            useHttps = true, 
+            keyMaterialProviderIsSelfSigned = true,
+            certificateDuration = 30,
+            keyAlgorithm = "RSA"
+        )
+        class SelfSignedCertificateTest implements MockWebServerHolder {
+            @Getter @Setter
+            private MockWebServer mockWebServer;
+        }
+        ```
+
+3. Enforce validation rules:
+   * When `useHttps` is true, at least one of `keyMaterialProviderIsTestClass` or `keyMaterialProviderIsSelfSigned` must be true
+   * If both are true, `keyMaterialProviderIsTestClass` takes precedence
+   * If neither is true when HTTPS is enabled, throw an appropriate exception with a clear message
+
+4. Integrate with Java's built-in HTTP client (java.net.http.HttpClient):
+   * Convert between `KeyMaterialHolder` and SSLContext
+   * Configure HttpClient with the appropriate SSLContext
+   * Example conversion code structure:
+     ```java
+     // Convert KeyMaterialHolder to SSLContext
+     private SSLContext createSslContext(KeyMaterialHolder keyMaterial) {
+         // Implementation details
+     }
+     
+     // Configure HttpClient with HTTPS
+     private void configureHttps(HttpClient client, SSLContext sslContext) {
+         client.sslContext(sslContext);
+     }
+     ```
+
+5. Implement bidirectional key material flow:
+   * **Test → Extension**: 
+     - Via `KeyMaterialProviderIsTestClass`: Test provides certificates through designated method
+   
+   * **Extension → Test**: 
+     - For `KeyMaterialProviderIsSelfSigned`: Extension generates certificates and calls `setKeyMaterial` on the holder
+     - Via `setKeyMaterial`: Access to the key material regardless of source
+     - This allows tests to use the same certificates for client configuration
+     - Example client configuration:
+       ```java
+       @Test
+       void testHttpsClient() {
+           // Access the injected values
+           String baseUrl = this.baseUrl;
+           KeyMaterialHolder keyMaterial = this.keyMaterial;
+           
+           // Create SSLContext from the key material
+           SSLContext sslContext = createSslContext(keyMaterial);
+           
+           // Configure Java's HttpClient with the same certificates
+           HttpClient client = HttpClient.newBuilder()
+               .sslContext(sslContext)
+               .build();
+               
+           // Make HTTPS request to the MockWebServer
+           HttpResponse<String> response = client.send(
+               HttpRequest.newBuilder()
+                   .uri(URI.create(baseUrl + "/api/data"))
+                   .GET()
+                   .build(),
+               HttpResponse.BodyHandlers.ofString()
+           );
+       }
+       
+       private SSLContext createSslContext(KeyMaterialHolder keyMaterial) {
+           try {
+               // Convert KeyMaterialHolder to SSLContext
+               KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+               keyStore.load(null, null);
+               
+               // Add certificate from KeyMaterialHolder to keystore
+               // Implementation details depend on KeyHolderType
+               
+               TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+               tmf.init(keyStore);
+               
+               SSLContext sslContext = SSLContext.getInstance("TLS");
+               sslContext.init(null, tmf.getTrustManagers(), null);
+               
+               return sslContext;
+           } catch (Exception e) {
+               throw new RuntimeException("Failed to create SSLContext", e);
+           }
+       }
+       ```
+
+=== ParameterResolver Implementation
+
+The ParameterResolver implementation will:
+
+1. Support direct injection of MockWebServer instances into test methods
+2. Allow for injection of port numbers and base URLs
+3. Support `KeyMaterialHolder` parameter type for accessing certificate information
+4. Support different parameter types based on method signature
+5. Maintain the existing MockWebServerHolder approach for backward compatibility
+6. Example test method with parameter injection:
+   ```java
+   @EnableMockWebServer(useHttps = true, keyMaterialProviderIsSelfSigned = true)
+   class ParameterInjectionTest {
+       
+       @Test
+       void testWithInjection(MockWebServer server, Integer port, String baseUrl, KeyMaterialHolder keyMaterial) {
+           // Use injected parameters directly
+           assertNotNull(server);
+           assertTrue(port > 0);
+           assertTrue(baseUrl.startsWith("https://"));
+           assertNotNull(keyMaterial);
+       }
+   }
+   ```
+
+=== MockWebServerHolder Enhancements
+
+The enhanced MockWebServerHolder will:
+
+1. Receive port, base URL, and key material via setter methods
+2. Use default implementations to maintain backward compatibility
+3. Follow the same pattern as the existing `setMockWebServer` method for new setter methods
+4. Allow the MockWebServerExtension to inject values into test instances
+5. Support both HTTP and HTTPS configurations
+6. Include `setKeyMaterial` method that is intended to be called only by the extension when using self-signed certificates
+7. Example implementation:
+   ```java
+   @EnableMockWebServer(useHttps = true, keyMaterialProviderIsSelfSigned = true)
+   class EnhancedHolderTest implements MockWebServerHolder {
+       @Getter @Setter
+       private MockWebServer mockWebServer;
+       
+       private int port;
+       private String baseUrl;
+       private KeyMaterialHolder keyMaterial;
+       
+       @Override
+       public void setPort(int port) {
+           this.port = port;
+       }
+       
+       @Override
+       public void setBaseUrl(String baseUrl) {
+           this.baseUrl = baseUrl;
+       }
+       
+       @Override
+       public void setKeyMaterial(KeyMaterialHolder keyMaterial) {
+           this.keyMaterial = keyMaterial;
+       }
+       
+       // Use the injected values in your tests
+       @Test
+       void testHttpsEndpoint() {
+           // port, baseUrl, and keyMaterial are already set by the extension
+           // Use them directly in your test
+       }
+   }
+   ```
+
+== Success Criteria
+
+* All tests pass
+* Documentation is complete and accurate
+* New features are backward compatible
+* Code coverage meets requirements (minimum 80%)
+* Quality gates pass
+* No critical issues pending
+* README.adoc contains clear usage examples
+* JavaDoc is comprehensive and accurate
