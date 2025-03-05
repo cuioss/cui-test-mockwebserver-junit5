@@ -99,7 +99,7 @@ public enum HttpMethodMapper {
      * @throws NullPointerException if any parameter is null
      */
     public abstract Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement,
-                                                        RecordedRequest request);
+            RecordedRequest request);
 
     /**
      * Creates an HttpMethodMapper from a RecordedRequest's method.
