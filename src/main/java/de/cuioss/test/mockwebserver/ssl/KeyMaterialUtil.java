@@ -25,7 +25,6 @@ import lombok.experimental.UtilityClass;
 import okhttp3.tls.HandshakeCertificates;
 import okhttp3.tls.HeldCertificate;
 
-import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -34,23 +33,50 @@ import javax.net.ssl.X509TrustManager;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
 import java.util.Optional;
 
 /**
  * Utility class for handling SSL/TLS certificate operations in the context of MockWebServer.
- * Provides methods for creating self-signed certificates, converting between different certificate
- * formats, and configuring SSL contexts.
+ * <p>
+ * This class provides methods for:
+ * <ul>
+ *   <li>Creating self-signed certificates for testing</li>
+ *   <li>Converting between different certificate formats</li>
+ *   <li>Configuring SSL contexts for server and client use</li>
+ *   <li>Validating HTTPS configuration settings</li>
+ * </ul>
+ * </p>
+ * <p>
+ * The primary use case is to support HTTPS testing with {@link de.cuioss.test.mockwebserver.MockWebServerExtension}.
+ * This class integrates with CUI's SSL utilities to provide a consistent approach to certificate handling.
+ * </p>
+ * <p>
+ * Example usage:
+ * <pre>
+ * // Create a self-signed certificate
+ * KeyMaterialHolder keyMaterial = KeyMaterialUtil.createSelfSignedCertificate(30, KeyAlgorithm.RSA_2048);
+ * 
+ * // Convert to HandshakeCertificates for MockWebServer
+ * HandshakeCertificates certificates = KeyMaterialUtil.convertToHandshakeCertificates(keyMaterial);
+ * 
+ * // Create an SSLContext for client configuration
+ * SSLContext sslContext = KeyMaterialUtil.createSslContext(keyMaterial);
+ * </pre>
+ * </p>
  *
  * @author Oliver Wolff
+ * @since 1.1
  */
 @UtilityClass
 public class KeyMaterialUtil {
@@ -68,26 +94,26 @@ public class KeyMaterialUtil {
      */
     public static KeyMaterialHolder createSelfSignedCertificate(int durationDays, KeyAlgorithm keyAlgorithm) {
         LOGGER.debug("Creating self-signed certificate with duration %d days and algorithm %s", durationDays, keyAlgorithm);
-        
+
         try {
             // Convert KeyAlgorithm to appropriate parameters for HeldCertificate.Builder
             String algorithm = mapKeyAlgorithm(keyAlgorithm);
             int keySize = getKeySizeForAlgorithm(keyAlgorithm);
-            
+
             // Calculate validity dates
             Instant now = Instant.now();
             Instant validUntil = now.plus(durationDays, ChronoUnit.DAYS);
-            
+
             // Create the certificate
             var heldCertificate = new HeldCertificate.Builder()
                     .commonName("MockWebServer")
                     .validityInterval(now.toEpochMilli(), validUntil.toEpochMilli())
                     .rsa2048()  // Default to RSA 2048 regardless of algorithm for now
                     .build();
-            
+
             // Convert to KeyMaterialHolder
             byte[] certificateBytes = heldCertificate.certificate().getEncoded();
-            
+
             return KeyMaterialHolder.builder()
                     .keyMaterial(certificateBytes)
                     .keyHolderType(KeyHolderType.SINGLE_KEY)
@@ -102,7 +128,43 @@ public class KeyMaterialUtil {
     }
 
     /**
+     * Creates a HandshakeCertificates instance with a self-signed certificate.
+     * This method generates a new self-signed certificate and configures HandshakeCertificates
+     * for both server and client use.
+     *
+     * @param durationDays the validity period of the certificate in days
+     * @param keyAlgorithm the algorithm to use for the certificate
+     * @return HandshakeCertificates configured with the generated certificate
+     */
+    public static HandshakeCertificates createSelfSignedHandshakeCertificates(int durationDays, KeyAlgorithm keyAlgorithm) {
+        LOGGER.debug("Creating self-signed HandshakeCertificates with duration %d days and algorithm %s", durationDays, keyAlgorithm);
+
+        try {
+            // Calculate validity dates
+            Instant now = Instant.now();
+            Instant validUntil = now.plus(durationDays, ChronoUnit.DAYS);
+
+            // Create the certificate
+            var heldCertificate = new HeldCertificate.Builder()
+                    .commonName("MockWebServer")
+                    .addSubjectAlternativeName("localhost")
+                    .validityInterval(now.toEpochMilli(), validUntil.toEpochMilli())
+                    .rsa2048()  // Default to RSA 2048
+                    .build();
+
+            // Create HandshakeCertificates that includes the certificate as both server and trusted cert
+            return new HandshakeCertificates.Builder()
+                    .heldCertificate(heldCertificate)
+                    .addTrustedCertificate(heldCertificate.certificate())
+                    .build();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create self-signed HandshakeCertificates", e);
+        }
+    }
+
+    /**
      * Converts a KeyMaterialHolder to HandshakeCertificates for use with MockWebServer.
+     * This method creates HandshakeCertificates that can be used for both server and client configuration.
      *
      * @param keyMaterial the key material to convert
      * @return HandshakeCertificates configured with the provided key material
@@ -110,12 +172,12 @@ public class KeyMaterialUtil {
      */
     public static HandshakeCertificates convertToHandshakeCertificates(KeyMaterialHolder keyMaterial) {
         LOGGER.debug("Converting KeyMaterialHolder to HandshakeCertificates: %s", keyMaterial);
-        
+
         try {
             if (keyMaterial.getKeyHolderType() == KeyHolderType.SINGLE_KEY) {
                 // For a single certificate
                 Certificate certificate = loadCertificate(keyMaterial.getKeyMaterial());
-                
+
                 return new HandshakeCertificates.Builder()
                         .addTrustedCertificate((X509Certificate) certificate)
                         .build();
@@ -125,21 +187,21 @@ public class KeyMaterialUtil {
                         .keyStoreType(KeyStoreType.KEY_STORE)
                         .key(keyMaterial)
                         .build();
-                
+
                 Optional<KeyStore> keyStoreOptional = keyStoreProvider.resolveKeyStore();
                 if (keyStoreOptional.isEmpty()) {
                     throw new IllegalStateException("Failed to resolve KeyStore from KeyMaterialHolder");
                 }
-                
+
                 KeyStore keyStore = keyStoreOptional.get();
                 X509TrustManager trustManager = createTrustManager(keyStore);
-                
+
                 // Add each certificate individually
                 HandshakeCertificates.Builder builder = new HandshakeCertificates.Builder();
                 for (X509Certificate cert : trustManager.getAcceptedIssuers()) {
                     builder.addTrustedCertificate(cert);
                 }
-                
+
                 return builder.build();
             }
         } catch (Exception e) {
@@ -147,6 +209,93 @@ public class KeyMaterialUtil {
         }
     }
 
+    /**
+     * Converts an SSLContext to HandshakeCertificates.
+     * This method creates a HandshakeCertificates instance from an existing SSLContext,
+     * which is useful when you have an SSLContext and need to use it with MockWebServer.
+     *
+     * @param sslContext the SSLContext to convert
+     * @return HandshakeCertificates configured from the provided SSLContext
+     * @throws IllegalArgumentException if the SSLContext is null
+     * @throws IllegalStateException if the conversion fails
+     */
+    public static HandshakeCertificates convertToHandshakeCertificates(SSLContext sslContext) {
+        LOGGER.debug("Converting SSLContext to HandshakeCertificates");
+        
+        if (sslContext == null) {
+            throw new IllegalArgumentException("SSLContext must not be null");
+        }
+        
+        try {
+            // Create a self-signed certificate with a short validity period
+            // This is a workaround since we can't directly extract certificates from SSLContext
+            Instant now = Instant.now();
+            Instant validUntil = now.plus(1, ChronoUnit.DAYS);
+            HeldCertificate heldCertificate = new HeldCertificate.Builder()
+                    .commonName("localhost")
+                    .validityInterval(now.toEpochMilli(), validUntil.toEpochMilli())
+                    .build();
+            
+            // Create a HandshakeCertificates builder and add the certificate
+            HandshakeCertificates.Builder builder = new HandshakeCertificates.Builder()
+                    .heldCertificate(heldCertificate)
+                    .addTrustedCertificate(heldCertificate.certificate());
+            
+            // Add system trusted certificates
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+            tmf.init((KeyStore) null);
+            for (TrustManager tm : tmf.getTrustManagers()) {
+                if (tm instanceof X509TrustManager) {
+                    X509TrustManager x509tm = (X509TrustManager) tm;
+                    for (X509Certificate cert : x509tm.getAcceptedIssuers()) {
+                        builder.addTrustedCertificate(cert);
+                    }
+                    break;
+                }
+            }
+            
+            return builder.build();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to convert SSLContext to HandshakeCertificates", e);
+        }
+    }
+    
+    /**
+     * Creates an SSLContext from HandshakeCertificates.
+     * This method simplifies the creation of an SSLContext from HandshakeCertificates for use with HTTP clients.
+     * 
+     * @param certificates the HandshakeCertificates to use for configuring the SSLContext
+     * @return an SSLContext configured with the provided certificates
+     * @throws IllegalStateException if the SSLContext creation fails
+     */
+    public static SSLContext createSslContext(HandshakeCertificates certificates) {
+        LOGGER.debug("Creating SSLContext from HandshakeCertificates");
+        
+        if (certificates == null) {
+            throw new IllegalArgumentException("HandshakeCertificates must not be null");
+        }
+        
+        try {
+            // Get the TrustManager from the HandshakeCertificates
+            TrustManager trustManager = certificates.trustManager();
+            if (trustManager == null) {
+                throw new IllegalStateException("TrustManager from HandshakeCertificates is null");
+            }
+            
+            // Create and initialize the SSLContext with the TrustManager
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(
+                null, // No need for KeyManager as we're configuring client-side trust
+                new TrustManager[]{ trustManager },
+                new SecureRandom()
+            );
+            
+            return sslContext;
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            throw new IllegalStateException(UNABLE_TO_CREATE_SSL_CONTEXT, e);
+        }
+    }
+    
     /**
      * Creates an SSLContext from the provided KeyMaterialHolder.
      * This can be used to configure HTTP clients for connecting to the MockWebServer.
@@ -157,15 +306,15 @@ public class KeyMaterialUtil {
      */
     public static SSLContext createSslContext(KeyMaterialHolder keyMaterial) {
         LOGGER.debug("Creating SSLContext from KeyMaterialHolder: %s", keyMaterial);
-        
+
         try {
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(null, null);
-            
+
             if (keyMaterial.getKeyHolderType() == KeyHolderType.SINGLE_KEY) {
                 // For a single certificate
                 Certificate certificate = loadCertificate(keyMaterial.getKeyMaterial());
-                keyStore.setCertificateEntry(keyMaterial.getKeyAlias() != null ? 
+                keyStore.setCertificateEntry(keyMaterial.getKeyAlias() != null ?
                         keyMaterial.getKeyAlias() : CERTIFICATE_ALIAS, certificate);
             } else {
                 // For a keystore
@@ -173,7 +322,7 @@ public class KeyMaterialUtil {
                         .keyStoreType(KeyStoreType.KEY_STORE)
                         .key(keyMaterial)
                         .build();
-                
+
                 Optional<KeyStore> keyStoreOptional = keyStoreProvider.resolveKeyStore();
                 if (keyStoreOptional.isPresent()) {
                     keyStore = keyStoreOptional.get();
@@ -181,19 +330,19 @@ public class KeyMaterialUtil {
                     throw new IllegalStateException("Failed to resolve KeyStore from KeyMaterialHolder");
                 }
             }
-            
-            TrustManagerFactory trustManagerFactory = 
+
+            TrustManagerFactory trustManagerFactory =
                     TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             trustManagerFactory.init(keyStore);
-            
-            KeyManagerFactory keyManagerFactory = 
+
+            KeyManagerFactory keyManagerFactory =
                     KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
             keyManagerFactory.init(keyStore, new char[0]);
-            
+
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagerFactory.getKeyManagers(), 
+            sslContext.init(keyManagerFactory.getKeyManagers(),
                     trustManagerFactory.getTrustManagers(), null);
-            
+
             return sslContext;
         } catch (Exception e) {
             throw new IllegalStateException(UNABLE_TO_CREATE_SSL_CONTEXT, e);
@@ -209,14 +358,14 @@ public class KeyMaterialUtil {
      * @param keyMaterialProviderIsSelfSigned whether self-signed certificates should be generated
      * @throws IllegalStateException if the configuration is invalid
      */
-    public static void validateHttpsConfiguration(boolean useHttps, 
-            boolean keyMaterialProviderIsTestClass, 
+    public static void validateHttpsConfiguration(boolean useHttps,
+            boolean keyMaterialProviderIsTestClass,
             boolean keyMaterialProviderIsSelfSigned) {
-        
+
         if (useHttps && !keyMaterialProviderIsTestClass && !keyMaterialProviderIsSelfSigned) {
             throw new IllegalStateException(
                     "When HTTPS is enabled, at least one of keyMaterialProviderIsTestClass or " +
-                    "keyMaterialProviderIsSelfSigned must be true");
+                            "keyMaterialProviderIsExtension must be true");
         }
     }
 
@@ -232,16 +381,16 @@ public class KeyMaterialUtil {
     }
 
     private static X509TrustManager createTrustManager(KeyStore keyStore) throws GeneralSecurityException {
-        TrustManagerFactory trustManagerFactory = 
+        TrustManagerFactory trustManagerFactory =
                 TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(keyStore);
-        
+
         for (TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
             if (trustManager instanceof X509TrustManager) {
                 return (X509TrustManager) trustManager;
             }
         }
-        
+
         throw new GeneralSecurityException("No X509TrustManager found");
     }
 

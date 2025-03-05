@@ -15,9 +15,11 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyMaterialHolder;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
+import okhttp3.tls.HandshakeCertificates;
 
 import javax.net.ssl.SSLContext;
 import java.util.Optional;
@@ -73,7 +75,7 @@ import java.util.Optional;
  *     private MockWebServer server;
  *
  *     &#64;Override
- *     public KeyMaterialHolder provideKeyMaterial() {
+ *     public Optional<KeyMaterialHolder> provideKeyMaterial() {
  *         // Return custom key material for HTTPS
  *         return KeyMaterialHolder.builder()
  *                 .keyMaterial(myCertificateBytes)
@@ -96,9 +98,9 @@ import java.util.Optional;
  * </ul>
  *
  * @author Oliver Wolff
- * @since 1.0
  * @see EnableMockWebServer
  * @see MockWebServerExtension
+ * @since 1.0
  */
 public interface MockWebServerHolder {
 
@@ -134,7 +136,7 @@ public interface MockWebServerHolder {
     default Dispatcher getDispatcher() {
         return null;
     }
-    
+
     /**
      * Provides key material for HTTPS configuration when {@link EnableMockWebServer#keyMaterialProviderIsTestClass()}
      * is set to {@code true}. This method allows tests to provide custom certificates for the MockWebServer.
@@ -153,7 +155,45 @@ public interface MockWebServerHolder {
     default Optional<KeyMaterialHolder> provideKeyMaterial() {
         return Optional.empty();
     }
-    
+
+    /**
+     * Provides HandshakeCertificates for HTTPS configuration.
+     * This is an alternative to {@link #provideKeyMaterial()} that directly provides
+     * OkHttp's HandshakeCertificates, which can be used to configure both server and client.
+     * <p>
+     * The default implementation returns an empty Optional, meaning no HandshakeCertificates are provided.
+     * Override this method to provide custom HandshakeCertificates for HTTPS.
+     * </p>
+     * <p>
+     * This method will only be called if {@link EnableMockWebServer#useHttps()} and
+     * {@link EnableMockWebServer#keyMaterialProviderIsTestClass()} are both {@code true}.
+     * </p>
+     *
+     * @return an Optional containing the HandshakeCertificates, or empty if none are provided
+     * @since 1.1
+     */
+    default Optional<HandshakeCertificates> provideHandshakeCertificates() {
+        return Optional.empty();
+    }
+
+    /**
+     * Receives the SSLContext used by the extension to configure HTTPS.
+     * This is called after the extension has configured the server with HTTPS.
+     * <p>
+     * The default implementation does nothing. Override this method to receive and
+     * store the SSLContext for client configuration.
+     * </p>
+     * <p>
+     * This method will only be called if {@link EnableMockWebServer#useHttps()} is {@code true}.
+     * </p>
+     *
+     * @param sslContext the HandshakeCertificates used by the extension
+     * @since 1.1
+     */
+    default void setSslContext(SSLContext sslContext) {
+        // Default implementation does nothing
+    }
+
     /**
      * Provides a custom SSLContext for client connections to the MockWebServer.
      * This is useful when the server is configured to use HTTPS with custom certificates.
@@ -172,6 +212,6 @@ public interface MockWebServerHolder {
      */
     default Optional<SSLContext> getSSLContext() {
         return provideKeyMaterial()
-                .map(keyMaterial -> de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.createSslContext(keyMaterial));
+                .map(KeyMaterialUtil::createSslContext);
     }
 }

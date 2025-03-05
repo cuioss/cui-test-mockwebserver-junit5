@@ -181,3 +181,84 @@ class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer>, M
     }
 }
 ----
+
+=== Parameter Injection (New in 1.1)
+
+MockWebServerExtension now implements ParameterResolver, allowing direct injection of MockWebServer and related parameters into test methods:
+
+[source,java]
+----
+@EnableMockWebServer
+class ParameterInjectionTest {
+
+    @Test
+    void testWithServerInjection(MockWebServer server) {
+        // Server is automatically injected
+        assertNotNull(server);
+        
+        // Use the server directly
+        server.enqueue(new MockResponse().setBody("Hello World"));
+    }
+    
+    @Test
+    void testWithMultipleParameters(MockWebServer server, int port, URL baseUrl) {
+        // Multiple parameters can be injected
+        assertNotNull(server);
+        assertTrue(port > 0);
+        assertNotNull(baseUrl);
+    }
+}
+----
+
+Supported parameter types:
+* `MockWebServer` - The server instance
+* `int` or `Integer` - The server port
+* `String` - The base URL as a string
+* `URL` - The base URL as a java.net.URL object
+
+=== HTTPS Support (New in 1.1)
+
+MockWebServerExtension now supports HTTPS configuration:
+
+[source,java]
+----
+// Using self-signed certificates (automatically generated)
+@EnableMockWebServer(useHttps = true, keyMaterialProviderIsSelfSigned = true)
+class HttpsWithSelfSignedCertTest implements MockWebServerHolder {
+
+    @Getter
+    @Setter
+    private MockWebServer mockWebServer;
+    
+    @Test
+    void testHttpsConnection() {
+        // Server URL will use https://
+        String url = mockWebServer.url("/api").toString();
+        assertTrue(url.startsWith("https://"));
+        
+        // Get the SSL context for client configuration
+        Optional<SSLContext> sslContext = getSSLContext();
+    }
+}
+
+// Using custom certificates
+@EnableMockWebServer(useHttps = true, keyMaterialProviderIsTestClass = true)
+class HttpsWithCustomCertTest implements MockWebServerHolder {
+
+    @Getter
+    @Setter
+    private MockWebServer mockWebServer;
+    
+    @Override
+    public Optional<KeyMaterialHolder> provideKeyMaterial() {
+        // Provide custom key material for HTTPS
+        return Optional.of(
+            KeyMaterialUtil.createSelfSignedCertificate(30, KeyAlgorithm.RSA_2048));
+    }
+}
+----
+
+HTTPS configuration options:
+* `useHttps` - Enable HTTPS support (default: false)
+* `keyMaterialProviderIsSelfSigned` - Use auto-generated self-signed certificates (default: false)
+* `keyMaterialProviderIsTestClass` - Use custom certificates provided by the test class (default: false)

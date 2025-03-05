@@ -15,15 +15,17 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-import de.cuioss.tools.net.ssl.KeyStoreType;
+import de.cuioss.tools.net.ssl.KeyMaterialHolder;
 import de.cuioss.tools.string.Joiner;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
 import mockwebserver3.MockWebServer;
+import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -39,55 +41,61 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Handle the lifetime of an instance of {@link MockWebServer}, see
- * {@link EnableMockWebServer} for details on using
+ * JUnit 5 extension that manages the lifecycle of {@link MockWebServer} instances.
+ * <p>
+ * This extension provides the following features:
+ * <ul>
+ *   <li>Automatic server creation and startup before each test</li>
+ *   <li>Automatic server shutdown after each test</li>
+ *   <li>Support for manual server control</li>
+ *   <li>Integration with {@link MockWebServerHolder} for server access</li>
+ *   <li>Parameter injection of server instances and related values</li>
+ *   <li>HTTPS support with both self-signed and custom certificates</li>
+ * </ul>
+ * </p>
+ * <p>
+ * As a {@link ParameterResolver}, this extension can inject the following parameter types:
+ * <ul>
+ *   <li>{@link MockWebServer} - The server instance</li>
+ *   <li>{@code int} or {@code Integer} - The server port</li>
+ *   <li>{@code String} - The base URL as a string</li>
+ *   <li>{@link URL} - The base URL as a java.net.URL object</li>
+ * </ul>
+ * </p>
+ * <p>
+ * See {@link EnableMockWebServer} for configuration options and usage examples.
+ * </p>
  *
  * @author Oliver Wolff
+ * @see EnableMockWebServer
+ * @see MockWebServerHolder
+ * @since 1.0
  */
 public class MockWebServerExtension implements AfterEachCallback, BeforeEachCallback, ParameterResolver {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerExtension.class);
+    
+    /**
+     * Identifies the {@link Namespace} under which the concrete instance of
+     * {@link MockWebServer} is stored.
+     */
+    private static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
 
     @Override
-    @SuppressWarnings({"squid:S2095"}) // owolff: Will be closed after all tests
     public void beforeEach(ExtensionContext context) throws Exception {
         var server = new MockWebServer();
-
         var testInstance = context.getRequiredTestInstance();
+        Optional<EnableMockWebServer> enableMockWebServerAnnotation = findEnableMockWebServerAnnotation(testInstance);
 
-        var classModel = extractTestClasses(testInstance);
-        Optional<EnableMockWebServer> enableMockWebServerAnnotation = classModel.stream().filter(holder -> holder.getAnnotation().isPresent()).findFirst().map(holder -> holder.getAnnotation().get());
+        var config = getConfig(enableMockWebServerAnnotation.orElse(null));
 
-        boolean manualStart = false;
-        boolean useHttps = false;
-        boolean keyMaterialProviderIsTestClass = false;
-        boolean keyMaterialProviderIsSelfSigned = false;
-        String keyMaterialProviderMethod = "";
-        KeyStoreType keyStoreType = KeyStoreType.KEY_STORE;
-        int certificateDuration = 365;
-        KeyAlgorithm keyAlgorithm = KeyAlgorithm.RSA_2048;
-
-        if (enableMockWebServerAnnotation.isPresent()) {
-            var annotation = enableMockWebServerAnnotation.get();
-            manualStart = annotation.manualStart();
-            useHttps = annotation.useHttps();
-            keyMaterialProviderIsTestClass = annotation.keyMaterialProviderIsTestClass();
-            keyMaterialProviderIsSelfSigned = annotation.keyMaterialProviderIsSelfSigned();
-            keyMaterialProviderMethod = annotation.keyMaterialProviderMethod();
-            keyStoreType = annotation.keyStoreType();
-            certificateDuration = annotation.certificateDuration();
-            keyAlgorithm = annotation.keyAlgorithm();
-        }
-
-        // Configure HTTPS if enabled
-        if (useHttps) {
-            configureHttps(server, testInstance, context, keyMaterialProviderIsTestClass, 
-                    keyMaterialProviderIsSelfSigned, certificateDuration, keyAlgorithm);
+        if (config.isUseHttps()) {
+            configureHttps(server, testInstance, context, config);
         }
 
         setMockWebServer(testInstance, server, context);
 
-        if (!manualStart) {
+        if (!config.isManualStart()) {
             server.start();
             LOGGER.info("Started MockWebServer at %s", server.url("/"));
         } else {
@@ -96,46 +104,134 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         put(server, context);
     }
 
-    private void configureHttps(MockWebServer server, Object testInstance, ExtensionContext context,
-                                 boolean keyMaterialProviderIsTestClass, boolean keyMaterialProviderIsSelfSigned,
-                                 int certificateDuration, KeyAlgorithm keyAlgorithm) {
+    /**
+     * Finds the first EnableMockWebServer annotation in the class hierarchy.
+     *
+     * @param testInstance the test instance to search for annotations
+     * @return the first EnableMockWebServer annotation found, or empty if none
+     */
+    private Optional<EnableMockWebServer> findEnableMockWebServerAnnotation(Object testInstance) {
+        List<Class<?>> classHierarchy = extractClassHierarchy(testInstance);
+        
+        return classHierarchy.stream()
+                .map(clazz -> AnnotationSupport.findAnnotation(clazz, EnableMockWebServer.class))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .findFirst();
+    }
 
-        LOGGER.debug("Configuring HTTPS for MockWebServer");
+/**
+ * Creates a configuration object from the annotation or default values.
+ *
+ * @param enableMockWebServerAnnotation the annotation or null for defaults
+ * @return a configuration object with all settings
+ */
+private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
+    if (enableMockWebServerAnnotation == null) {
+        return Config.getDefaults();
+    }
+    
+    return new Config(
+        enableMockWebServerAnnotation.manualStart(),
+        enableMockWebServerAnnotation.useHttps(),
+        enableMockWebServerAnnotation.keyMaterialProviderIsTestClass(),
+        enableMockWebServerAnnotation.keyMaterialProviderIsExtension(),
+        enableMockWebServerAnnotation.certificateDuration(),
+        enableMockWebServerAnnotation.keyAlgorithm()
+    );
+}
 
-        // Validate HTTPS configuration
-        de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.validateHttpsConfiguration(
-                true, keyMaterialProviderIsTestClass, keyMaterialProviderIsSelfSigned);
+    private void configureHttps(MockWebServer server, Object testInstance, ExtensionContext context, Config config) {
+        LOGGER.info("Configuring HTTPS for MockWebServer");
 
-        // Get key material from test class if specified
-        Optional<de.cuioss.tools.net.ssl.KeyMaterialHolder> keyMaterial = Optional.empty();
-        if (keyMaterialProviderIsTestClass) {
-            Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
-            if (holder.isPresent()) {
-                keyMaterial = holder.get().provideKeyMaterial();
-                LOGGER.debug("Using key material provided by test class: {}", 
-                        keyMaterial.isPresent() ? "present" : "not present");
+        Optional<HandshakeCertificates> handshakeCertificates = getHandshakeCertificates(testInstance, context, config);
+
+        if (handshakeCertificates.isPresent()) {
+            server.useHttps(handshakeCertificates.get().sslSocketFactory());
+            LOGGER.info("HTTPS configured for MockWebServer");
+            notifyTestClassAboutCertificates(testInstance, context, handshakeCertificates.get());
+        } else {
+            LOGGER.error("Failed to configure HTTPS: No key material or HandshakeCertificates available");
+            throw new IllegalStateException("Failed to configure HTTPS: No key material or HandshakeCertificates available");
+        }
+    }
+
+    /**
+     * Obtains HandshakeCertificates based on the configuration.
+     * Will try to get certificates from the test class first if configured,
+     * then fall back to self-signed certificates if enabled.
+     *
+     * @param testInstance the test class instance
+     * @param context the extension context
+     * @param config the configuration
+     * @return an Optional containing HandshakeCertificates if available
+     */
+    private Optional<HandshakeCertificates> getHandshakeCertificates(Object testInstance, ExtensionContext context, Config config) {
+        Optional<HandshakeCertificates> handshakeCertificates = Optional.empty();
+
+        // First try to get certificates from the test class if configured
+        if (config.isKeyMaterialProviderIsTestClass()) {
+            handshakeCertificates = getTestClassProvidedCertificates(testInstance, context);
+        }
+
+        // Fall back to self-signed certificates if enabled and no certificates were provided
+        if (config.isKeyMaterialProviderIsSelfSigned() && handshakeCertificates.isEmpty()) {
+            try {
+                handshakeCertificates = Optional.of(KeyMaterialUtil.createSelfSignedHandshakeCertificates(
+                        config.getCertificateDuration(), 
+                        config.getKeyAlgorithm()));
+                LOGGER.debug("Generated self-signed HandshakeCertificates with algorithm {} and duration {} days", 
+                        config.getKeyAlgorithm(), config.getCertificateDuration());
+            } catch (Exception e) {
+                LOGGER.error("Failed to create self-signed certificates", e);
             }
         }
 
-        // Generate self-signed certificate if needed
-        if (keyMaterialProviderIsSelfSigned && keyMaterial.isEmpty()) {
-            keyMaterial = Optional.of(
-                    de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.createSelfSignedCertificate(
-                            certificateDuration, keyAlgorithm));
-            LOGGER.debug("Generated self-signed certificate with algorithm {} and duration {} days", 
-                    keyAlgorithm, certificateDuration);
-        }
+        return handshakeCertificates;
+    }
 
-        // Apply key material to server
+    /**
+     * Attempts to get HandshakeCertificates from the test class.
+     * First tries to get HandshakeCertificates directly, then falls back to KeyMaterialHolder.
+     *
+     * @param testInstance the test class instance
+     * @param context the extension context
+     * @return an Optional containing HandshakeCertificates if the test class provided them
+     */
+    private Optional<HandshakeCertificates> getTestClassProvidedCertificates(Object testInstance, ExtensionContext context) {
+        Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
+        if (holder.isEmpty()) {
+            return Optional.empty();
+        }
+        
+        MockWebServerHolder mockWebServerHolder = holder.get();
+        
+        // First try to get HandshakeCertificates directly
+        Optional<HandshakeCertificates> handshakeCertificates = mockWebServerHolder.provideHandshakeCertificates();
+        if (handshakeCertificates.isPresent()) {
+            LOGGER.debug("Using HandshakeCertificates provided by test class");
+            return handshakeCertificates;
+        }
+        
+        // Fall back to KeyMaterialHolder
+        Optional<KeyMaterialHolder> keyMaterial = mockWebServerHolder.provideKeyMaterial();
         if (keyMaterial.isPresent()) {
-            var handshakeCertificates = 
-                    de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.convertToHandshakeCertificates(
-                            keyMaterial.get());
-            server.useHttps(handshakeCertificates.sslSocketFactory());
-            LOGGER.info("HTTPS configured for MockWebServer");
-        } else {
-            LOGGER.error("Failed to configure HTTPS: No key material available");
-            throw new IllegalStateException("Failed to configure HTTPS: No key material available");
+            try {
+                LOGGER.debug("Using key material provided by test class");
+                return Optional.of(KeyMaterialUtil.convertToHandshakeCertificates(keyMaterial.get()));
+            } catch (Exception e) {
+                LOGGER.error("Failed to convert key material to HandshakeCertificates", e);
+            }
+        }
+        
+        return Optional.empty();
+    }
+
+    private void notifyTestClassAboutCertificates(Object testInstance, ExtensionContext context, HandshakeCertificates handshakeCertificates) {
+        Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
+        if (holder.isPresent()) {
+            holder.get().setSslContext(KeyMaterialUtil.createSslContext(handshakeCertificates));
+            LOGGER.debug("Notified test class about HandshakeCertificates");
         }
     }
 
@@ -166,14 +262,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                     return Optional.of(holder);
                 }
             } else {
-                /*
-                 * According Copilot:
-                 * The issue you're encountering is related to how JUnit handles nested test classes and their contexts.
-                 * Specifically, the parentContext.get().getTestInstance() returning an empty Optional despite parentContext.isPresent()
-                 * being true can be confusing.
-                 * This behavior is not necessarily a bug but rather a consequence of how JUnit manages test instances and their lifecycle.
-                 * In JUnit 5, nested test classes are treated as separate test instances, and their contexts are managed independently.
-                 * This can lead to situations where the parent context is present, but the test instance is not yet available or initialized.*/
                 LOGGER.debug("Parent test instance is not present although context is present %s", parentContext.get().getDisplayName());
             }
             parentContext = parentContext.get().getParent();
@@ -182,12 +270,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
         return Optional.empty();
     }
-
-    /**
-     * Identifies the {@link Namespace} under which the concrete instance of
-     * {@link MockWebServer} is stored.
-     */
-    public static final Namespace NAMESPACE = Namespace.create("test", "portal", "MockWebServer");
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
@@ -203,7 +285,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         } else {
             LOGGER.error("Server not present, therefore can not be shutdown");
         }
-
     }
 
     private static void put(MockWebServer mockWebServer, ExtensionContext context) {
@@ -214,49 +295,45 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(MockWebServer.class.getName()));
     }
 
-    private static List<TestClassHolder> extractTestClasses(Object testInstance) {
-        List<TestClassHolder> parentClassmodel = new ArrayList<>();
-        if (null != testInstance.getClass().getEnclosingClass()) {
-            parentClassmodel = extractTestClassesRecursive(testInstance.getClass().getEnclosingClass(), new ArrayList<>());
-        }
-        var model = extractTestClassesRecursive(testInstance.getClass(), new ArrayList<>());
-
-        parentClassmodel.addAll(model);
-        LOGGER.debug("Extracted model form %s, resulting in:\n\t-%s", testInstance.getClass(), Joiner.on("\n\t-").join(parentClassmodel));
-        return parentClassmodel;
-    }
-
-    private static List<TestClassHolder> extractTestClassesRecursive(Class<?> testClass, List<TestClassHolder> holderList) {
-        LOGGER.debug("Extract TestClassHolder %s", testClass);
-        if (Object.class.equals(testClass)) {
-            LOGGER.debug("Reached java.lang.Object, returning list");
-            return holderList;
-        }
-        LOGGER.debug("Extracting TestClassHolder for %s", testClass);
-        holderList.add(TestClassHolder.from(testClass));
-        return extractTestClassesRecursive(testClass.getSuperclass(), holderList);
-    }
-
     /**
-     * Represents a tuple of the concrete class and the optional annotation
+     * Extracts the class hierarchy for a test instance, including enclosing classes.
+     *
+     * @param testInstance the test instance to extract the class hierarchy from
+     * @return a list of classes in the hierarchy, from most specific to least specific
      */
-    @AllArgsConstructor
-    @ToString
-    private static class TestClassHolder {
-        @NonNull
-        @Getter
-        Class<?> testInstance;
-        EnableMockWebServer annotation;
-
-        Optional<EnableMockWebServer> getAnnotation() {
-            return Optional.ofNullable(annotation);
+    private List<Class<?>> extractClassHierarchy(Object testInstance) {
+        List<Class<?>> classHierarchy = new ArrayList<>();
+        Class<?> testClass = testInstance.getClass();
+        
+        // Add enclosing classes if present
+        if (testClass.getEnclosingClass() != null) {
+            classHierarchy.addAll(extractClassHierarchyRecursive(testClass.getEnclosingClass(), new ArrayList<>()));
         }
-
-        static TestClassHolder from(Class<?> testClass) {
-            EnableMockWebServer annotation = AnnotationSupport.findAnnotation(testClass,
-                    EnableMockWebServer.class).orElse(null);
-            return new TestClassHolder(testClass, annotation);
+        
+        // Add the class hierarchy of the test class itself
+        classHierarchy.addAll(extractClassHierarchyRecursive(testClass, new ArrayList<>()));
+        
+        LOGGER.debug("Extracted class hierarchy from %s, resulting in:\n\t-%s", 
+                testInstance.getClass(), 
+                Joiner.on("\n\t-").join(classHierarchy));
+        
+        return classHierarchy;
+    }
+    
+    /**
+     * Recursively extracts the class hierarchy for a class.
+     *
+     * @param clazz the class to extract the hierarchy from
+     * @param classList the list to add classes to
+     * @return the list of classes in the hierarchy
+     */
+    private List<Class<?>> extractClassHierarchyRecursive(Class<?> clazz, List<Class<?>> classList) {
+        if (Object.class.equals(clazz)) {
+            return classList; // Stop at Object class
         }
+        
+        classList.add(clazz);
+        return extractClassHierarchyRecursive(clazz.getSuperclass(), classList);
     }
 
     @Override
@@ -277,23 +354,100 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         }
 
         Class<?> type = parameterContext.getParameter().getType();
+        MockWebServer mockWebServer = server.get();
 
         if (MockWebServer.class.equals(type)) {
-            return server.get();
+            return resolveServerParameter(mockWebServer);
         }
 
         if (Integer.class.equals(type) || int.class.equals(type)) {
-            return server.get().getPort();
+            return resolvePortParameter(mockWebServer);
         }
 
         if (URL.class.equals(type)) {
-            return server.get().url("/");
+            return resolveUrlParameter(mockWebServer);
         }
 
         if (String.class.equals(type)) {
-            return server.get().url("/").toString();
+            return resolveStringParameter(mockWebServer);
         }
 
         throw new ParameterResolutionException("Unsupported parameter type: " + type.getName());
     }
+    
+    private MockWebServer resolveServerParameter(MockWebServer server) {
+        return server;
+    }
+    
+    private int resolvePortParameter(MockWebServer server) {
+        return server.getPort();
+    }
+    
+    private URL resolveUrlParameter(MockWebServer server) {
+        try {
+            return server.url("/").url();
+        } catch (Exception e) {
+            throw new ParameterResolutionException("Failed to convert HttpUrl to URL", e);
+        }
+    }
+    
+    private String resolveStringParameter(MockWebServer server) {
+        return server.url("/").toString();
+    }
+
+    /**
+     * Immutable configuration class that holds all settings for the extension.
+     */
+    @AllArgsConstructor
+    @ToString
+    private static class Config {
+        private final boolean manualStart;
+        private final boolean useHttps;
+        private final boolean keyMaterialProviderIsTestClass;
+        private final boolean keyMaterialProviderIsSelfSigned;
+        private final int certificateDuration;
+        private final KeyAlgorithm keyAlgorithm;
+        
+        /**
+         * @return default configuration with sensible defaults
+         */
+        static Config getDefaults() {
+            return new Config(
+                false,              // manualStart
+                false,              // useHttps
+                false,              // keyMaterialProviderIsTestClass
+                false,              // keyMaterialProviderIsSelfSigned
+                365,                // certificateDuration
+                KeyAlgorithm.RSA_2048  // keyAlgorithm
+            );
+        }
+        
+        public boolean isManualStart() {
+            return manualStart;
+        }
+        
+        public boolean isUseHttps() {
+            return useHttps;
+        }
+        
+        public boolean isKeyMaterialProviderIsTestClass() {
+            return keyMaterialProviderIsTestClass;
+        }
+        
+        public boolean isKeyMaterialProviderIsSelfSigned() {
+            return keyMaterialProviderIsSelfSigned;
+        }
+        
+        public int getCertificateDuration() {
+            return certificateDuration;
+        }
+        
+        public KeyAlgorithm getKeyAlgorithm() {
+            return keyAlgorithm;
+        }
+    }
+
+
+
+
 }

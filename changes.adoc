@@ -1,0 +1,495 @@
+= MockWebServer HTTPS Configuration Changes
+:toc:
+:toclevels: 3
+:toc-title: Table of Contents
+:sectnums:
+
+== Overview
+
+This document describes the design and implementation of HTTPS support in the MockWebServer extension, focusing on the data flow between tests and the extension for certificate management.
+
+== Use Cases
+
+There are two primary use cases for HTTPS configuration in the MockWebServer extension:
+
+1. *Test → Extension*: The test provides key material to the extension, which configures the SSL context for the server.
+2. *Extension → Test*: The extension creates a self-signed certificate and makes it available to the test for client configuration.
+
+=== Use Case 1: Test → Extension
+
+==== Current Implementation
+
+In this use case, the test class implements the `MockWebServerHolder` interface and provides key material through the `provideKeyMaterial()` method. The extension uses this material to configure the SSL context for the server.
+
+[source,java]
+----
+@EnableMockWebServer(
+    useHttps = true,
+    keyMaterialProviderIsTestClass = true
+)
+class TestClass implements MockWebServerHolder {
+    
+    @Override
+    public Optional<KeyMaterialHolder> provideKeyMaterial() {
+        // Create and return key material
+        return Optional.of(keyMaterial);
+    }
+}
+----
+
+==== Data Flow
+
+1. Test class implements `MockWebServerHolder.provideKeyMaterial()`
+2. Extension calls this method to retrieve key material
+3. Extension converts key material to SSL context using `KeyMaterialUtil`
+4. Extension configures the MockWebServer with the SSL context
+
+==== Limitations
+
+* The test has no direct access to the SSL context created by the extension
+* The test must recreate compatible client-side certificates, which may lead to SSL handshake failures
+
+=== Use Case 2: Extension → Test
+
+==== Current Implementation
+
+In this use case, the extension creates a self-signed certificate based on annotation parameters and configures the server. However, there's currently no mechanism for the test to access this certificate for client configuration.
+
+[source,java]
+----
+@EnableMockWebServer(
+    useHttps = true,
+    keyMaterialProviderIsSelfSigned = true,
+    certificateDuration = 30,
+    keyAlgorithm = KeyAlgorithm.RSA_2048
+)
+class TestClass implements MockWebServerHolder {
+    // No way to access the certificate created by the extension
+}
+----
+
+==== Data Flow
+
+1. Extension creates self-signed certificate using `KeyMaterialUtil`
+2. Extension configures the MockWebServer with the SSL context
+3. *Missing*: Extension provides the certificate to the test
+4. *Missing*: Test configures client with the same certificate
+
+==== Limitations
+
+* The test has no way to access the certificate created by the extension
+* This forces tests to manually create and configure HTTPS, bypassing the extension's built-in support
+
+== Proposed Changes
+
+=== Option 1: Enhanced KeyMaterialHolder
+
+Enhance the `MockWebServerHolder` interface to provide bidirectional certificate exchange:
+
+[source,java]
+----
+public interface MockWebServerHolder {
+    // Existing methods...
+    
+    /**
+     * Provides key material for HTTPS configuration.
+     * @return an Optional containing the key material
+     */
+    default Optional<KeyMaterialHolder> provideKeyMaterial() {
+        return Optional.empty();
+    }
+    
+    /**
+     * Receives the key material used by the extension to configure HTTPS.
+     * This is called after the extension has configured the server.
+     * @param keyMaterial the key material used by the extension
+     */
+    default void receiveKeyMaterial(KeyMaterialHolder keyMaterial) {
+        // Default implementation does nothing
+    }
+}
+----
+
+=== Option 2: SSLContext Exchange
+
+Instead of exchanging key material, exchange the complete SSLContext:
+
+[source,java]
+----
+public interface MockWebServerHolder {
+    // Existing methods...
+    
+    /**
+     * Provides an SSLContext for HTTPS configuration.
+     * @return an Optional containing the SSLContext
+     */
+    default Optional<SSLContext> provideSSLContext() {
+        return Optional.empty();
+    }
+    
+    /**
+     * Receives the SSLContext used by the extension to configure HTTPS.
+     * This is called after the extension has configured the server.
+     * @param sslContext the SSLContext used by the extension
+     */
+    default void receiveSSLContext(SSLContext sslContext) {
+        // Default implementation does nothing
+    }
+}
+----
+
+=== Option 3: SSLContext Exchange
+
+Exchange the complete SSLContext, which provides a more abstract approach:
+
+[source,java]
+----
+public interface MockWebServerHolder {
+    // Existing methods...
+    
+    /**
+     * Provides an SSLContext for HTTPS configuration.
+     * @return an Optional containing the SSLContext
+     */
+    default Optional<SSLContext> provideSSLContext() {
+        return Optional.empty();
+    }
+    
+    /**
+     * Receives the SSLContext used by the extension to configure HTTPS.
+     * This is called after the extension has configured the server.
+     * @param sslContext the SSLContext used by the extension
+     * @param trustManager the X509TrustManager used with the SSLContext
+     */
+    default void receiveSSLContext(SSLContext sslContext, X509TrustManager trustManager) {
+        // Default implementation does nothing
+    }
+}
+----
+
+==== Advantages of SSLContext Exchange
+
+1. *Abstraction*: SSLContext is a standard Java API, not tied to any specific HTTP client library
+2. *Flexibility*: Works with any HTTP client that accepts an SSLContext (not just OkHttp)
+3. *Compatibility*: Easier integration with existing code that already uses SSLContext
+
+==== Disadvantages of SSLContext Exchange
+
+1. *Complexity*: Requires additional X509TrustManager to be passed alongside SSLContext for proper client configuration
+2. *Less Direct*: Requires more conversion code when using with OkHttp or other HTTP clients
+3. *Limited Access*: Doesn't provide direct access to the underlying certificates
+4. *Configuration Gap*: Doesn't include hostname verification settings, which must be configured separately
+
+=== Option 4: HandshakeCertificates Exchange
+
+Exchange OkHttp's HandshakeCertificates, which encapsulates both server and client certificate configuration:
+
+[source,java]
+----
+public interface MockWebServerHolder {
+    // Existing methods...
+    
+    /**
+     * Provides HandshakeCertificates for HTTPS configuration.
+     * @return an Optional containing the HandshakeCertificates
+     */
+    default Optional<HandshakeCertificates> provideHandshakeCertificates() {
+        return Optional.empty();
+    }
+    
+    /**
+     * Receives the HandshakeCertificates used by the extension to configure HTTPS.
+     * This is called after the extension has configured the server.
+     * @param handshakeCertificates the HandshakeCertificates used by the extension
+     */
+    default void receiveHandshakeCertificates(HandshakeCertificates handshakeCertificates) {
+        // Default implementation does nothing
+    }
+}
+----
+
+==== Advantages of HandshakeCertificates Exchange
+
+1. *Native OkHttp Integration*: Uses OkHttp's native certificate management, which is designed to work seamlessly with MockWebServer.
+2. *Simplified Configuration*: The test class can configure both the server and client with the same certificate material.
+3. *Improved Certificate Management*: OkHttp's `HandshakeCertificates` class provides a more convenient API for certificate management than Java's SSLContext.
+4. *Better Error Handling*: OkHttp provides better error messages for SSL handshake failures, making it easier to diagnose issues.
+
+==== Implementation
+
+The `MockWebServerHolder` interface has been extended with two new methods:
+
+[source,java]
+----
+/**
+ * Provides HandshakeCertificates for HTTPS configuration.
+ * This is called before the extension configures the server.
+ * @return an Optional containing the HandshakeCertificates
+ */
+default Optional<HandshakeCertificates> provideHandshakeCertificates() {
+    return Optional.empty();
+}
+
+/**
+ * Receives the HandshakeCertificates used by the extension to configure HTTPS.
+ * This is called after the extension has configured the server.
+ * @param handshakeCertificates the HandshakeCertificates used by the extension
+ */
+default void receiveHandshakeCertificates(HandshakeCertificates handshakeCertificates) {
+    // Default implementation does nothing
+}
+----
+
+The `MockWebServerExtension` class has been updated to use these methods:
+
+1. It tries to get HandshakeCertificates from the test class if `keyMaterialProviderIsTestClass` is true
+2. It generates a self-signed certificate if `keyMaterialProviderIsSelfSigned` is true and no certificates are available
+3. It configures the MockWebServer with the available certificates
+4. It notifies the test class about the HandshakeCertificates used
+
+A new utility method has been added to `KeyMaterialUtil` to create HandshakeCertificates directly:
+
+[source,java]
+----
+/**
+ * Creates a HandshakeCertificates instance with a self-signed certificate.
+ * This method generates a new self-signed certificate and configures HandshakeCertificates
+ * for both server and client use.
+ *
+ * @param durationDays the validity period of the certificate in days
+ * @param keyAlgorithm the algorithm to use for the certificate
+ * @return HandshakeCertificates configured with the generated certificate
+ */
+public static HandshakeCertificates createSelfSignedHandshakeCertificates(int durationDays, KeyAlgorithm keyAlgorithm) {
+    // Implementation details...
+}
+----
+
+==== Example Usage
+
+Two example test classes have been provided to demonstrate the HandshakeCertificates exchange feature:
+
+1. `ExtensionProvidedHttpsTest`: Shows the Extension → Test approach, where the extension creates and configures certificates, then shares them with the test class.
+2. `TestProvidedHttpsTest`: Shows the Test → Extension approach, where the test class creates certificates and shares them with the extension.
+
+For detailed documentation, see the link:src/main/asciidoc/handshake-certificates-exchange.adoc[HandshakeCertificates Exchange] document.
+
+== Recommendation
+
+=== Preferred Approach
+
+Based on the analysis of the different options, **Option 4: HandshakeCertificates Exchange** is the recommended approach for the following reasons:
+
+1. *Native OkHttp Integration*: It uses OkHttp's native certificate management, which is designed to work seamlessly with MockWebServer.
+2. *Simplified Configuration*: Both the server and client use the same certificate material, eliminating SSL handshake errors.
+3. *Flexible Certificate Management*: Supports both extension-provided and test-provided certificates.
+4. *Better Diagnostics*: OkHttp provides better error messages for SSL handshake failures.
+5. *Improved Test Isolation*: Each test can have its own certificate configuration.
+
+This approach provides the best balance of simplicity, flexibility, and reliability for HTTPS testing with MockWebServer.
+
+=== Implementation Details
+
+The implementation of Option 4 includes:
+
+1. New methods in the `MockWebServerHolder` interface for HandshakeCertificates exchange
+2. Updates to the `MockWebServerExtension` class to support HandshakeCertificates
+3. A new utility method in `KeyMaterialUtil` for creating self-signed HandshakeCertificates
+4. Example test classes demonstrating both Extension → Test and Test → Extension approaches
+5. Comprehensive documentation in the HandshakeCertificates Exchange document
+
+=== Migration Guide
+
+For users who want to migrate from the current approach to the new HandshakeCertificates exchange:
+
+1. Update your test class to implement the `MockWebServerHolder` interface
+2. Choose either the Extension → Test or Test → Extension approach based on your needs
+3. Configure your client to use the same certificate material as the server
+4. Remove any direct configuration of the MockWebServer in the `@BeforeEach` method
+
+For detailed examples, see the `ExtensionProvidedHttpsTest` and `TestProvidedHttpsTest` classes.
+
+== Conclusion
+
+The proposed changes will enhance the MockWebServer extension's HTTPS support by providing a bidirectional certificate exchange mechanism. This will allow tests to use the same certificate material for both server and client configuration, eliminating SSL handshake failures.
+
+Two viable approaches are presented:
+
+1. **HandshakeCertificates Exchange (Option 4)**: Recommended for most cases, especially when using OkHttp. Provides a clean API and direct compatibility with MockWebServer.
+
+2. **SSLContext Exchange (Option 3)**: A more abstract approach using standard Java APIs, suitable for applications that need to work with various HTTP clients or have existing code that uses SSLContext.
+
+Both approaches solve the fundamental issue of ensuring that both server and client use the same certificate material, but they offer different trade-offs in terms of abstraction, ease of use, and compatibility.
+
+== Recommendation
+
+=== Preferred Approach
+
+Option 4 (HandshakeCertificates Exchange) is recommended because:
+
+1. `HandshakeCertificates` encapsulates both server and client certificate configuration
+2. It's directly compatible with OkHttp, which is commonly used with MockWebServer
+3. It provides a clean API for both server and client configuration
+
+=== Alternative Approach
+
+Option 3 (SSLContext Exchange) is a viable alternative when:
+
+1. The application needs to work with HTTP clients other than OkHttp
+2. There's existing code that already uses SSLContext
+3. A more standard Java API approach is preferred
+
+However, this approach requires additional configuration for hostname verification and requires passing both the SSLContext and TrustManager.
+
+=== Implementation Steps
+
+For Option 4 (HandshakeCertificates):
+1. Add `receiveHandshakeCertificates` method to `MockWebServerHolder` interface
+2. Modify `MockWebServerExtension` to call this method after configuring the server
+3. Update `KeyMaterialUtil` to provide better conversion between certificate formats
+4. Add examples demonstrating both use cases
+
+For Option 3 (SSLContext):
+1. Add `receiveSSLContext` method to `MockWebServerHolder` interface
+2. Modify `MockWebServerExtension` to call this method after configuring the server
+3. Ensure the TrustManager is passed alongside the SSLContext
+4. Add examples demonstrating both use cases
+
+=== Example Implementation
+
+==== Option 4: HandshakeCertificates Exchange
+
+===== Test → Extension
+
+[source,java]
+----
+@EnableMockWebServer(
+    useHttps = true,
+    keyMaterialProviderIsTestClass = true
+)
+class TestClass implements MockWebServerHolder {
+    
+    private final HandshakeCertificates handshakeCertificates = createCertificates();
+    
+    @Override
+    public Optional<HandshakeCertificates> provideHandshakeCertificates() {
+        return Optional.of(handshakeCertificates);
+    }
+    
+    @Test
+    void testHttps() {
+        // Configure client with the same certificates
+        OkHttpClient client = new OkHttpClient.Builder()
+                .sslSocketFactory(handshakeCertificates.sslSocketFactory(), handshakeCertificates.trustManager())
+                .build();
+        
+        // Make HTTPS request
+    }
+}
+----
+
+===== Extension → Test
+
+[source,java]
+----
+@EnableMockWebServer(
+    useHttps = true,
+    keyMaterialProviderIsSelfSigned = true
+)
+class TestClass implements MockWebServerHolder {
+    
+    private HandshakeCertificates handshakeCertificates;
+    
+    @Override
+    public void receiveHandshakeCertificates(HandshakeCertificates handshakeCertificates) {
+        this.handshakeCertificates = handshakeCertificates;
+    }
+    
+    @Test
+    void testHttps() {
+        // Configure client with the certificates received from the extension
+        OkHttpClient client = new OkHttpClient.Builder()
+                .sslSocketFactory(handshakeCertificates.sslSocketFactory(), handshakeCertificates.trustManager())
+                .build();
+        
+        // Make HTTPS request
+    }
+}
+----
+
+==== Option 3: SSLContext Exchange
+
+===== Test → Extension
+
+[source,java]
+----
+@EnableMockWebServer(
+    useHttps = true,
+    keyMaterialProviderIsTestClass = true
+)
+class TestClass implements MockWebServerHolder {
+    
+    private final SSLContext sslContext = createSSLContext();
+    private final X509TrustManager trustManager = createTrustManager();
+    
+    @Override
+    public Optional<SSLContext> provideSSLContext() {
+        return Optional.of(sslContext);
+    }
+    
+    @Test
+    void testHttps() {
+        // Configure client with the same SSLContext
+        OkHttpClient client = new OkHttpClient.Builder()
+                .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
+                .hostnameVerifier((hostname, session) -> true) // Additional configuration needed
+                .build();
+        
+        // Make HTTPS request
+    }
+}
+----
+
+===== Extension → Test
+
+[source,java]
+----
+@EnableMockWebServer(
+    useHttps = true,
+    keyMaterialProviderIsSelfSigned = true
+)
+class TestClass implements MockWebServerHolder {
+    
+    private SSLContext sslContext;
+    private X509TrustManager trustManager;
+    
+    @Override
+    public void receiveSSLContext(SSLContext sslContext, X509TrustManager trustManager) {
+        this.sslContext = sslContext;
+        this.trustManager = trustManager;
+    }
+    
+    @Test
+    void testHttps() {
+        // Configure client with the SSLContext received from the extension
+        OkHttpClient client = new OkHttpClient.Builder()
+                .sslSocketFactory(sslContext.getSocketFactory(), trustManager)
+                .hostnameVerifier((hostname, session) -> true) // Additional configuration needed
+                .build();
+        
+        // Make HTTPS request
+    }
+}
+----
+
+== Conclusion
+
+The proposed changes will enhance the MockWebServer extension's HTTPS support by providing a bidirectional certificate exchange mechanism. This will allow tests to use the same certificate material for both server and client configuration, eliminating SSL handshake failures.
+
+Two viable approaches are presented:
+
+1. **HandshakeCertificates Exchange (Option 4)**: Recommended for most cases, especially when using OkHttp. Provides a clean API and direct compatibility with MockWebServer.
+
+2. **SSLContext Exchange (Option 3)**: A more abstract approach using standard Java APIs, suitable for applications that need to work with various HTTP clients or have existing code that uses SSLContext.
+
+Both approaches solve the fundamental issue of ensuring that both server and client use the same certificate material, but they offer different trade-offs in terms of abstraction, ease of use, and compatibility.

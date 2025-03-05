@@ -80,10 +80,19 @@ public class EndpointAnswerHandler {
     public static final MockResponse RESPONSE_UNAUTHORIZED = new MockResponse(HttpServletResponse.SC_UNAUTHORIZED);
 
     /**
-     * Empty response with status code 200 OK.
+     * Default response body for successful requests.
+     */
+    public static final String RESPONSE_SUCCESSFUL_BODY = "HTTP test successful";
+
+    /**
+     * Response with status code 200 OK and the value of {@link #RESPONSE_SUCCESSFUL_BODY} .
      * Standard success response for GET requests.
      */
-    public static final MockResponse RESPONSE_OK = new MockResponse(HttpServletResponse.SC_OK);
+    public static final MockResponse RESPONSE_OK = new MockResponse.Builder()
+            .addHeader("Content-Type", "text/plain")
+                            .body(RESPONSE_SUCCESSFUL_BODY)
+                            .code(HttpServletResponse.SC_OK)
+                            .build();;
 
     /**
      * Empty response with status code 204 No Content.

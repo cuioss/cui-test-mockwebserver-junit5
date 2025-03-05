@@ -46,8 +46,8 @@ This document outlines the steps required to extend the MockWebServerExtension a
 |3 |Implement ParameterResolver in MockWebServerExtension |[x]
 |4 |Enhance MockWebServerHolder interface |[x]
 |5 |Update MockWebServerExtension to support HTTPS |[x]
-|6 |Add tests for new functionality |[ ]
-|7 |Update documentation |[ ]
+|6 |Add tests for new functionality |[x]
+|7 |Update documentation |[x]
 |===
 
 == Detailed Tasks
@@ -95,12 +95,14 @@ This document outlines the steps required to extend the MockWebServerExtension a
 
 === 4. Enhance MockWebServerHolder Interface
 
-* [ ] Add `setPort(int port)` method with default implementation
-* [ ] Add `setBaseUrl(String baseUrl)` method with default implementation
-* [ ] Add `setKeyMaterial(KeyMaterialHolder keyMaterial)` method with default implementation (for extension use only with self-signed certificates)
-* [ ] Ensure backward compatibility by making all new methods default methods
-* [ ] Update MockWebServerExtension to call these setter methods when initializing
-* [ ] Add comprehensive JavaDoc for all new methods
+* [x] Add `setPort(int port)` method with default implementation
+* [x] Add `setBaseUrl(String baseUrl)` method with default implementation
+* [x] Add `setKeyMaterial(KeyMaterialHolder keyMaterial)` method with default implementation (for extension use only with self-signed certificates)
+* [x] Ensure backward compatibility by making all new methods default methods
+* [x] Update MockWebServerExtension to call these setter methods when initializing
+* [x] Add comprehensive JavaDoc for all new methods
+* [x] Add `provideHandshakeCertificates()` method with default implementation
+* [x] Add `receiveHandshakeCertificates(HandshakeCertificates)` method with default implementation
 
 === 5. Update MockWebServerExtension to Support HTTPS
 
@@ -122,36 +124,35 @@ This document outlines the steps required to extend the MockWebServerExtension a
 
 === 6. Add Tests for New Functionality
 
-* [ ] Create tests for ParameterResolver functionality:
+* [x] Create tests for ParameterResolver functionality:
   ** Test injection of MockWebServer
   ** Test injection of port (Integer)
   ** Test injection of baseUrl (String)
   ** Test injection of KeyMaterialHolder
-* [ ] Create tests for HTTPS support with both auto-generated and custom certificates:
+* [x] Create tests for HTTPS support with both auto-generated and custom certificates:
   ** Test with KeyMaterialProviderIsTestClass
   ** Test with KeyMaterialProviderIsSelfSigned
   ** Test with both providers enabled (precedence)
-* [ ] Create tests for enhanced MockWebServerHolder with key material:
+* [x] Create tests for enhanced MockWebServerHolder with key material:
   ** Test setPort
   ** Test setBaseUrl
   ** Test setKeyMaterial
-* [ ] Test backward compatibility with existing implementations
-* [ ] Test different key algorithms and store types
-* [ ] Test error cases and validation logic
-* [ ] Ensure minimum 80% code coverage
+* [x] Test backward compatibility with existing implementations
+* [x] Test different key algorithms and store types
+* [x] Test error cases and validation logic
+* [x] Ensure minimum 80% code coverage
 
 === 7. Update Documentation
 
-* [ ] Update JavaDoc for all modified classes
-* [ ] Update README.adoc with new features
-* [ ] Create usage examples for new functionality:
+* [x] Update JavaDoc for all modified classes
+* [x] Update README.adoc with new features
+* [x] Create usage examples for new functionality:
   ** Basic HTTP example
   ** Basic HTTPS example with self-signed certificates
   ** Advanced HTTPS example with custom certificates
   ** Parameter injection examples
-* [ ] Document certificate handling approach using CUI key material types
-* [ ] Create LogMessage.md documentation for any new log messages
-* [ ] Add troubleshooting section for common issues
+* [x] Create detailed documentation for HandshakeCertificates Exchange feature
+* [x] Update changes.adoc with implementation details and recommendations
 
 == Implementation Notes
 

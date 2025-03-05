@@ -171,4 +171,11 @@ public class CombinedDispatcher extends Dispatcher {
         return this;
     }
 
+    /**
+     * @return A new instance of the CombinedDispatcher with a default configuration providing an /api endpoint
+     */
+    public static CombinedDispatcher createAPIDispatcher() {
+        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+    }
+
 }

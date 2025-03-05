@@ -15,6 +15,7 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -57,12 +58,29 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * }
  * </pre>
  *
+ * <h2>HTTPS Support</h2>
+ * <pre>
+ * &#64;EnableMockWebServer(
+ *     useHttps = true,
+ *     keyMaterialProviderIsExtension = true
+ * )
+ * class HttpsTest implements MockWebServerHolder {
+ *     private MockWebServer server;
+ *
+ *     &#64;Override
+ *     public void setMockWebServer(MockWebServer mockWebServer) {
+ *         this.server = mockWebServer;
+ *     }
+ * }
+ * </pre>
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li>Automatic server startup before each test (default behavior)</li>
  *   <li>Manual server control with {@link #manualStart()}</li>
  *   <li>Integration with {@link MockWebServerHolder} for server access</li>
  *   <li>Support for custom {@link mockwebserver3.Dispatcher} implementations</li>
+ *   <li>HTTPS support with both self-signed and custom certificates</li>
  * </ul>
  *
  * <h2>MockWebServerHolder Nesting</h2>
@@ -88,4 +106,55 @@ public @interface EnableMockWebServer {
      */
     boolean manualStart() default false;
 
+    /**
+     * Controls whether the MockWebServer should use HTTPS instead of HTTP.
+     * When set to {@code true}, at least one of {@link #keyMaterialProviderIsTestClass()} or
+     * {@link #keyMaterialProviderIsExtension()} must also be {@code true}.
+     *
+     * @return {@code true} if the server should use HTTPS, {@code false} for HTTP (default)
+     */
+    boolean useHttps() default false;
+
+    /**
+     * Indicates that the test class provides key material through the {@link MockWebServerHolder#provideKeyMaterial()}
+     * method. When {@code true}, the extension will call this method to obtain the key material for HTTPS configuration.
+     * 
+     * <p>This approach gives tests full control over certificate generation/loading.</p>
+     * 
+     * <p>If both this and {@link #keyMaterialProviderIsExtension()} are {@code true},
+     * this approach takes precedence.</p>
+     *
+     * @return {@code true} if the test class provides key material, {@code false} otherwise (default)
+     */
+    boolean keyMaterialProviderIsTestClass() default false;
+
+    /**
+     * Indicates that the extension should automatically generate self-signed certificates.
+     * When {@code true}, the extension will create certificates using the parameters specified by
+     * {@link #certificateDuration()} and {@link #keyAlgorithm()}.
+     * 
+     * <p>This is the simplest approach for tests that don't need specific certificates.</p>
+     * 
+     * <p>If both this and {@link #keyMaterialProviderIsTestClass()} are {@code true},
+     * the test class method takes precedence.</p>
+     *
+     * @return {@code true} if self-signed certificates should be generated, {@code false} otherwise (default)
+     */
+    boolean keyMaterialProviderIsExtension() default false;
+
+    /**
+     * Specifies the validity period in days for generated certificates when
+     * {@link #keyMaterialProviderIsExtension()} is {@code true}.
+     *
+     * @return the certificate validity period in days
+     */
+    int certificateDuration() default 365;
+
+    /**
+     * Specifies the key algorithm to use for generated certificates when
+     * {@link #keyMaterialProviderIsExtension()} is {@code true}.
+     *
+     * @return the key algorithm to use
+     */
+    KeyAlgorithm keyAlgorithm() default KeyAlgorithm.RSA_2048;
 }
