@@ -15,8 +15,12 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.tools.net.ssl.KeyMaterialHolder;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
+
+import javax.net.ssl.SSLContext;
+import java.util.Optional;
 
 /**
  * Interface for test classes that need access to a {@link MockWebServer} instance.
@@ -57,11 +61,36 @@ import mockwebserver3.MockWebServer;
  * }
  * </pre>
  *
+ * <h2>HTTPS Support</h2>
+ * <pre>
+ * &#64;EnableMockWebServer(
+ *     useHttps = true,
+ *     keyMaterialProviderIsTestClass = true
+ * )
+ * class HttpsTest implements MockWebServerHolder {
+ *     &#64;Getter
+ *     &#64;Setter
+ *     private MockWebServer server;
+ *
+ *     &#64;Override
+ *     public KeyMaterialHolder provideKeyMaterial() {
+ *         // Return custom key material for HTTPS
+ *         return KeyMaterialHolder.builder()
+ *                 .keyMaterial(myCertificateBytes)
+ *                 .keyHolderType(KeyHolderType.SINGLE_KEY)
+ *                 .keyAlias("my-cert")
+ *                 .build();
+ *     }
+ * }
+ * </pre>
+ *
  * <h2>Usage Notes</h2>
  * <ul>
  *   <li>The {@link #setMockWebServer(MockWebServer)} method must be implemented to receive the server instance</li>
  *   <li>The {@link #getMockWebServer()} method must be implemented to retrieve the server instance</li>
  *   <li>Implement {@link #getDispatcher()} to provide custom request handling logic</li>
+ *   <li>Implement {@link #provideKeyMaterial()} to provide custom certificates for HTTPS</li>
+ *   <li>Implement {@link #getSSLContext()} to provide a custom SSLContext for client connections</li>
  *   <li>The server instance is managed by {@link MockWebServerExtension}</li>
  *   <li>Default dispatcher returns null, meaning requests are handled by the default MockWebServer behavior</li>
  * </ul>
@@ -104,5 +133,45 @@ public interface MockWebServerHolder {
      */
     default Dispatcher getDispatcher() {
         return null;
+    }
+    
+    /**
+     * Provides key material for HTTPS configuration when {@link EnableMockWebServer#keyMaterialProviderIsTestClass()}
+     * is set to {@code true}. This method allows tests to provide custom certificates for the MockWebServer.
+     * <p>
+     * The default implementation returns an empty Optional, meaning no key material is provided.
+     * Override this method to provide custom key material for HTTPS.
+     * </p>
+     * <p>
+     * This method will only be called if {@link EnableMockWebServer#useHttps()} and
+     * {@link EnableMockWebServer#keyMaterialProviderIsTestClass()} are both {@code true}.
+     * </p>
+     *
+     * @return an Optional containing the key material, or empty if no key material is provided
+     * @since 1.1
+     */
+    default Optional<KeyMaterialHolder> provideKeyMaterial() {
+        return Optional.empty();
+    }
+    
+    /**
+     * Provides a custom SSLContext for client connections to the MockWebServer.
+     * This is useful when the server is configured to use HTTPS with custom certificates.
+     * <p>
+     * The default implementation creates an SSLContext from the key material provided by
+     * {@link #provideKeyMaterial()} if available. If no key material is provided, it returns
+     * an empty Optional.
+     * </p>
+     * <p>
+     * This method can be overridden to provide a custom SSLContext implementation,
+     * but in most cases, it's better to override {@link #provideKeyMaterial()} instead.
+     * </p>
+     *
+     * @return an Optional containing the SSLContext, or empty if no custom SSLContext is provided
+     * @since 1.1
+     */
+    default Optional<SSLContext> getSSLContext() {
+        return provideKeyMaterial()
+                .map(keyMaterial -> de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.createSslContext(keyMaterial));
     }
 }
