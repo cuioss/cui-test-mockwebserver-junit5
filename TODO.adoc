@@ -43,9 +43,9 @@ This document outlines the steps required to extend the MockWebServerExtension a
 |Task |Description |Status
 |1 |Update EnableMockWebServer annotation with HTTPS configuration |[x]
 |2 |Integrate CUI key material types for certificate handling |[x]
-|3 |Implement ParameterResolver in MockWebServerExtension |[ ]
+|3 |Implement ParameterResolver in MockWebServerExtension |[x]
 |4 |Enhance MockWebServerHolder interface |[x]
-|5 |Update MockWebServerExtension to support HTTPS |[ ]
+|5 |Update MockWebServerExtension to support HTTPS |[x]
 |6 |Add tests for new functionality |[ ]
 |7 |Update documentation |[ ]
 |===
@@ -81,17 +81,17 @@ This document outlines the steps required to extend the MockWebServerExtension a
 
 === 3. Implement ParameterResolver in MockWebServerExtension
 
-* [ ] Add ParameterResolver interface to MockWebServerExtension
-* [ ] Implement `supportsParameter` method to check parameter types:
+* [x] Add ParameterResolver interface to MockWebServerExtension
+* [x] Implement `supportsParameter` method to check parameter types:
   ** Support MockWebServer.class
   ** Support Integer.class (for port)
   ** Support String.class (for baseUrl)
   ** Support KeyMaterialHolder.class
-* [ ] Implement `resolveParameter` method to provide parameter values
-* [ ] Add caching mechanism to avoid creating multiple instances
-* [ ] Add proper exception handling for unsupported parameter types
-* [ ] Ensure thread safety for concurrent test execution
-* [ ] Maintain backward compatibility with existing MockWebServerHolder approach
+* [x] Implement `resolveParameter` method to provide parameter values
+* [x] Add caching mechanism to avoid creating multiple instances
+* [x] Add proper exception handling for unsupported parameter types
+* [x] Ensure thread safety for concurrent test execution
+* [x] Maintain backward compatibility with existing MockWebServerHolder approach
 
 === 4. Enhance MockWebServerHolder Interface
 
@@ -104,21 +104,21 @@ This document outlines the steps required to extend the MockWebServerExtension a
 
 === 5. Update MockWebServerExtension to Support HTTPS
 
-* [ ] Modify `beforeEach` method to check for HTTPS configuration
-* [ ] Implement validation to ensure at least one key material provider is specified when HTTPS is enabled
-* [ ] For `KeyMaterialProviderIsTestClass`:
+* [x] Modify `beforeEach` method to check for HTTPS configuration
+* [x] Implement validation to ensure at least one key material provider is specified when HTTPS is enabled
+* [x] For `KeyMaterialProviderIsTestClass`:
   ** Use reflection to invoke the specified method on the test instance
   ** Default to method name "provideKeyMaterial" if not specified
   ** Method must return KeyMaterialHolder or compatible type
   ** Add proper error handling for reflection failures
-* [ ] For `KeyMaterialProviderIsSelfSigned`:
+* [x] For `KeyMaterialProviderIsSelfSigned`:
   ** Implement certificate generation using `HeldCertificate`
   ** Convert generated certificate to KeyMaterialHolder
   ** Call `setKeyMaterial` on the holder to store the generated certificates
-* [ ] Configure MockWebServer with HTTPS using the appropriate SSL socket factory
-* [ ] Implement logic to determine certificate source priority (test class method vs. self-signed)
-* [ ] Add proper logging for HTTPS configuration steps
-* [ ] Handle cleanup of resources in `afterEach` method
+* [x] Configure MockWebServer with HTTPS using the appropriate SSL socket factory
+* [x] Implement logic to determine certificate source priority (test class method vs. self-signed)
+* [x] Add proper logging for HTTPS configuration steps
+* [x] Handle cleanup of resources in `afterEach` method
 
 === 6. Add Tests for New Functionality
 
@@ -170,30 +170,8 @@ For handling certificates, we will:
 
    a. **KeyMaterialProviderIsTestClass**:
       * Test class provides key material through a designated instance method
-      * Method name specified via `keyMaterialProviderMethod` parameter (default: "provideKeyMaterial")
-      * Method must return a `KeyMaterialHolder` or compatible type
-      * Extension uses reflection to invoke the method on the test instance
-      * Gives tests full control over certificate generation/loading
-      * Example method signature: `public KeyMaterialHolder provideKeyMaterial()`
-      * Example implementation:
-        ```java
-        @EnableMockWebServer(useHttps = true, keyMaterialProviderIsTestClass = true)
-        class CustomCertificateTest implements MockWebServerHolder {
-            @Getter @Setter
-            private MockWebServer mockWebServer;
-            
-            public KeyMaterialHolder provideKeyMaterial() {
-                // Custom implementation to provide certificates
-                return KeyMaterialHolder.builder()
-                    .keyAlias("test-cert")
-                    .keyMaterial(certificateBytes)
-                    .keyHolderType(KeyHolderType.SINGLE_KEY)
-                    .build();
-            }
-        }
-        ```
-
-   b. **KeyMaterialProviderIsSelfSigned**:
+   
+   * **KeyMaterialProviderIsSelfSigned**:
       * Extension automatically generates self-signed certificates
       * Uses `HeldCertificate` for certificate generation
       * Configurable via `certificateDuration` and `keyAlgorithm` parameters
