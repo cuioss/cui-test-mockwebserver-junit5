@@ -67,7 +67,7 @@ import java.util.Optional;
  * <pre>
  * &#64;EnableMockWebServer(
  *     useHttps = true,
- *     keyMaterialProviderIsTestClass = true
+ *     testClassProvidesKeyMaterial = true
  * )
  * class HttpsTest implements MockWebServerHolder {
  *     &#64;Getter
@@ -138,7 +138,7 @@ public interface MockWebServerHolder {
     }
 
     /**
-     * Provides key material for HTTPS configuration when {@link EnableMockWebServer#keyMaterialProviderIsTestClass()}
+     * Provides key material for HTTPS configuration when {@link EnableMockWebServer#testClassProvidesKeyMaterial()}
      * is set to {@code true}. This method allows tests to provide custom certificates for the MockWebServer.
      * <p>
      * The default implementation returns an empty Optional, meaning no key material is provided.
@@ -146,7 +146,7 @@ public interface MockWebServerHolder {
      * </p>
      * <p>
      * This method will only be called if {@link EnableMockWebServer#useHttps()} and
-     * {@link EnableMockWebServer#keyMaterialProviderIsTestClass()} are both {@code true}.
+     * {@link EnableMockWebServer#testClassProvidesKeyMaterial()} are both {@code true}.
      * </p>
      *
      * @return an Optional containing the key material, or empty if no key material is provided
@@ -166,7 +166,7 @@ public interface MockWebServerHolder {
      * </p>
      * <p>
      * This method will only be called if {@link EnableMockWebServer#useHttps()} and
-     * {@link EnableMockWebServer#keyMaterialProviderIsTestClass()} are both {@code true}.
+     * {@link EnableMockWebServer#testClassProvidesKeyMaterial()} are both {@code true}.
      * </p>
      *
      * @return an Optional containing the HandshakeCertificates, or empty if none are provided

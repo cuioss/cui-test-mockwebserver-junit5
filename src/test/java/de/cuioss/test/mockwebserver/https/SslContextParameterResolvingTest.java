@@ -17,7 +17,6 @@ package de.cuioss.test.mockwebserver.https;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.MockWebServerHolder;
-import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
 import lombok.Getter;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -39,50 +39,33 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Demonstrates how to access a MockWebServer with HTTPS using Java's HttpClient.
- *
- * <p>This test shows how to configure Java's HttpClient to trust certificates provided by the extension.
- * The key to making HTTPS work with self-signed certificates is to use the same certificate material
- * for both the server and client.</p>
- *
- * <p>This test uses the "Extension → Test" approach with extension-provided certificates, where:
- * <ol>
- *   <li>The extension creates a self-signed certificate with a short validity period</li>
- *   <li>The extension configures the MockWebServer with this certificate</li>
- *   <li>The extension provides the SSLContext directly as a parameter</li>
- *   <li>The test configures Java's HttpClient with the same certificate</li>
- * </ol>
+ * Tests the parameter resolving functionality for SSLContext.
+ * <p>
+ * This test demonstrates how to use the SSLContext parameter resolving feature
+ * to simplify HTTPS testing with MockWebServer.
  * </p>
- *
- * <p>This approach simplifies HTTPS testing by eliminating the need for the test to create
- * and manage certificates manually.</p>
  */
 @EnableMockWebServer(
         useHttps = true
 )
-@DisplayName("HttpClient HTTPS Test")
-class ExtensionProvidedHttpsTest implements MockWebServerHolder {
+@DisplayName("SSLContext Parameter Resolving Test")
+class SslContextParameterResolvingTest implements MockWebServerHolder {
 
     @Getter
     @Setter
     private MockWebServer mockWebServer;
 
     /**
-     * Tests a basic HTTPS connection to a default endpoint.
-     * This demonstrates the most common use case for HTTPS testing.
-     * 
-     * The SSLContext is directly injected as a parameter using the parameter resolving feature.
+     * Tests that the SSLContext can be directly injected as a parameter.
+     * This demonstrates the simplest way to use the SSLContext parameter resolving feature.
      */
     @Test
-    @DisplayName("Should successfully connect to HTTPS server with extension-provided certificate")
-    void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
+    @DisplayName("Should inject SSLContext parameter directly")
+    void shouldInjectSslContextParameter(URL serverURL, SSLContext sslContext) throws IOException, InterruptedException {
         // Arrange
-        assertNotNull(sslContext, "SSLContext should be injected as a parameter");
-        assertNotNull(serverURIBuilder, "URL builder should be injected as a parameter");
-
-        // Verify the URL builder creates HTTPS URLs
-        URI uri = serverURIBuilder.build();
-        assertEquals("https", uri.getScheme(), "Server URL should use HTTPS");
+        assertNotNull(mockWebServer, "MockWebServer should be injected");
+        assertNotNull(sslContext, "SSLContext should be injected");
+        assertEquals("https", serverURL.getProtocol(), "Server URL should use HTTPS");
 
         // Configure HttpClient with the injected SSLContext
         HttpClient client = HttpClient.newBuilder()
@@ -90,9 +73,9 @@ class ExtensionProvidedHttpsTest implements MockWebServerHolder {
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
 
-        // Act: Make an HTTPS request using the URL builder
+        // Act: Make an HTTPS request
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(serverURIBuilder.addPathSegment("api").addPathSegment("test").build())
+                .uri(URI.create(serverURL.toString() + "api/test"))
                 .GET()
                 .build();
 

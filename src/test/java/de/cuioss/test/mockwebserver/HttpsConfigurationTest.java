@@ -56,7 +56,7 @@ class HttpsConfigurationTest {
             assertTrue(serverUrl.startsWith("https://"));
 
             // For self-signed certificates, the extension automatically creates a certificate
-            // when keyMaterialProviderIsTestClass is false (default)
+            // when testClassProvidesKeyMaterial is false (default)
             // Just verify the server is running with HTTPS
         }
 
@@ -68,7 +68,7 @@ class HttpsConfigurationTest {
 
     @Nested
     @DisplayName("Custom certificate tests")
-    @EnableMockWebServer(useHttps = true, keyMaterialProviderIsTestClass = true)
+    @EnableMockWebServer(useHttps = true, testClassProvidesKeyMaterial = true)
     class CustomCertificateTest implements MockWebServerHolder {
 
         @Getter

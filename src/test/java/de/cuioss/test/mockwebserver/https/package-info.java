@@ -71,7 +71,7 @@
  * All tests use the {@code @EnableMockWebServer} annotation with:
  * <ul>
  *   <li>{@code useHttps = true} to enable HTTPS</li>
- *   <li>{@code keyMaterialProviderIsTestClass = false} (default) to use self-signed certificates</li>
+ *   <li>{@code testClassProvidesKeyMaterial = false} (default) to use self-signed certificates</li>
  * </ul>
  * <p>
  * The extension automatically creates certificates with a short validity period (1 day)

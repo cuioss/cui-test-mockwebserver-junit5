@@ -39,9 +39,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Demonstrates how to access a MockWebServer with HTTPS using certificates provided by the test class.
@@ -63,8 +61,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * in the test class.</p>
  */
 @EnableMockWebServer(
-    useHttps = true,
-    keyMaterialProviderIsTestClass = true
+        useHttps = true,
+        testClassProvidesKeyMaterial = true
 )
 @DisplayName("Test-Provided HTTPS Test")
 class TestProvidedHttpsTest implements MockWebServerHolder {
@@ -72,9 +70,9 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
     @Getter
     @Setter
     private MockWebServer mockWebServer;
-    
+
     private HandshakeCertificates handshakeCertificates;
-    
+
     /**
      * This method is called by the extension to get the certificates that should be used by the server.
      * In this case, we create self-signed certificates and provide them to the extension.
@@ -94,20 +92,24 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
      */
     @Test
     @DisplayName("Should successfully connect to HTTPS server with test-provided certificate")
-    void shouldConnectToHttpsServer(URL serverURL) throws IOException, InterruptedException {
+    void shouldConnectToHttpsServer(URL serverURL, SSLContext sslContext) throws IOException, InterruptedException {
         // Arrange
         assertNotNull(mockWebServer);
         assertTrue(mockWebServer.getStarted());
         assertNotNull(handshakeCertificates, "HandshakeCertificates should have been created by the test");
+        assertNotNull(sslContext, "SSLContext should be injected as a parameter");
 
         assertEquals("https", serverURL.getProtocol(), "Server URL should use HTTPS");
 
-        // Configure HttpClient with the extension-provided certificates
-        HttpClient client = createSecureHttpClient();
+        // Configure HttpClient with the injected SSLContext
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
 
         // Act: Make an HTTPS request
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serverURL.toString() + "api/test") )
+                .uri(URI.create(serverURL.toString() + "api/test"))
                 .GET()
                 .build();
 
@@ -118,24 +120,6 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
         assertEquals(EndpointAnswerHandler.RESPONSE_SUCCESSFUL_BODY, response.body(), "Response body should match expected content");
     }
 
-    /**
-     * Helper method to create a secure HttpClient configured with the test-created certificates.
-     * This centralizes the client configuration logic to avoid duplication.
-     */
-    private HttpClient createSecureHttpClient() {
-        // Verify that we have created the certificates
-        assertNotNull(handshakeCertificates, "HandshakeCertificates must be created by the test before creating the HttpClient");
-        
-        // Use the utility method to create an SSLContext from the HandshakeCertificates
-        // This ensures we're using the same certificate material as the server
-        SSLContext sslContext = KeyMaterialUtil.createSslContext(handshakeCertificates);
-        
-        // Configure the HttpClient with our SSL context that uses the test-created certificates
-        return HttpClient.newBuilder()
-                .sslContext(sslContext)
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
-    }
 
     /**
      * Tests the round-trip conversion between HandshakeCertificates and SSLContext.
@@ -143,28 +127,25 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
      */
     @Test
     @DisplayName("Should support round-trip conversion between HandshakeCertificates and SSLContext")
-    void shouldSupportRoundTripConversion() {
+    void shouldSupportRoundTripConversion(SSLContext sslContext) {
         // Arrange
         assertNotNull(handshakeCertificates, "HandshakeCertificates should have been created by the test");
-        
-        // Convert HandshakeCertificates to SSLContext
-        SSLContext sslContext = KeyMaterialUtil.createSslContext(handshakeCertificates);
-        assertNotNull(sslContext, "SSLContext should be created from HandshakeCertificates");
-        
+        assertNotNull(sslContext, "SSLContext should be injected as a parameter");
+
         // Convert SSLContext back to HandshakeCertificates
         HandshakeCertificates convertedCertificates = KeyMaterialUtil.convertToHandshakeCertificates(sslContext);
         assertNotNull(convertedCertificates, "HandshakeCertificates should be created from SSLContext");
         assertNotNull(convertedCertificates.trustManager(), "TrustManager should not be null");
-        
+
         // Verify that the converted certificates can be used to create a new SSLContext
         SSLContext roundTripContext = KeyMaterialUtil.createSslContext(convertedCertificates);
         assertNotNull(roundTripContext, "Round-trip SSLContext should be created from converted HandshakeCertificates");
-        
+
         // Verify that both the original and converted certificates have trust managers
         assertNotNull(handshakeCertificates.trustManager(), "Original HandshakeCertificates should have a TrustManager");
         assertNotNull(convertedCertificates.trustManager(), "Converted HandshakeCertificates should have a TrustManager");
     }
-    
+
     @Override
     public Dispatcher getDispatcher() {
         return CombinedDispatcher.createAPIDispatcher();

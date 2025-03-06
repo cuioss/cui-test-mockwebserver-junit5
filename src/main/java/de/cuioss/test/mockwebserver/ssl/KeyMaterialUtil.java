@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
@@ -221,11 +220,11 @@ public class KeyMaterialUtil {
      */
     public static HandshakeCertificates convertToHandshakeCertificates(SSLContext sslContext) {
         LOGGER.debug("Converting SSLContext to HandshakeCertificates");
-        
+
         if (sslContext == null) {
             throw new IllegalArgumentException("SSLContext must not be null");
         }
-        
+
         try {
             // Create a self-signed certificate with a short validity period
             // This is a workaround since we can't directly extract certificates from SSLContext
@@ -235,31 +234,30 @@ public class KeyMaterialUtil {
                     .commonName("localhost")
                     .validityInterval(now.toEpochMilli(), validUntil.toEpochMilli())
                     .build();
-            
+
             // Create a HandshakeCertificates builder and add the certificate
             HandshakeCertificates.Builder builder = new HandshakeCertificates.Builder()
                     .heldCertificate(heldCertificate)
                     .addTrustedCertificate(heldCertificate.certificate());
-            
+
             // Add system trusted certificates
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
             tmf.init((KeyStore) null);
             for (TrustManager tm : tmf.getTrustManagers()) {
-                if (tm instanceof X509TrustManager) {
-                    X509TrustManager x509tm = (X509TrustManager) tm;
+                if (tm instanceof X509TrustManager x509tm) {
                     for (X509Certificate cert : x509tm.getAcceptedIssuers()) {
                         builder.addTrustedCertificate(cert);
                     }
                     break;
                 }
             }
-            
+
             return builder.build();
         } catch (Exception e) {
             throw new IllegalStateException("Failed to convert SSLContext to HandshakeCertificates", e);
         }
     }
-    
+
     /**
      * Creates an SSLContext from HandshakeCertificates.
      * This method simplifies the creation of an SSLContext from HandshakeCertificates for use with HTTP clients.
@@ -270,32 +268,29 @@ public class KeyMaterialUtil {
      */
     public static SSLContext createSslContext(HandshakeCertificates certificates) {
         LOGGER.debug("Creating SSLContext from HandshakeCertificates");
-        
+
         if (certificates == null) {
             throw new IllegalArgumentException("HandshakeCertificates must not be null");
         }
-        
+
         try {
             // Get the TrustManager from the HandshakeCertificates
             TrustManager trustManager = certificates.trustManager();
-            if (trustManager == null) {
-                throw new IllegalStateException("TrustManager from HandshakeCertificates is null");
-            }
-            
+
             // Create and initialize the SSLContext with the TrustManager
             SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(
-                null, // No need for KeyManager as we're configuring client-side trust
-                new TrustManager[]{ trustManager },
-                new SecureRandom()
+                    null, // No need for KeyManager as we're configuring client-side trust
+                    new TrustManager[]{trustManager},
+                    new SecureRandom()
             );
-            
+
             return sslContext;
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
             throw new IllegalStateException(UNABLE_TO_CREATE_SSL_CONTEXT, e);
         }
     }
-    
+
     /**
      * Creates an SSLContext from the provided KeyMaterialHolder.
      * This can be used to configure HTTP clients for connecting to the MockWebServer.
@@ -354,17 +349,17 @@ public class KeyMaterialUtil {
      * When HTTPS is enabled, at least one key material provider must be specified.
      *
      * @param useHttps whether HTTPS is enabled
-     * @param keyMaterialProviderIsTestClass whether the test class provides key material
+     * @param testClassProvidesKeyMaterial whether the test class provides key material
      * @param keyMaterialProviderIsSelfSigned whether self-signed certificates should be generated
      * @throws IllegalStateException if the configuration is invalid
      */
     public static void validateHttpsConfiguration(boolean useHttps,
-            boolean keyMaterialProviderIsTestClass,
+            boolean testClassProvidesKeyMaterial,
             boolean keyMaterialProviderIsSelfSigned) {
 
-        if (useHttps && !keyMaterialProviderIsTestClass && !keyMaterialProviderIsSelfSigned) {
+        if (useHttps && !testClassProvidesKeyMaterial && !keyMaterialProviderIsSelfSigned) {
             throw new IllegalStateException(
-                    "When HTTPS is enabled, at least one of keyMaterialProviderIsTestClass or " +
+                    "When HTTPS is enabled, at least one of testClassProvidesKeyMaterial or " +
                             "keyMaterialProviderIsExtension must be true");
         }
     }
@@ -400,45 +395,23 @@ public class KeyMaterialUtil {
     }
 
     private static String mapKeyAlgorithm(KeyAlgorithm keyAlgorithm) {
-        switch (keyAlgorithm) {
-            case RSA_2048:
-            case RSA_RS_256:
-            case RSA_RS_384:
-            case RSA_RS_512:
-            case RSA_PS_256:
-            case RSA_PS_384:
-            case RSA_PS_512:
-                return "RSA";
-            case ECDSA_P_256:
-            case ECDSA_P_384:
-            case ECDSA_P_521:
-                return "EC";
-            default:
-                return "RSA"; // Default to RSA
-        }
+        return switch (keyAlgorithm) {
+            case RSA_2048, RSA_RS_256, RSA_RS_384, RSA_RS_512, RSA_PS_256, RSA_PS_384, RSA_PS_512 -> "RSA";
+            case ECDSA_P_256, ECDSA_P_384, ECDSA_P_521 -> "EC";
+            default -> "RSA"; // Default to RSA
+        };
     }
 
     private static int getKeySizeForAlgorithm(KeyAlgorithm keyAlgorithm) {
-        switch (keyAlgorithm) {
-            case RSA_2048:
-                return 2048;
-            case RSA_RS_256:
-            case RSA_PS_256:
-                return 2048;
-            case RSA_RS_384:
-            case RSA_PS_384:
-                return 3072;
-            case RSA_RS_512:
-            case RSA_PS_512:
-                return 4096;
-            case ECDSA_P_256:
-                return 256;
-            case ECDSA_P_384:
-                return 384;
-            case ECDSA_P_521:
-                return 521;
-            default:
-                return 2048; // Default to 2048
-        }
+        return switch (keyAlgorithm) {
+            case RSA_2048 -> 2048;
+            case RSA_RS_256, RSA_PS_256 -> 2048;
+            case RSA_RS_384, RSA_PS_384 -> 3072;
+            case RSA_RS_512, RSA_PS_512 -> 4096;
+            case ECDSA_P_256 -> 256;
+            case ECDSA_P_384 -> 384;
+            case ECDSA_P_521 -> 521;
+            default -> 2048; // Default to 2048
+        };
     }
 }

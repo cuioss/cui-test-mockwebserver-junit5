@@ -215,15 +215,20 @@ Supported parameter types:
 * `int` or `Integer` - The server port
 * `String` - The base URL as a string
 * `URL` - The base URL as a java.net.URL object
+* `SSLContext` - The SSL context for HTTPS connections (when HTTPS is enabled)
 
 === HTTPS Support (New in 1.1)
+
+==== SSLContext Parameter Resolving (New in 1.2)
+
+When HTTPS is enabled, the extension automatically makes the SSLContext available for parameter injection, simplifying HTTPS testing:
 
 MockWebServerExtension now supports HTTPS configuration:
 
 [source,java]
 ----
 // Using self-signed certificates (automatically generated)
-@EnableMockWebServer(useHttps = true, keyMaterialProviderIsSelfSigned = true)
+@EnableMockWebServer(useHttps = true)
 class HttpsWithSelfSignedCertTest implements MockWebServerHolder {
 
     @Getter
@@ -231,13 +236,25 @@ class HttpsWithSelfSignedCertTest implements MockWebServerHolder {
     private MockWebServer mockWebServer;
     
     @Test
-    void testHttpsConnection() {
+    void testHttpsConnection(URL serverURL, SSLContext sslContext) throws IOException {
         // Server URL will use https://
-        String url = mockWebServer.url("/api").toString();
-        assertTrue(url.startsWith("https://"));
+        assertTrue(serverURL.toString().startsWith("https://"));
         
-        // Get the SSL context for client configuration
-        Optional<SSLContext> sslContext = getSSLContext();
+        // SSLContext is automatically injected as a parameter
+        assertNotNull(sslContext);
+        
+        // Configure HttpClient with the injected SSLContext
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build();
+                
+        // Make secure requests with the client
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(serverURL.toString() + "api/test"))
+                .GET()
+                .build();
+                
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
     }
 }
 

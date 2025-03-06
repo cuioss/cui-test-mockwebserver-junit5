@@ -17,13 +17,8 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import de.cuioss.tools.net.ssl.KeyMaterialHolder;
 import de.cuioss.tools.string.Joiner;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.ToString;
 import mockwebserver3.MockWebServer;
 import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -35,10 +30,13 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
 
+import javax.net.ssl.SSLContext;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * JUnit 5 extension that manages the lifecycle of {@link MockWebServer} instances.
@@ -73,18 +71,27 @@ import java.util.Optional;
  */
 public class MockWebServerExtension implements AfterEachCallback, BeforeEachCallback, ParameterResolver {
 
+    /**
+     * Logger for the MockWebServerExtension class.
+     * Used to provide consistent logging throughout the extension lifecycle.
+     */
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerExtension.class);
-    
+
     /**
      * Identifies the {@link Namespace} under which the concrete instance of
      * {@link MockWebServer} is stored.
      */
     private static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
-    
+
     /**
      * Key for storing self-signed certificates in the extension context.
      */
     private static final String SELF_SIGNED_CERTIFICATES_KEY = "SELF_SIGNED_CERTIFICATES";
+
+    /**
+     * Key for storing the SSLContext in the extension context.
+     */
+    private static final String SSL_CONTEXT_KEY = "SSL_CONTEXT";
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -117,7 +124,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      */
     private Optional<EnableMockWebServer> findEnableMockWebServerAnnotation(Object testInstance) {
         List<Class<?>> classHierarchy = extractClassHierarchy(testInstance);
-        
+
         return classHierarchy.stream()
                 .map(clazz -> AnnotationSupport.findAnnotation(clazz, EnableMockWebServer.class))
                 .filter(Optional::isPresent)
@@ -125,32 +132,46 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                 .findFirst();
     }
 
-/**
- * Creates a configuration object from the annotation or default values.
- *
- * @param enableMockWebServerAnnotation the annotation or null for defaults
- * @return a configuration object with all settings
- */
-private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
-    if (enableMockWebServerAnnotation == null) {
-        return Config.getDefaults();
-    }
-    
-    return new Config(
-        enableMockWebServerAnnotation.manualStart(),
-        enableMockWebServerAnnotation.useHttps(),
-        enableMockWebServerAnnotation.keyMaterialProviderIsTestClass()
-    );
-}
+    /**
+     * Creates a configuration object from the annotation or default values.
+     *
+     * @param enableMockWebServerAnnotation the annotation or null for defaults
+     * @return a configuration object with all settings
+     */
+    private MockServerConfig getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
+        if (enableMockWebServerAnnotation == null) {
+            return MockServerConfig.getDefaults();
+        }
 
-    private void configureHttps(MockWebServer server, Object testInstance, ExtensionContext context, Config config) {
+        return new MockServerConfig(
+                enableMockWebServerAnnotation.manualStart(),
+                enableMockWebServerAnnotation.useHttps(),
+                enableMockWebServerAnnotation.testClassProvidesKeyMaterial()
+        );
+    }
+
+    /**
+     * Configures HTTPS for the MockWebServer instance.
+     * This method handles the setup of SSL/TLS for secure connections.
+     *
+     * @param server the MockWebServer instance to configure
+     * @param testInstance the test class instance
+     * @param context the extension context
+     * @param config the configuration settings
+     * @throws IllegalStateException if certificate material cannot be obtained
+     */
+    private void configureHttps(MockWebServer server, Object testInstance, ExtensionContext context, MockServerConfig config) {
         LOGGER.info("Configuring HTTPS for MockWebServer");
 
+        // Get certificates based on configuration
         Optional<HandshakeCertificates> handshakeCertificates = getHandshakeCertificates(testInstance, context, config);
 
         if (handshakeCertificates.isPresent()) {
+            // Apply certificates to server
             server.useHttps(handshakeCertificates.get().sslSocketFactory());
             LOGGER.info("HTTPS configured for MockWebServer");
+
+            // Share certificates with test class
             notifyTestClassAboutCertificates(testInstance, context, handshakeCertificates.get());
         } else {
             LOGGER.error("Failed to configure HTTPS: No key material or HandshakeCertificates available");
@@ -160,54 +181,62 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
 
     /**
      * Obtains HandshakeCertificates based on the configuration.
-     * Will try to get certificates from the test class first if configured,
-     * then fall back to self-signed certificates if enabled.
+     * Uses a prioritized approach:
+     * 1. Try to get certificates from the test class if configured
+     * 2. Try to get cached certificates from context
+     * 3. Create new self-signed certificates
      *
      * @param testInstance the test class instance
      * @param context the extension context
      * @param config the configuration
      * @return an Optional containing HandshakeCertificates if available
      */
-    private Optional<HandshakeCertificates> getHandshakeCertificates(Object testInstance, ExtensionContext context, Config config) {
-        Optional<HandshakeCertificates> handshakeCertificates = Optional.empty();
-
-        // First try to get certificates from the test class if configured
-        if (config.isKeyMaterialProviderIsTestClass()) {
-            handshakeCertificates = getTestClassProvidedCertificates(testInstance, context);
-            if (handshakeCertificates.isEmpty()) {
-                LOGGER.warn("Test class is configured to provide certificates but none were provided");
+    private Optional<HandshakeCertificates> getHandshakeCertificates(Object testInstance, ExtensionContext context, MockServerConfig config) {
+        // Strategy 1: Get certificates from test class if configured
+        if (config.isTestClassProvidesKeyMaterial()) {
+            Optional<HandshakeCertificates> testClassCertificates = getTestClassProvidedCertificates(testInstance, context);
+            if (testClassCertificates.isPresent()) {
+                LOGGER.info("Using certificates provided by test class");
+                return testClassCertificates;
             }
+            LOGGER.warn("Test class is configured to provide certificates but none were provided");
         }
 
-        // If no certificates from test class or not configured to use test class,
-        // create self-signed certificates
-        if (handshakeCertificates.isEmpty()) {
-            // Try to get cached certificates from context first
-            handshakeCertificates = getSelfSignedCertificatesFromContext(context, config);
-            
-            // If not found in context, create new ones and store them
-            if (handshakeCertificates.isEmpty()) {
-                try {
-                    HandshakeCertificates certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(
-                            config.getCertificateDuration(), 
-                            config.getKeyAlgorithm());
-                    LOGGER.info("Generated self-signed certificates with validity of {} day(s)", config.getCertificateDuration());
-                    handshakeCertificates = Optional.of(certificates);
-                    
-                    // Store in context for reuse
-                    storeSelfSignedCertificatesInContext(context, certificates, config);
-                    
-                    LOGGER.info("Generated and cached new self-signed HandshakeCertificates with algorithm {} and duration {} days", 
-                            config.getKeyAlgorithm(), config.getCertificateDuration());
-                } catch (Exception e) {
-                    LOGGER.error("Failed to create self-signed certificates", e);
-                }
-            } else {
-                LOGGER.info("Reusing cached self-signed HandshakeCertificates");
-            }
+        // Strategy 2: Try to get cached certificates from context
+        Optional<HandshakeCertificates> cachedCertificates = getSelfSignedCertificatesFromContext(context, config);
+        if (cachedCertificates.isPresent()) {
+            LOGGER.info("Reusing cached self-signed HandshakeCertificates");
+            return cachedCertificates;
         }
 
-        return handshakeCertificates;
+        // Strategy 3: Create new self-signed certificates
+        return createAndStoreSelfSignedCertificates(context, config);
+    }
+
+    /**
+     * Creates new self-signed certificates and stores them in the context.
+     *
+     * @param context the extension context
+     * @param config the configuration
+     * @return an Optional containing the created HandshakeCertificates, or empty if creation failed
+     */
+    private Optional<HandshakeCertificates> createAndStoreSelfSignedCertificates(ExtensionContext context, MockServerConfig config) {
+        try {
+            HandshakeCertificates certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(
+                    config.getCertificateDuration(),
+                    config.getKeyAlgorithm());
+
+            // Store in context for reuse
+            storeSelfSignedCertificatesInContext(context, certificates, config);
+
+            LOGGER.info("Generated and cached new self-signed HandshakeCertificates with algorithm {} and duration {} days",
+                    config.getKeyAlgorithm(), config.getCertificateDuration());
+
+            return Optional.of(certificates);
+        } catch (Exception e) {
+            LOGGER.error("Failed to create self-signed certificates", e);
+            return Optional.empty();
+        }
     }
 
     /**
@@ -223,16 +252,16 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
         if (holder.isEmpty()) {
             return Optional.empty();
         }
-        
+
         MockWebServerHolder mockWebServerHolder = holder.get();
-        
+
         // First try to get HandshakeCertificates directly
         Optional<HandshakeCertificates> handshakeCertificates = mockWebServerHolder.provideHandshakeCertificates();
         if (handshakeCertificates.isPresent()) {
             LOGGER.debug("Using HandshakeCertificates provided by test class");
             return handshakeCertificates;
         }
-        
+
         // Fall back to KeyMaterialHolder
         Optional<KeyMaterialHolder> keyMaterial = mockWebServerHolder.provideKeyMaterial();
         if (keyMaterial.isPresent()) {
@@ -243,15 +272,21 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
                 LOGGER.error("Failed to convert key material to HandshakeCertificates", e);
             }
         }
-        
+
         return Optional.empty();
     }
 
     private void notifyTestClassAboutCertificates(Object testInstance, ExtensionContext context, HandshakeCertificates handshakeCertificates) {
         Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
         if (holder.isPresent()) {
-            holder.get().setSslContext(KeyMaterialUtil.createSslContext(handshakeCertificates));
-            LOGGER.debug("Notified test class about HandshakeCertificates");
+            SSLContext sslContext = KeyMaterialUtil.createSslContext(handshakeCertificates);
+            holder.get().setSslContext(sslContext);
+
+            // Store the SSLContext in the context store for parameter resolution
+            ExtensionContext rootContext = getRootContext(context);
+            rootContext.getStore(NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
+
+            LOGGER.debug("Notified test class about HandshakeCertificates and stored SSLContext for parameter resolution");
         }
     }
 
@@ -314,7 +349,7 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
     private Optional<MockWebServer> get(ExtensionContext context) {
         return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(MockWebServer.class.getName()));
     }
-    
+
     /**
      * Retrieves self-signed certificates from the extension context if they exist and match the current configuration.
      *
@@ -322,24 +357,24 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
      * @param config the current configuration
      * @return an Optional containing HandshakeCertificates if found in context and matching the config
      */
-    private Optional<HandshakeCertificates> getSelfSignedCertificatesFromContext(ExtensionContext context, Config config) {
+    private Optional<HandshakeCertificates> getSelfSignedCertificatesFromContext(ExtensionContext context, MockServerConfig config) {
         // Get the root context to ensure certificates are shared across all tests in the class
         ExtensionContext rootContext = getRootContext(context);
-        
+
         Object cachedValue = rootContext.getStore(NAMESPACE).get(SELF_SIGNED_CERTIFICATES_KEY);
         if (cachedValue instanceof CachedCertificates cachedCerts) {
             // Only reuse if the configuration matches
             if (cachedCerts.matches(config)) {
-                return Optional.of(cachedCerts.getCertificates());
+                return Optional.of(cachedCerts.certificates());
             } else {
                 LOGGER.debug("Cached certificates found but configuration doesn't match, creating new ones");
                 return Optional.empty();
             }
         }
-        
+
         return Optional.empty();
     }
-    
+
     /**
      * Stores self-signed certificates in the extension context for reuse.
      *
@@ -347,16 +382,16 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
      * @param certificates the certificates to store
      * @param config the current configuration
      */
-    private void storeSelfSignedCertificatesInContext(ExtensionContext context, HandshakeCertificates certificates, Config config) {
+    private void storeSelfSignedCertificatesInContext(ExtensionContext context, HandshakeCertificates certificates, MockServerConfig config) {
         // Store in the root context to ensure certificates are shared across all tests in the class
         ExtensionContext rootContext = getRootContext(context);
-        
+
         CachedCertificates cachedCerts = new CachedCertificates(
                 certificates);
-        
+
         rootContext.getStore(NAMESPACE).put(SELF_SIGNED_CERTIFICATES_KEY, cachedCerts);
     }
-    
+
     /**
      * Gets the root context to ensure certificates are shared across all tests in the class.
      *
@@ -373,6 +408,7 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
 
     /**
      * Extracts the class hierarchy for a test instance, including enclosing classes.
+     * This implementation uses a non-recursive approach for better performance and readability.
      *
      * @param testInstance the test instance to extract the class hierarchy from
      * @return a list of classes in the hierarchy, from most specific to least specific
@@ -380,85 +416,92 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
     private List<Class<?>> extractClassHierarchy(Object testInstance) {
         List<Class<?>> classHierarchy = new ArrayList<>();
         Class<?> testClass = testInstance.getClass();
-        
+
         // Add enclosing classes if present
-        if (testClass.getEnclosingClass() != null) {
-            classHierarchy.addAll(extractClassHierarchyRecursive(testClass.getEnclosingClass(), new ArrayList<>()));
+        Class<?> enclosingClass = testClass.getEnclosingClass();
+        if (enclosingClass != null) {
+            addClassHierarchy(enclosingClass, classHierarchy);
         }
-        
+
         // Add the class hierarchy of the test class itself
-        classHierarchy.addAll(extractClassHierarchyRecursive(testClass, new ArrayList<>()));
-        
-        LOGGER.debug("Extracted class hierarchy from %s, resulting in:\n\t-%s", 
-                testInstance.getClass(), 
-                Joiner.on("\n\t-").join(classHierarchy));
-        
+        addClassHierarchy(testClass, classHierarchy);
+
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Extracted class hierarchy from {}, resulting in:\n\t-{}",
+                    testInstance.getClass().getName(),
+                    Joiner.on("\n\t-").join(classHierarchy));
+        }
+
         return classHierarchy;
     }
-    
+
     /**
-     * Recursively extracts the class hierarchy for a class.
+     * Adds a class and its superclasses to the hierarchy list.
+     * Uses an iterative approach instead of recursion for better performance.
      *
-     * @param clazz the class to extract the hierarchy from
-     * @param classList the list to add classes to
-     * @return the list of classes in the hierarchy
+     * @param clazz the starting class
+     * @param hierarchy the list to add classes to
      */
-    private List<Class<?>> extractClassHierarchyRecursive(Class<?> clazz, List<Class<?>> classList) {
-        if (Object.class.equals(clazz)) {
-            return classList; // Stop at Object class
+    private void addClassHierarchy(Class<?> clazz, List<Class<?>> hierarchy) {
+        Class<?> current = clazz;
+        while (current != null && !Object.class.equals(current)) {
+            hierarchy.add(current);
+            current = current.getSuperclass();
         }
-        
-        classList.add(clazz);
-        return extractClassHierarchyRecursive(clazz.getSuperclass(), classList);
     }
+
+    /**
+     * Map of parameter types to resolver functions.
+     * This approach simplifies the parameter resolution logic and makes it more maintainable.
+     */
+    private final Map<Class<?>, Function<MockWebServer, Object>> parameterResolvers = Map.of(
+            MockWebServer.class, this::resolveServerParameter,
+            Integer.class, this::resolvePortParameter,
+            int.class, this::resolvePortParameter,
+            URL.class, this::resolveUrlParameter,
+            String.class, this::resolveStringParameter,
+            URIBuilder.class, this::resolveUrlBuilderParameter
+    );
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
         Class<?> type = parameterContext.getParameter().getType();
-        return MockWebServer.class.equals(type) ||
-                Integer.class.equals(type) ||
-                int.class.equals(type) ||
-                URL.class.equals(type) ||
-                String.class.equals(type);
+        return parameterResolvers.containsKey(type) || SSLContext.class.equals(type);
     }
 
     @Override
     public Object resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {
+        Class<?> type = parameterContext.getParameter().getType();
+
+        // Handle SSLContext separately as it doesn't depend on MockWebServer
+        if (SSLContext.class.equals(type)) {
+            return resolveSslContextParameter(extensionContext);
+        }
+
+        // For all other parameter types, get the MockWebServer instance
         Optional<MockWebServer> server = get(extensionContext);
         if (server.isEmpty()) {
             throw new ParameterResolutionException("No MockWebServer instance available");
         }
-
-        Class<?> type = parameterContext.getParameter().getType();
         MockWebServer mockWebServer = server.get();
 
-        if (MockWebServer.class.equals(type)) {
-            return resolveServerParameter(mockWebServer);
-        }
-
-        if (Integer.class.equals(type) || int.class.equals(type)) {
-            return resolvePortParameter(mockWebServer);
-        }
-
-        if (URL.class.equals(type)) {
-            return resolveUrlParameter(mockWebServer);
-        }
-
-        if (String.class.equals(type)) {
-            return resolveStringParameter(mockWebServer);
+        // Use the parameter resolver map to resolve the parameter
+        Function<MockWebServer, Object> resolver = parameterResolvers.get(type);
+        if (resolver != null) {
+            return resolver.apply(mockWebServer);
         }
 
         throw new ParameterResolutionException("Unsupported parameter type: " + type.getName());
     }
-    
+
     private MockWebServer resolveServerParameter(MockWebServer server) {
         return server;
     }
-    
+
     private int resolvePortParameter(MockWebServer server) {
         return server.getPort();
     }
-    
+
     private URL resolveUrlParameter(MockWebServer server) {
         try {
             return server.url("/").url();
@@ -466,83 +509,87 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
             throw new ParameterResolutionException("Failed to convert HttpUrl to URL", e);
         }
     }
-    
+
     private String resolveStringParameter(MockWebServer server) {
         return server.url("/").toString();
     }
 
     /**
-     * Immutable configuration class that holds all settings for the extension.
+     * Resolves a URIBuilder parameter for the given MockWebServer instance.
+     * <p>
+     * The URIBuilder provides a convenient way to build and manipulate URIs for API requests.
+     * This method creates a URIBuilder initialized with the base URL of the MockWebServer,
+     * which can then be used to construct complete request URLs by adding paths, query parameters,
+     * fragments, etc.
+     * </p>
+     * <p>
+     * Example usage in tests:
+     * <pre>
+     * {@code
+     * @Test
+     * void testWithUriBuilder(URIBuilder uriBuilder) {
+     *     // Add path and query parameters
+     *     uriBuilder.setPath("/api/users")
+     *              .addParameter("active", "true");
+     *     
+     *     // Use the URI in your HTTP client
+     *     HttpGet request = new HttpGet(uriBuilder.build());
+     *     // ...
+     * }
+     * }
+     * </pre>
+     * </p>
+     *
+     * @param server the MockWebServer instance
+     * @return a URIBuilder initialized with the server's base URL
+     * @throws ParameterResolutionException if the URL cannot be converted to a URI
      */
-    @ToString
-    private static class Config {
-        
-        private Config(boolean manualStart, boolean useHttps, boolean keyMaterialProviderIsTestClass) {
-            this.manualStart = manualStart;
-            this.useHttps = useHttps;
-            this.keyMaterialProviderIsTestClass = keyMaterialProviderIsTestClass;
-        }
-        private final boolean manualStart;
-        private final boolean useHttps;
-        private final boolean keyMaterialProviderIsTestClass;
-        
-        // Fixed values for certificate generation
-        private static final int CERTIFICATE_DURATION = 1; // 1 day validity for unit tests
-        private static final KeyAlgorithm KEY_ALGORITHM = KeyAlgorithm.RSA_2048;
-        
-        /**
-         * @return default configuration with sensible defaults
-         */
-        static Config getDefaults() {
-            return new Config(
-                false,              // manualStart
-                false,              // useHttps
-                false               // keyMaterialProviderIsTestClass
-            );
-        }
-        
-        public boolean isManualStart() {
-            return manualStart;
-        }
-        
-        public boolean isUseHttps() {
-            return useHttps;
-        }
-        
-        public boolean isKeyMaterialProviderIsTestClass() {
-            return keyMaterialProviderIsTestClass;
-        }
-        
-        public int getCertificateDuration() {
-            return CERTIFICATE_DURATION;
-        }
-        
-        public KeyAlgorithm getKeyAlgorithm() {
-            return KEY_ALGORITHM;
+    private URIBuilder resolveUrlBuilderParameter(MockWebServer server) {
+        try {
+            return URIBuilder.from(server.url("/").url());
+        } catch (Exception e) {
+            throw new ParameterResolutionException(
+                    "Failed to create URIBuilder from MockWebServer URL: " + e.getMessage(), e);
         }
     }
 
     /**
-     * Class to store certificates with their configuration for caching.
+     * Resolves an SSLContext parameter for test methods.
+     * This allows tests to directly inject the SSLContext without having to implement the MockWebServerHolder interface.
+     * 
+     * @param context the extension context
+     * @return the SSLContext used for HTTPS configuration
+     * @throws ParameterResolutionException if no SSLContext is available
      */
-    private static class CachedCertificates {
-        private final HandshakeCertificates certificates;
-        
-        CachedCertificates(HandshakeCertificates certificates) {
-            this.certificates = certificates;
+    private SSLContext resolveSslContextParameter(ExtensionContext context) {
+        // Get the root context to access the store
+        ExtensionContext rootContext = getRootContext(context);
+
+        // Try to get the SSLContext from the store
+        Optional<SSLContext> sslContext = Optional.ofNullable(rootContext.getStore(NAMESPACE)
+                .get(SSL_CONTEXT_KEY, SSLContext.class));
+
+        if (sslContext.isEmpty()) {
+            throw new ParameterResolutionException("No SSLContext available. Make sure HTTPS is enabled with @EnableMockWebServer(useHttps = true)");
         }
-        
-        HandshakeCertificates getCertificates() {
-            return certificates;
-        }
-        
-        /**
-         * Since we now use fixed certificate parameters, all cached certificates match.
-         *
-         * @param config the configuration to check against
-         * @return always true since we use fixed certificate parameters
+
+        return sslContext.get();
+    }
+
+    // Configuration class has been extracted to MockServerConfig
+
+    /**
+         * Class to store certificates with their configuration for caching.
          */
-        boolean matches(Config config) {
+        private record CachedCertificates(HandshakeCertificates certificates) {
+
+        /**
+             * Since we now use fixed certificate parameters, all cached certificates match.
+             *
+             * @param config the configuration to check against
+             * @return always true since we use fixed certificate parameters
+             */
+            boolean matches(MockServerConfig config) {
             return true;
         }
     }

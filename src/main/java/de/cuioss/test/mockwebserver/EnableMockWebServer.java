@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -73,6 +72,55 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * }
  * </pre>
  *
+ * <h2>Parameter Resolving</h2>
+ * <p>The extension can automatically inject various parameters into your test methods:</p>
+ * 
+ * <h3>URL Builder Parameter</h3>
+ * <p>The extension provides a convenient URL builder for constructing request URLs:</p>
+ * <pre>
+ * &#64;EnableMockWebServer
+ * class UrlBuilderTest implements MockWebServerHolder {
+ *     private MockWebServer server;
+ *
+ *     &#64;Test
+ *     void shouldUseUrlBuilder(URIBuilder urlBuilder) throws IOException {
+ *         // Build a URL with path segments and query parameters
+ *         URI uri = urlBuilder
+ *                 .addPathSegment("api")
+ *                 .addPathSegment("users")
+ *                 .addQueryParameter("filter", "active")
+ *                 .build();
+ *         
+ *         // Use the URI for requests
+ *         HttpRequest request = HttpRequest.newBuilder()
+ *                 .uri(uri)
+ *                 .GET()
+ *                 .build();
+ *     }
+ * }
+ * </pre>
+ * 
+ * <h3>SSLContext Parameter</h3>
+ * <p>When HTTPS is enabled, the extension automatically makes the SSLContext available for parameter injection:</p>
+ * <pre>
+ * &#64;EnableMockWebServer(
+ *     useHttps = true
+ * )
+ * class SslContextTest implements MockWebServerHolder {
+ *     private MockWebServer server;
+ *
+ *     &#64;Test
+ *     void shouldConnectSecurely(SSLContext sslContext) throws IOException {
+ *         // The SSLContext is automatically injected
+ *         HttpClient client = HttpClient.newBuilder()
+ *                 .sslContext(sslContext)
+ *                 .build();
+ *         
+ *         // Make secure requests with the client
+ *     }
+ * }
+ * </pre>
+ *
  * <h2>Features</h2>
  * <ul>
  *   <li>Automatic server startup before each test (default behavior)</li>
@@ -80,6 +128,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *   <li>Integration with {@link MockWebServerHolder} for server access</li>
  *   <li>Support for custom {@link mockwebserver3.Dispatcher} implementations</li>
  *   <li>HTTPS support with both self-signed and custom certificates</li>
+ *   <li>Parameter resolving for {@link MockWebServer}, port, URL, {@link URIBuilder}, and {@link javax.net.ssl.SSLContext}</li>
  * </ul>
  *
  * <h2>MockWebServerHolder Nesting</h2>
@@ -109,8 +158,8 @@ public @interface EnableMockWebServer {
      * Controls whether the MockWebServer should use HTTPS instead of HTTP.
      * When set to {@code true}, the extension will either:
      * <ul>
-     *   <li>Use certificates provided by the test class if {@link #keyMaterialProviderIsTestClass()} is {@code true}</li>
-     *   <li>Automatically generate self-signed certificates if {@link #keyMaterialProviderIsTestClass()} is {@code false}</li>
+     *   <li>Use certificates provided by the test class if {@link #testClassProvidesKeyMaterial()} is {@code true}</li>
+     *   <li>Automatically generate self-signed certificates if {@link #testClassProvidesKeyMaterial()} is {@code false}</li>
      * </ul>
      *
      * @return {@code true} if the server should use HTTPS, {@code false} for HTTP (default)
@@ -128,9 +177,7 @@ public @interface EnableMockWebServer {
      *
      * @return {@code true} if the test class provides key material, {@code false} otherwise (default)
      */
-    boolean keyMaterialProviderIsTestClass() default false;
-
-
+    boolean testClassProvidesKeyMaterial() default false;
 
 
 }
