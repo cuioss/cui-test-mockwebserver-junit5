@@ -80,6 +80,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * {@link MockWebServer} is stored.
      */
     private static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
+    
+    /**
+     * Key for storing self-signed certificates in the extension context.
+     */
+    private static final String SELF_SIGNED_CERTIFICATES_KEY = "SELF_SIGNED_CERTIFICATES";
 
     @Override
     public void beforeEach(ExtensionContext context) throws Exception {
@@ -134,10 +139,7 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
     return new Config(
         enableMockWebServerAnnotation.manualStart(),
         enableMockWebServerAnnotation.useHttps(),
-        enableMockWebServerAnnotation.keyMaterialProviderIsTestClass(),
-        enableMockWebServerAnnotation.keyMaterialProviderIsExtension(),
-        enableMockWebServerAnnotation.certificateDuration(),
-        enableMockWebServerAnnotation.keyAlgorithm()
+        enableMockWebServerAnnotation.keyMaterialProviderIsTestClass()
     );
 }
 
@@ -172,18 +174,36 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
         // First try to get certificates from the test class if configured
         if (config.isKeyMaterialProviderIsTestClass()) {
             handshakeCertificates = getTestClassProvidedCertificates(testInstance, context);
+            if (handshakeCertificates.isEmpty()) {
+                LOGGER.warn("Test class is configured to provide certificates but none were provided");
+            }
         }
 
-        // Fall back to self-signed certificates if enabled and no certificates were provided
-        if (config.isKeyMaterialProviderIsSelfSigned() && handshakeCertificates.isEmpty()) {
-            try {
-                handshakeCertificates = Optional.of(KeyMaterialUtil.createSelfSignedHandshakeCertificates(
-                        config.getCertificateDuration(), 
-                        config.getKeyAlgorithm()));
-                LOGGER.debug("Generated self-signed HandshakeCertificates with algorithm {} and duration {} days", 
-                        config.getKeyAlgorithm(), config.getCertificateDuration());
-            } catch (Exception e) {
-                LOGGER.error("Failed to create self-signed certificates", e);
+        // If no certificates from test class or not configured to use test class,
+        // create self-signed certificates
+        if (handshakeCertificates.isEmpty()) {
+            // Try to get cached certificates from context first
+            handshakeCertificates = getSelfSignedCertificatesFromContext(context, config);
+            
+            // If not found in context, create new ones and store them
+            if (handshakeCertificates.isEmpty()) {
+                try {
+                    HandshakeCertificates certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(
+                            config.getCertificateDuration(), 
+                            config.getKeyAlgorithm());
+                    LOGGER.info("Generated self-signed certificates with validity of {} day(s)", config.getCertificateDuration());
+                    handshakeCertificates = Optional.of(certificates);
+                    
+                    // Store in context for reuse
+                    storeSelfSignedCertificatesInContext(context, certificates, config);
+                    
+                    LOGGER.info("Generated and cached new self-signed HandshakeCertificates with algorithm {} and duration {} days", 
+                            config.getKeyAlgorithm(), config.getCertificateDuration());
+                } catch (Exception e) {
+                    LOGGER.error("Failed to create self-signed certificates", e);
+                }
+            } else {
+                LOGGER.info("Reusing cached self-signed HandshakeCertificates");
             }
         }
 
@@ -294,6 +314,62 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
     private Optional<MockWebServer> get(ExtensionContext context) {
         return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(MockWebServer.class.getName()));
     }
+    
+    /**
+     * Retrieves self-signed certificates from the extension context if they exist and match the current configuration.
+     *
+     * @param context the extension context
+     * @param config the current configuration
+     * @return an Optional containing HandshakeCertificates if found in context and matching the config
+     */
+    private Optional<HandshakeCertificates> getSelfSignedCertificatesFromContext(ExtensionContext context, Config config) {
+        // Get the root context to ensure certificates are shared across all tests in the class
+        ExtensionContext rootContext = getRootContext(context);
+        
+        Object cachedValue = rootContext.getStore(NAMESPACE).get(SELF_SIGNED_CERTIFICATES_KEY);
+        if (cachedValue instanceof CachedCertificates cachedCerts) {
+            // Only reuse if the configuration matches
+            if (cachedCerts.matches(config)) {
+                return Optional.of(cachedCerts.getCertificates());
+            } else {
+                LOGGER.debug("Cached certificates found but configuration doesn't match, creating new ones");
+                return Optional.empty();
+            }
+        }
+        
+        return Optional.empty();
+    }
+    
+    /**
+     * Stores self-signed certificates in the extension context for reuse.
+     *
+     * @param context the extension context
+     * @param certificates the certificates to store
+     * @param config the current configuration
+     */
+    private void storeSelfSignedCertificatesInContext(ExtensionContext context, HandshakeCertificates certificates, Config config) {
+        // Store in the root context to ensure certificates are shared across all tests in the class
+        ExtensionContext rootContext = getRootContext(context);
+        
+        CachedCertificates cachedCerts = new CachedCertificates(
+                certificates);
+        
+        rootContext.getStore(NAMESPACE).put(SELF_SIGNED_CERTIFICATES_KEY, cachedCerts);
+    }
+    
+    /**
+     * Gets the root context to ensure certificates are shared across all tests in the class.
+     *
+     * @param context the current extension context
+     * @return the root context
+     */
+    private ExtensionContext getRootContext(ExtensionContext context) {
+        ExtensionContext current = context;
+        while (current.getParent().isPresent()) {
+            current = current.getParent().get();
+        }
+        return current;
+    }
 
     /**
      * Extracts the class hierarchy for a test instance, including enclosing classes.
@@ -398,15 +474,21 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
     /**
      * Immutable configuration class that holds all settings for the extension.
      */
-    @AllArgsConstructor
     @ToString
     private static class Config {
+        
+        private Config(boolean manualStart, boolean useHttps, boolean keyMaterialProviderIsTestClass) {
+            this.manualStart = manualStart;
+            this.useHttps = useHttps;
+            this.keyMaterialProviderIsTestClass = keyMaterialProviderIsTestClass;
+        }
         private final boolean manualStart;
         private final boolean useHttps;
         private final boolean keyMaterialProviderIsTestClass;
-        private final boolean keyMaterialProviderIsSelfSigned;
-        private final int certificateDuration;
-        private final KeyAlgorithm keyAlgorithm;
+        
+        // Fixed values for certificate generation
+        private static final int CERTIFICATE_DURATION = 1; // 1 day validity for unit tests
+        private static final KeyAlgorithm KEY_ALGORITHM = KeyAlgorithm.RSA_2048;
         
         /**
          * @return default configuration with sensible defaults
@@ -415,10 +497,7 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
             return new Config(
                 false,              // manualStart
                 false,              // useHttps
-                false,              // keyMaterialProviderIsTestClass
-                false,              // keyMaterialProviderIsSelfSigned
-                365,                // certificateDuration
-                KeyAlgorithm.RSA_2048  // keyAlgorithm
+                false               // keyMaterialProviderIsTestClass
             );
         }
         
@@ -434,20 +513,37 @@ private Config getConfig(EnableMockWebServer enableMockWebServerAnnotation) {
             return keyMaterialProviderIsTestClass;
         }
         
-        public boolean isKeyMaterialProviderIsSelfSigned() {
-            return keyMaterialProviderIsSelfSigned;
-        }
-        
         public int getCertificateDuration() {
-            return certificateDuration;
+            return CERTIFICATE_DURATION;
         }
         
         public KeyAlgorithm getKeyAlgorithm() {
-            return keyAlgorithm;
+            return KEY_ALGORITHM;
         }
     }
 
-
-
-
+    /**
+     * Class to store certificates with their configuration for caching.
+     */
+    private static class CachedCertificates {
+        private final HandshakeCertificates certificates;
+        
+        CachedCertificates(HandshakeCertificates certificates) {
+            this.certificates = certificates;
+        }
+        
+        HandshakeCertificates getCertificates() {
+            return certificates;
+        }
+        
+        /**
+         * Since we now use fixed certificate parameters, all cached certificates match.
+         *
+         * @param config the configuration to check against
+         * @return always true since we use fixed certificate parameters
+         */
+        boolean matches(Config config) {
+            return true;
+        }
+    }
 }

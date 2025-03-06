@@ -39,7 +39,7 @@ class HttpsConfigurationTest {
 
     @Nested
     @DisplayName("Self-signed certificate tests")
-    @EnableMockWebServer(useHttps = true, keyMaterialProviderIsExtension = true)
+    @EnableMockWebServer(useHttps = true)
     class SelfSignedCertificateTest implements MockWebServerHolder {
 
         @Getter
@@ -55,8 +55,8 @@ class HttpsConfigurationTest {
             String serverUrl = mockWebServer.url("/api").toString();
             assertTrue(serverUrl.startsWith("https://"));
 
-            // For self-signed certificates, the extension should automatically create a certificate
-            // We don't need to explicitly check getSSLContext() as it might not be available in the test class
+            // For self-signed certificates, the extension automatically creates a certificate
+            // when keyMaterialProviderIsTestClass is false (default)
             // Just verify the server is running with HTTPS
         }
 

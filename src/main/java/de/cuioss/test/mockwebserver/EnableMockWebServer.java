@@ -61,8 +61,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * <h2>HTTPS Support</h2>
  * <pre>
  * &#64;EnableMockWebServer(
- *     useHttps = true,
- *     keyMaterialProviderIsExtension = true
+ *     useHttps = true
  * )
  * class HttpsTest implements MockWebServerHolder {
  *     private MockWebServer server;
@@ -108,8 +107,11 @@ public @interface EnableMockWebServer {
 
     /**
      * Controls whether the MockWebServer should use HTTPS instead of HTTP.
-     * When set to {@code true}, at least one of {@link #keyMaterialProviderIsTestClass()} or
-     * {@link #keyMaterialProviderIsExtension()} must also be {@code true}.
+     * When set to {@code true}, the extension will either:
+     * <ul>
+     *   <li>Use certificates provided by the test class if {@link #keyMaterialProviderIsTestClass()} is {@code true}</li>
+     *   <li>Automatically generate self-signed certificates if {@link #keyMaterialProviderIsTestClass()} is {@code false}</li>
+     * </ul>
      *
      * @return {@code true} if the server should use HTTPS, {@code false} for HTTP (default)
      */
@@ -121,40 +123,14 @@ public @interface EnableMockWebServer {
      * 
      * <p>This approach gives tests full control over certificate generation/loading.</p>
      * 
-     * <p>If both this and {@link #keyMaterialProviderIsExtension()} are {@code true},
-     * this approach takes precedence.</p>
+     * <p>When {@code false}, the extension will automatically generate self-signed certificates
+     * with a short validity period suitable for unit tests.</p>
      *
      * @return {@code true} if the test class provides key material, {@code false} otherwise (default)
      */
     boolean keyMaterialProviderIsTestClass() default false;
 
-    /**
-     * Indicates that the extension should automatically generate self-signed certificates.
-     * When {@code true}, the extension will create certificates using the parameters specified by
-     * {@link #certificateDuration()} and {@link #keyAlgorithm()}.
-     * 
-     * <p>This is the simplest approach for tests that don't need specific certificates.</p>
-     * 
-     * <p>If both this and {@link #keyMaterialProviderIsTestClass()} are {@code true},
-     * the test class method takes precedence.</p>
-     *
-     * @return {@code true} if self-signed certificates should be generated, {@code false} otherwise (default)
-     */
-    boolean keyMaterialProviderIsExtension() default false;
 
-    /**
-     * Specifies the validity period in days for generated certificates when
-     * {@link #keyMaterialProviderIsExtension()} is {@code true}.
-     *
-     * @return the certificate validity period in days
-     */
-    int certificateDuration() default 365;
 
-    /**
-     * Specifies the key algorithm to use for generated certificates when
-     * {@link #keyMaterialProviderIsExtension()} is {@code true}.
-     *
-     * @return the key algorithm to use
-     */
-    KeyAlgorithm keyAlgorithm() default KeyAlgorithm.RSA_2048;
+
 }

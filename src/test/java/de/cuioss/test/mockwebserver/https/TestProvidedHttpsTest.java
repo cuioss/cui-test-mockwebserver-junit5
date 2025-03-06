@@ -64,8 +64,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @EnableMockWebServer(
     useHttps = true,
-    keyMaterialProviderIsTestClass = true,
-    keyAlgorithm = KeyAlgorithm.RSA_2048
+    keyMaterialProviderIsTestClass = true
 )
 @DisplayName("Test-Provided HTTPS Test")
 class TestProvidedHttpsTest implements MockWebServerHolder {
@@ -84,8 +83,8 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
      */
     @Override
     public Optional<HandshakeCertificates> provideHandshakeCertificates() {
-        // Create self-signed certificates with a 30-day validity period
-        this.handshakeCertificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(30, KeyAlgorithm.RSA_2048);
+        // Create self-signed certificates with a short validity period (1 day) for unit tests
+        this.handshakeCertificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
         return Optional.of(this.handshakeCertificates);
     }
 

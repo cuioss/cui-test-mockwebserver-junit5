@@ -50,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p>This test uses the "Extension → Test" approach with extension-provided certificates, where:
  * <ol>
- *   <li>The extension creates a self-signed certificate based on annotation parameters (keyMaterialProviderIsExtension = true)</li>
+ *   <li>The extension creates a self-signed certificate with a short validity period</li>
  *   <li>The extension configures the MockWebServer with this certificate</li>
  *   <li>The extension provides the certificate to the test via the setSslContext method</li>
  *   <li>The test configures Java's HttpClient with the same certificate</li>
@@ -61,10 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * and manage certificates manually.</p>
  */
 @EnableMockWebServer(
-        useHttps = true,
-        keyMaterialProviderIsExtension = true,
-        certificateDuration = 30,
-        keyAlgorithm = KeyAlgorithm.RSA_2048
+        useHttps = true
 )
 @DisplayName("HttpClient HTTPS Test")
 class ExtensionProvidedHttpsTest implements MockWebServerHolder {
