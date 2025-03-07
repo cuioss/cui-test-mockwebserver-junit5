@@ -121,11 +121,14 @@ public class URIBuilder {
      * @return the constructed URI
      */
     public URI build() {
-        StringBuilder uriBuilder = new StringBuilder(baseUrl.toString());
-
-        // Remove trailing slash from base URL if present
-        if (uriBuilder.charAt(uriBuilder.length() - 1) == '/') {
-            uriBuilder.deleteCharAt(uriBuilder.length() - 1);
+        String baseUrlString = baseUrl.toString();
+        StringBuilder uriBuilder = new StringBuilder();
+        
+        // Normalize base URL by removing trailing slash
+        if (baseUrlString.endsWith("/")) {
+            uriBuilder.append(baseUrlString, 0, baseUrlString.length() - 1);
+        } else {
+            uriBuilder.append(baseUrlString);
         }
 
         // Add path segments
@@ -136,7 +139,7 @@ public class URIBuilder {
         // Add query parameters
         if (!queryParameters.isEmpty()) {
             uriBuilder.append('?');
-
+            
             String queryString = queryParameters.entrySet().stream()
                     .flatMap(entry -> entry.getValue().stream()
                             .map(value -> entry.getKey() + "=" + value))

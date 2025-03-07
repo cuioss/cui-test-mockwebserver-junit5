@@ -361,4 +361,226 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api/users?param=value", result.toString());
     }
+    
+    @Test
+    @DisplayName("Should handle path segment with only whitespace")
+    void shouldHandlePathSegmentWithOnlyWhitespace() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("   ")
+                .addPathSegment("api")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/api", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle base URL without trailing slash")
+    void shouldHandleBaseUrlWithoutTrailingSlash() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("api")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/api", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should build URI without any path segments or query parameters")
+    void shouldBuildUriWithoutPathOrQuery() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080");
+
+        // When
+        URI result = URIBuilder.from(baseUrl).build();
+
+        // Then
+        assertEquals("http://localhost:8080", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle empty query parameters list")
+    void shouldHandleEmptyQueryParametersList() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("api")
+                // No query parameters added
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/api", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle path segments with mixed slashes")
+    void shouldHandlePathSegmentsWithMixedSlashes() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("api/")
+                .addPathSegment("/users")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/api/users", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle path segments with only slashes")
+    void shouldHandlePathSegmentsWithOnlySlashes() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("/")
+                .addPathSegment("///")
+                .addPathSegment("api")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/api", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle base URL with path and trailing slash when adding segments")
+    void shouldHandleBaseUrlWithPathAndTrailingSlashWhenAddingSegments() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/base/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("api")
+                .addPathSegment("users")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/base/api/users", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle empty path segments array")
+    void shouldHandleEmptyPathSegmentsArray() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegments(new String[0])
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle base URL without trailing slash and empty path segments")
+    void shouldHandleBaseUrlWithoutTrailingSlashAndEmptyPathSegments() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                // No path segments added
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle base URL with trailing slash and empty path segments")
+    void shouldHandleBaseUrlWithTrailingSlashAndEmptyPathSegments() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                // No path segments added
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle multiple query parameters with same name and different values")
+    void shouldHandleMultipleQueryParametersWithSameNameAndDifferentValues() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addQueryParameter("param", "value1")
+                .addQueryParameter("param", "value2")
+                .addQueryParameter("param", "value3")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080?param=value1&param=value2&param=value3", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle path segments with encoded special characters")
+    void shouldHandlePathSegmentsWithSpecialCharacters() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("api")
+                .addPathSegment("users%20with%20spaces")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/api/users%20with%20spaces", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle query parameters with encoded special characters")
+    void shouldHandleQueryParametersWithSpecialCharacters() throws Exception {
+        // Given
+        URL baseUrl = new URL("http://localhost:8080/");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("api")
+                .addQueryParameter("filter", "name%20with%20spaces")
+                .build();
+
+        // Then
+        assertEquals("http://localhost:8080/api?filter=name%20with%20spaces", result.toString());
+    }
+    
+    @Test
+    @DisplayName("Should handle complex URL with port, path and query parameters")
+    void shouldHandleComplexUrlWithPortPathAndQueryParameters() throws Exception {
+        // Given
+        URL baseUrl = new URL("https://example.com:8443/context");
+
+        // When
+        URI result = URIBuilder.from(baseUrl)
+                .addPathSegment("api/v1")
+                .addPathSegment("resources")
+                .addQueryParameter("page", "1")
+                .addQueryParameter("size", "10")
+                .addQueryParameter("sort", "name,asc")
+                .build();
+
+        // Then
+        assertEquals("https://example.com:8443/context/api/v1/resources?page=1&size=10&sort=name,asc", result.toString());
+    }
 }
