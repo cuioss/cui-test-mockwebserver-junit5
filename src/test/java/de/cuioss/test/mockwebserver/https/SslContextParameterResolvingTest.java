@@ -20,8 +20,6 @@ import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -30,10 +28,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-
 import javax.net.ssl.SSLContext;
+
+
 import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -51,10 +49,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @DisplayName("SSLContext Parameter Resolving Test")
 class SslContextParameterResolvingTest implements MockWebServerHolder {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
-
     /**
      * Tests that the SSLContext can be directly injected as a parameter.
      * This demonstrates the simplest way to use the SSLContext parameter resolving feature.
@@ -63,7 +57,6 @@ class SslContextParameterResolvingTest implements MockWebServerHolder {
     @DisplayName("Should inject SSLContext parameter directly")
     void shouldInjectSslContextParameter(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
         // Arrange
-        assertNotNull(mockWebServer, "MockWebServer should be injected");
         assertNotNull(sslContext, "SSLContext should be injected");
         assertEquals("https", serverURIBuilder.getScheme(), "Server URL should use HTTPS");
 

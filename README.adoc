@@ -38,32 +38,7 @@ The recommended approach is to use parameter injection rather than implementing 
 
 [source,java]
 ----
-@EnableMockWebServer
-class ParameterResolverTest {
-
-    @Test
-    @DisplayName("Should inject MockWebServer instance")
-    void shouldInjectMockWebServer(MockWebServer server) {
-        assertNotNull(server);
-        assertTrue(server.getStarted());
-    }
-
-    @Test
-    @DisplayName("Should inject URIBuilder")
-    void shouldInjectUriBuilder(URIBuilder uriBuilder) {
-        assertNotNull(uriBuilder);
-        assertEquals("http", uriBuilder.build().getScheme());
-        assertEquals("/", uriBuilder.getPath());
-    }
-
-    @Test
-    @DisplayName("Should inject multiple parameters")
-    void shouldInjectMultipleParameters(MockWebServer server, URIBuilder uriBuilder) {
-        assertNotNull(server);
-        assertTrue(server.getPort() > 0);
-        assertEquals(server.getPort(), uriBuilder.getPort());
-    }
-}
+include::src/test/java/de/cuioss/test/mockwebserver/ParameterResolverTest.java[tags=parameter-resolver-example]
 ----
 
 === Dispatching Requests
@@ -72,40 +47,7 @@ The recommended approach is to set up the dispatcher directly in your test metho
 
 [source,java]
 ----
-@EnableMockWebServer
-class EndpointDispatcherTest {
-    
-    @Test
-    void testWithEndpointDispatcher(MockWebServer server, URIBuilder uriBuilder) throws Exception {
-        // Create an EndpointAnswerHandler for this test
-        var handler = new EndpointAnswerHandler();
-        
-        // Configure endpoint responses
-        handler.addAnswerFor("/api/data", new MockResponse.Builder()
-            .addHeader("Content-Type", "application/json")
-            .body("{'data': 'test'}")
-            .code(HttpServletResponse.SC_OK)
-            .build());
-        
-        // Set the dispatcher for this test
-        server.setDispatcher(handler);
-        
-        // Create HttpClient
-        HttpClient client = HttpClient.newHttpClient();
-        
-        // Create request using the URIBuilder parameter
-        HttpRequest request = HttpRequest.newBuilder()
-            .uri(uriBuilder.addPathSegment("api").addPathSegment("data").build())
-            .GET()
-            .build();
-            
-        // Send request and verify response
-        HttpResponse<String> response = client.send(request, 
-            HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertEquals("{'data': 'test'}", response.body());
-    }
-}
+include::src/test/java/de/cuioss/test/mockwebserver/dispatcher/EndpointDispatcherExampleTest.java[tags=dispatcher-example]
 ----
 
 === ModuleDispatcherElement
@@ -209,38 +151,7 @@ class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer>, M
 
 MockWebServerExtension implements ParameterResolver, allowing direct injection of MockWebServer and related parameters into test methods. This is the recommended approach for accessing the server and related components.
 
-[source,java]
-----
-@EnableMockWebServer
-class ParameterResolverTest {
-
-    @Test
-    @DisplayName("Should inject multiple parameters")
-    void shouldInjectMultipleParameters(MockWebServer server, URIBuilder uriBuilder) {
-        // Multiple parameters can be injected
-        assertNotNull(server);
-        assertTrue(server.getPort() > 0);
-        assertEquals(server.getPort(), uriBuilder.getPort());
-        
-        // Set up a dispatcher for this test
-        server.setDispatcher(new Dispatcher() {
-            @Override
-            public MockResponse dispatch(RecordedRequest request) {
-                if ("/api/test".equals(request.getPath())) {
-                    return new MockResponse.Builder()
-                        .addHeader("Content-Type", "text/plain")
-                        .body("Hello World")
-                        .code(HttpServletResponse.SC_OK)
-                        .build();
-                }
-                return new MockResponse.Builder()
-                    .code(HttpServletResponse.SC_NOT_FOUND)
-                    .build();
-            }
-        });
-    }
-}
-----
+See the examples above for how to use parameter injection in your tests.
 
 Supported parameter types:
 * `MockWebServer` - The server instance
@@ -253,51 +164,7 @@ When HTTPS is enabled, the extension automatically makes the SSLContext availabl
 
 [source,java]
 ----
-/**
- * Demonstrates how to access a MockWebServer with HTTPS using Java's HttpClient.
- *
- * <p>This test shows how to configure Java's HttpClient to trust certificates provided by the extension.
- * The key to making HTTPS work with self-signed certificates is to use the same certificate material
- * for both the server and client.</p>
- */
-@EnableMockWebServer(
-        useHttps = true
-)
-@DisplayName("HttpClient HTTPS Test")
-class ExtensionProvidedHttpsTest {
-
-    /**
-     * Tests a basic HTTPS connection to a default endpoint.
-     * The SSLContext is directly injected as a parameter using the parameter resolving feature.
-     */
-    @Test
-    @DisplayName("Should successfully connect to HTTPS server with extension-provided certificate")
-    void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
-        // Arrange
-        assertNotNull(sslContext, "SSLContext should be injected as a parameter");
-        assertNotNull(serverURIBuilder, "URL builder should be injected as a parameter");
-
-        // Verify the URL builder creates HTTPS URLs
-        URI uri = serverURIBuilder.build();
-        assertEquals("https", uri.getScheme(), "Server URL should use HTTPS");
-
-        // Configure HttpClient with the injected SSLContext
-        HttpClient client = HttpClient.newBuilder()
-                .sslContext(sslContext)
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
-
-        // Act: Make an HTTPS request using the URL builder
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(serverURIBuilder.addPathSegment("api").addPathSegment("test").build())
-                .GET()
-                .build();
-
-        // Assert: Verify successful connection and response
-        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode(), "Should receive 200 OK response");
-    }
-}
+include::src/test/java/de/cuioss/test/mockwebserver/https/ExtensionProvidedHttpsTest.java[tags=https-example]
 ----
 
 HTTPS configuration options:

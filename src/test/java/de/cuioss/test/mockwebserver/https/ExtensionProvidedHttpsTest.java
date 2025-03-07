@@ -20,8 +20,6 @@ import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -31,10 +29,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-
 import javax.net.ssl.SSLContext;
+
+
 import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -58,20 +56,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * <p>This approach simplifies HTTPS testing by eliminating the need for the test to create
  * and manage certificates manually.</p>
  */
+// tag::https-example[]
 @EnableMockWebServer(
         useHttps = true
 )
 @DisplayName("HttpClient HTTPS Test")
 class ExtensionProvidedHttpsTest implements MockWebServerHolder {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
-
     /**
      * Tests a basic HTTPS connection to a default endpoint.
      * This demonstrates the most common use case for HTTPS testing.
-     * 
+     * <p>
      * The SSLContext is directly injected as a parameter using the parameter resolving feature.
      */
     @Test
@@ -109,3 +104,4 @@ class ExtensionProvidedHttpsTest implements MockWebServerHolder {
         return CombinedDispatcher.createAPIDispatcher();
     }
 }
+// end::https-example[]

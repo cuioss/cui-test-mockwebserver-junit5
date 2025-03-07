@@ -15,38 +15,44 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import lombok.Getter;
-import lombok.Setter;
-import okhttp3.Headers;
-import org.jetbrains.annotations.NotNull;
+import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import org.junit.jupiter.api.Test;
 
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
-import mockwebserver3.MockWebServer;
-import mockwebserver3.RecordedRequest;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @EnableMockWebServer(manualStart = true)
 class ManualStartMockWebServerTest implements MockWebServerHolder {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
 
     @Override
     public Dispatcher getDispatcher() {
-        return new Dispatcher() {
-            @Override
-            public @NotNull MockResponse dispatch(final @NotNull RecordedRequest request) {
-                return new MockResponse(200, Headers.of("Content-Type", "text/plain"), "OK");
-            }
-        };
+        return CombinedDispatcher.createAPIDispatcher();
     }
 
     @Test
-    void shouldInjectServerForManualStart() {
-        assertNotNull(mockWebServer, "Server should be injected even for manual start");
+    void shouldHandleSimpleRequest(MockWebServer mockWebServer, URIBuilder uriBuilder) throws URISyntaxException, IOException, InterruptedException {
+
+        assertDoesNotThrow(() -> mockWebServer.start());
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uriBuilder.setPath("api").build())
+                .GET()
+                .build();
+
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        assertNotNull(response);
+        assertEquals(200, response.statusCode());
+
     }
 }

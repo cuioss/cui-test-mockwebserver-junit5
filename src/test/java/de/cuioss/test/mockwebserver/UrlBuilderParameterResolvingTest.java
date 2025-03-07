@@ -15,8 +15,9 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import lombok.Getter;
-import lombok.Setter;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
 
@@ -25,11 +26,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
-import mockwebserver3.MockWebServer;
-import mockwebserver3.RecordedRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -40,9 +36,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @EnableMockWebServer
 class UrlBuilderParameterResolvingTest implements MockWebServerHolder {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
 
     @Test
     void shouldInjectUrlBuilder(URIBuilder urlBuilder) throws IOException, InterruptedException {

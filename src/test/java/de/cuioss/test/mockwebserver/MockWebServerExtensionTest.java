@@ -17,16 +17,14 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
 
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
@@ -40,22 +38,17 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMockWebServer
 class MockWebServerExtensionTest implements MockWebServerHolder {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
-
     @Test
-    void shouldProvideServer() {
+    void shouldProvideStartedServer(MockWebServer mockWebServer) {
         assertNotNull(mockWebServer);
         assertTrue(mockWebServer.getStarted());
     }
 
     @Test
-    void shouldHandleSimpleRequest() throws URISyntaxException, IOException, InterruptedException {
-        String serverUrl = mockWebServer.url("/api").toString();
+    void shouldHandleSimpleRequest(URIBuilder uriBuilder) throws URISyntaxException, IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(serverUrl))
+                .uri(uriBuilder.setPath("api").build())
                 .GET()
                 .build();
 

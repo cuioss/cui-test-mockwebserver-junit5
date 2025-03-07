@@ -15,13 +15,8 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.jupiter.api.Test;
 
-import mockwebserver3.MockWebServer;
-
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class MockWebServerHolderTest {
@@ -29,13 +24,8 @@ class MockWebServerHolderTest {
     @Test
     void shouldHandleDefaultMethods() {
         var holder = new MockWebServerHolder() {
-            @Getter
-            @Setter
-            private MockWebServer mockWebServer;
         };
 
         assertNull(holder.getDispatcher());
-        holder.setMockWebServer(new MockWebServer());
-        assertNotNull(holder.getMockWebServer());
     }
 }

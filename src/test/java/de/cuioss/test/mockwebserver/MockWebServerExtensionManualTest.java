@@ -15,19 +15,16 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
-import lombok.Getter;
-import lombok.Setter;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
 
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
@@ -42,12 +39,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMockWebServer(manualStart = true)
 class MockWebServerExtensionManualTest implements MockWebServerHolder {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
-
     @Test
-    void shouldProvideServerNotStartedServer() {
+    void shouldProvideServerNotStartedServer(MockWebServer mockWebServer) {
         assertNotNull(mockWebServer, "Server should be injected even for manual start");
         assertFalse(mockWebServer.getStarted(), "Server should not be started");
         // Now start the server manually
@@ -56,14 +49,13 @@ class MockWebServerExtensionManualTest implements MockWebServerHolder {
     }
 
     @Test
-    void shouldHandleSimpleRequest() throws URISyntaxException, IOException, InterruptedException {
-        String serverUrl = mockWebServer.url("/api").toString();
+    void shouldHandleSimpleRequest(MockWebServer mockWebServer, URIBuilder uriBuilder) throws URISyntaxException, IOException, InterruptedException {
 
         assertDoesNotThrow(() -> mockWebServer.start());
 
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(serverUrl))
+                .uri(uriBuilder.setPath("api").build())
                 .GET()
                 .build();
 
@@ -75,6 +67,6 @@ class MockWebServerExtensionManualTest implements MockWebServerHolder {
 
     @Override
     public Dispatcher getDispatcher() {
-        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+        return CombinedDispatcher.createAPIDispatcher();
     }
 }

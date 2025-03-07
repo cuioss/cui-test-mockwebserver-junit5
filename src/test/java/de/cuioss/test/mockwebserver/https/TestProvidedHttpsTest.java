@@ -22,8 +22,6 @@ import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-import lombok.Getter;
-import lombok.Setter;
 import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,12 +32,13 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
-
 import javax.net.ssl.SSLContext;
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 
-import static org.junit.jupiter.api.Assertions.*;
+
+import mockwebserver3.Dispatcher;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Demonstrates how to access a MockWebServer with HTTPS using certificates provided by the test class.
@@ -67,9 +66,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Test-Provided HTTPS Test")
 class TestProvidedHttpsTest implements MockWebServerHolder {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
 
     private HandshakeCertificates handshakeCertificates;
 
@@ -82,8 +78,10 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
     @Override
     public Optional<HandshakeCertificates> getTestProvidedHandshakeCertificates() {
         // Create self-signed certificates with a short validity period (1 day) for unit tests
-        this.handshakeCertificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
-        return Optional.of(this.handshakeCertificates);
+        if (null == handshakeCertificates) {
+            handshakeCertificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
+        }
+        return Optional.of(handshakeCertificates);
     }
 
     /**
@@ -94,8 +92,6 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
     @DisplayName("Should successfully connect to HTTPS server with test-provided certificate")
     void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
         // Arrange
-        assertNotNull(mockWebServer);
-        assertTrue(mockWebServer.getStarted());
         assertNotNull(handshakeCertificates, "HandshakeCertificates should have been created by the test");
         assertNotNull(sslContext, "SSLContext should be injected as a parameter");
 

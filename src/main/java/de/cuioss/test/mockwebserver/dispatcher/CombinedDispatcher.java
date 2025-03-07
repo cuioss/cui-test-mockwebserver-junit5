@@ -26,6 +26,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
@@ -107,7 +108,7 @@ public class CombinedDispatcher extends Dispatcher {
     public @NotNull MockResponse dispatch(@NonNull RecordedRequest request) {
         var path = MoreStrings.nullToEmpty(request.getPath());
         var mapper = HttpMethodMapper.of(request);
-        LOGGER.info("Processing method '{}' with path '{}'", mapper, path);
+        LOGGER.info("Processing method '%s' with path '%s'", mapper, path);
 
         List<ModuleDispatcherElement> filtered = new ArrayList<>();
 
@@ -126,7 +127,7 @@ public class CombinedDispatcher extends Dispatcher {
             }
         }
         LOGGER.info(
-                "Method '{}' with path '{}' could not be processed by the configured ModuleDispatcherElements. Going to default",
+                "Method '%s' with path '%s' could not be processed by the configured ModuleDispatcherElements. Going to default",
                 mapper, path);
         var code = HTTP_CODE_TEAPOT;
         if (!endWithTeapot) {
