@@ -15,6 +15,8 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.tools.net.UrlHelper;
+import de.cuioss.tools.string.MoreStrings;
 import lombok.NonNull;
 
 import java.net.URI;
@@ -77,8 +79,9 @@ public class URIBuilder {
      * @return this builder for method chaining
      */
     public URIBuilder addPathSegment(@NonNull String segment) {
-        // Trim leading and trailing slashes
-        String trimmedSegment = segment.replaceAll("^/+|/+$", "");
+        String trimmedSegment = UrlHelper.removeTrailingSlashesFromUrl(UrlHelper.removePrecedingSlashFromPath(segment));
+        trimmedSegment = trimmedSegment.trim();
+        
         if (!trimmedSegment.isEmpty()) {
             pathSegments.add(trimmedSegment);
         }
