@@ -16,7 +16,6 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.tools.net.UrlHelper;
-import de.cuioss.tools.string.MoreStrings;
 import lombok.NonNull;
 
 import java.net.URI;
@@ -42,11 +41,10 @@ import java.util.stream.Collectors;
  *     .addPathSegment("users")
  *     .addQueryParameter("filter", "active")
  *     .build();
- * 
+ *
  * // Creates a URI like: http://localhost:12345/api/users?filter=active
  * }
  * </pre>
- *
  */
 public class URIBuilder {
 
@@ -81,7 +79,7 @@ public class URIBuilder {
     public URIBuilder addPathSegment(@NonNull String segment) {
         String trimmedSegment = UrlHelper.removeTrailingSlashesFromUrl(UrlHelper.removePrecedingSlashFromPath(segment));
         trimmedSegment = trimmedSegment.trim();
-        
+
         if (!trimmedSegment.isEmpty()) {
             pathSegments.add(trimmedSegment);
         }
