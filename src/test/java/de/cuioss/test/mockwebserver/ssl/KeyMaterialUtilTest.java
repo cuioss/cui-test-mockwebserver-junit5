@@ -35,40 +35,10 @@ class KeyMaterialUtilTest {
     private static final int TEST_DURATION_DAYS = 30;
 
     @Test
-    @DisplayName("Should create self-signed certificate")
-    void shouldCreateSelfSignedCertificate() {
+    @DisplayName("Should create self-signed HandshakeCertificates")
+    void shouldCreateSelfSignedHandshakeCertificates() {
         // Arrange & Act
-        var keyMaterial = KeyMaterialUtil.createSelfSignedCertificate(TEST_DURATION_DAYS, KeyAlgorithm.RSA_2048);
-
-        // Assert
-        assertNotNull(keyMaterial);
-        assertNotNull(keyMaterial.getKeyMaterial());
-        assertNotNull(keyMaterial.getName());
-        assertEquals("MockWebServer Self-Signed Certificate", keyMaterial.getName());
-        assertEquals("mockwebserver-cert", keyMaterial.getKeyAlias());
-    }
-
-    @ParameterizedTest
-    @EnumSource(KeyAlgorithm.class)
-    @DisplayName("Should create self-signed certificate with different algorithms")
-    void shouldCreateSelfSignedCertificateWithDifferentAlgorithms(KeyAlgorithm algorithm) {
-        // Arrange & Act
-        var keyMaterial = KeyMaterialUtil.createSelfSignedCertificate(TEST_DURATION_DAYS, algorithm);
-
-        // Assert
-        assertNotNull(keyMaterial);
-        assertNotNull(keyMaterial.getKeyMaterial());
-        assertEquals(algorithm, keyMaterial.getKeyAlgorithm());
-    }
-
-    @Test
-    @DisplayName("Should convert to HandshakeCertificates")
-    void shouldConvertToHandshakeCertificates() {
-        // Arrange
-        var keyMaterial = KeyMaterialUtil.createSelfSignedCertificate(TEST_DURATION_DAYS, KeyAlgorithm.RSA_2048);
-
-        // Act
-        var certificates = KeyMaterialUtil.convertToHandshakeCertificates(keyMaterial);
+        var certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(TEST_DURATION_DAYS, KeyAlgorithm.RSA_2048);
 
         // Assert
         assertNotNull(certificates);
@@ -76,19 +46,22 @@ class KeyMaterialUtilTest {
         assertNotNull(certificates.trustManager());
     }
 
-    @Test
-    @DisplayName("Should create SSL context")
-    void shouldCreateSslContext() {
-        // Arrange
-        var keyMaterial = KeyMaterialUtil.createSelfSignedCertificate(TEST_DURATION_DAYS, KeyAlgorithm.RSA_2048);
-
-        // Act
-        var sslContext = KeyMaterialUtil.createSslContext(keyMaterial);
+    @ParameterizedTest
+    @EnumSource(KeyAlgorithm.class)
+    @DisplayName("Should create self-signed HandshakeCertificates with different algorithms")
+    void shouldCreateSelfSignedHandshakeCertificatesWithDifferentAlgorithms(KeyAlgorithm algorithm) {
+        // Arrange & Act
+        var certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(TEST_DURATION_DAYS, algorithm);
 
         // Assert
-        assertNotNull(sslContext);
-        assertEquals("TLS", sslContext.getProtocol());
+        assertNotNull(certificates);
+        assertNotNull(certificates.keyManager());
+        assertNotNull(certificates.trustManager());
     }
+
+
+
+
 
     @Test
     @DisplayName("Should validate valid HTTPS configuration")

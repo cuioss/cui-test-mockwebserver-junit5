@@ -240,8 +240,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     }
 
     /**
-     * Attempts to get HandshakeCertificates from the test class.
-     * First tries to get HandshakeCertificates directly, then falls back to KeyMaterialHolder.
+     * Gets HandshakeCertificates from the test class.
      *
      * @param testInstance the test class instance
      * @param context the extension context
@@ -254,23 +253,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         }
 
         MockWebServerHolder mockWebServerHolder = holder.get();
-
-        // First try to get HandshakeCertificates directly
         Optional<HandshakeCertificates> handshakeCertificates = mockWebServerHolder.provideHandshakeCertificates();
+        
         if (handshakeCertificates.isPresent()) {
             LOGGER.debug("Using HandshakeCertificates provided by test class");
             return handshakeCertificates;
-        }
-
-        // Fall back to KeyMaterialHolder
-        Optional<KeyMaterialHolder> keyMaterial = mockWebServerHolder.provideKeyMaterial();
-        if (keyMaterial.isPresent()) {
-            try {
-                LOGGER.debug("Using key material provided by test class");
-                return Optional.of(KeyMaterialUtil.convertToHandshakeCertificates(keyMaterial.get()));
-            } catch (Exception e) {
-                LOGGER.error("Failed to convert key material to HandshakeCertificates", e);
-            }
         }
 
         return Optional.empty();

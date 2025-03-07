@@ -167,15 +167,15 @@ public @interface EnableMockWebServer {
     boolean useHttps() default false;
 
     /**
-     * Indicates that the test class provides key material through the {@link MockWebServerHolder#provideKeyMaterial()}
-     * method. When {@code true}, the extension will call this method to obtain the key material for HTTPS configuration.
+     * Indicates that the test class provides certificates through the {@link MockWebServerHolder#provideHandshakeCertificates()}
+     * method. When {@code true}, the extension will call this method to obtain the certificates for HTTPS configuration.
      * 
      * <p>This approach gives tests full control over certificate generation/loading.</p>
      * 
      * <p>When {@code false}, the extension will automatically generate self-signed certificates
      * with a short validity period suitable for unit tests.</p>
      *
-     * @return {@code true} if the test class provides key material, {@code false} otherwise (default)
+     * @return {@code true} if the test class provides certificates, {@code false} otherwise (default)
      */
     boolean testClassProvidesKeyMaterial() default false;
 

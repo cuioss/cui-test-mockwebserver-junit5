@@ -84,47 +84,7 @@ public class KeyMaterialUtil {
     private static final String CERTIFICATE_ALIAS = "mockwebserver-cert";
     private static final String UNABLE_TO_CREATE_SSL_CONTEXT = "Unable to create SSLContext";
 
-    /**
-     * Creates a self-signed certificate for use with MockWebServer HTTPS.
-     *
-     * @param durationDays the validity period of the certificate in days
-     * @param keyAlgorithm the algorithm to use for the certificate
-     * @return a KeyMaterialHolder containing the generated certificate
-     */
-    public static KeyMaterialHolder createSelfSignedCertificate(int durationDays, KeyAlgorithm keyAlgorithm) {
-        LOGGER.debug("Creating self-signed certificate with duration %d days and algorithm %s", durationDays, keyAlgorithm);
 
-        try {
-            // Convert KeyAlgorithm to appropriate parameters for HeldCertificate.Builder
-            String algorithm = mapKeyAlgorithm(keyAlgorithm);
-            int keySize = getKeySizeForAlgorithm(keyAlgorithm);
-
-            // Calculate validity dates
-            Instant now = Instant.now();
-            Instant validUntil = now.plus(durationDays, ChronoUnit.DAYS);
-
-            // Create the certificate
-            var heldCertificate = new HeldCertificate.Builder()
-                    .commonName("MockWebServer")
-                    .validityInterval(now.toEpochMilli(), validUntil.toEpochMilli())
-                    .rsa2048()  // Default to RSA 2048 regardless of algorithm for now
-                    .build();
-
-            // Convert to KeyMaterialHolder
-            byte[] certificateBytes = heldCertificate.certificate().getEncoded();
-
-            return KeyMaterialHolder.builder()
-                    .keyMaterial(certificateBytes)
-                    .keyHolderType(KeyHolderType.SINGLE_KEY)
-                    .keyAlgorithm(keyAlgorithm)
-                    .keyAlias(CERTIFICATE_ALIAS)
-                    .name("MockWebServer Self-Signed Certificate")
-                    .description("Auto-generated self-signed certificate for MockWebServer HTTPS testing")
-                    .build();
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to create self-signed certificate", e);
-        }
-    }
 
     /**
      * Creates a HandshakeCertificates instance with a self-signed certificate.
@@ -161,52 +121,7 @@ public class KeyMaterialUtil {
         }
     }
 
-    /**
-     * Converts a KeyMaterialHolder to HandshakeCertificates for use with MockWebServer.
-     * This method creates HandshakeCertificates that can be used for both server and client configuration.
-     *
-     * @param keyMaterial the key material to convert
-     * @return HandshakeCertificates configured with the provided key material
-     * @throws IllegalStateException if the conversion fails
-     */
-    public static HandshakeCertificates convertToHandshakeCertificates(KeyMaterialHolder keyMaterial) {
-        LOGGER.debug("Converting KeyMaterialHolder to HandshakeCertificates: %s", keyMaterial);
 
-        try {
-            if (keyMaterial.getKeyHolderType() == KeyHolderType.SINGLE_KEY) {
-                // For a single certificate
-                Certificate certificate = loadCertificate(keyMaterial.getKeyMaterial());
-
-                return new HandshakeCertificates.Builder()
-                        .addTrustedCertificate((X509Certificate) certificate)
-                        .build();
-            } else {
-                // For a keystore
-                KeyStoreProvider keyStoreProvider = KeyStoreProvider.builder()
-                        .keyStoreType(KeyStoreType.KEY_STORE)
-                        .key(keyMaterial)
-                        .build();
-
-                Optional<KeyStore> keyStoreOptional = keyStoreProvider.resolveKeyStore();
-                if (keyStoreOptional.isEmpty()) {
-                    throw new IllegalStateException("Failed to resolve KeyStore from KeyMaterialHolder");
-                }
-
-                KeyStore keyStore = keyStoreOptional.get();
-                X509TrustManager trustManager = createTrustManager(keyStore);
-
-                // Add each certificate individually
-                HandshakeCertificates.Builder builder = new HandshakeCertificates.Builder();
-                for (X509Certificate cert : trustManager.getAcceptedIssuers()) {
-                    builder.addTrustedCertificate(cert);
-                }
-
-                return builder.build();
-            }
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to convert KeyMaterialHolder to HandshakeCertificates", e);
-        }
-    }
 
     /**
      * Converts an SSLContext to HandshakeCertificates.
@@ -291,58 +206,7 @@ public class KeyMaterialUtil {
         }
     }
 
-    /**
-     * Creates an SSLContext from the provided KeyMaterialHolder.
-     * This can be used to configure HTTP clients for connecting to the MockWebServer.
-     *
-     * @param keyMaterial the key material to use
-     * @return an SSLContext configured with the provided key material
-     * @throws IllegalStateException if the SSLContext creation fails
-     */
-    public static SSLContext createSslContext(KeyMaterialHolder keyMaterial) {
-        LOGGER.debug("Creating SSLContext from KeyMaterialHolder: %s", keyMaterial);
 
-        try {
-            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-            keyStore.load(null, null);
-
-            if (keyMaterial.getKeyHolderType() == KeyHolderType.SINGLE_KEY) {
-                // For a single certificate
-                Certificate certificate = loadCertificate(keyMaterial.getKeyMaterial());
-                keyStore.setCertificateEntry(keyMaterial.getKeyAlias() != null ?
-                        keyMaterial.getKeyAlias() : CERTIFICATE_ALIAS, certificate);
-            } else {
-                // For a keystore
-                KeyStoreProvider keyStoreProvider = KeyStoreProvider.builder()
-                        .keyStoreType(KeyStoreType.KEY_STORE)
-                        .key(keyMaterial)
-                        .build();
-
-                Optional<KeyStore> keyStoreOptional = keyStoreProvider.resolveKeyStore();
-                if (keyStoreOptional.isPresent()) {
-                    keyStore = keyStoreOptional.get();
-                } else {
-                    throw new IllegalStateException("Failed to resolve KeyStore from KeyMaterialHolder");
-                }
-            }
-
-            TrustManagerFactory trustManagerFactory =
-                    TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-            trustManagerFactory.init(keyStore);
-
-            KeyManagerFactory keyManagerFactory =
-                    KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
-            keyManagerFactory.init(keyStore, new char[0]);
-
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(keyManagerFactory.getKeyManagers(),
-                    trustManagerFactory.getTrustManagers(), null);
-
-            return sslContext;
-        } catch (Exception e) {
-            throw new IllegalStateException(UNABLE_TO_CREATE_SSL_CONTEXT, e);
-        }
-    }
 
     /**
      * Validates that the HTTPS configuration is valid.

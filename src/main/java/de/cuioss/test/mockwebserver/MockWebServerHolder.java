@@ -137,29 +137,11 @@ public interface MockWebServerHolder {
         return null;
     }
 
-    /**
-     * Provides key material for HTTPS configuration when {@link EnableMockWebServer#testClassProvidesKeyMaterial()}
-     * is set to {@code true}. This method allows tests to provide custom certificates for the MockWebServer.
-     * <p>
-     * The default implementation returns an empty Optional, meaning no key material is provided.
-     * Override this method to provide custom key material for HTTPS.
-     * </p>
-     * <p>
-     * This method will only be called if {@link EnableMockWebServer#useHttps()} and
-     * {@link EnableMockWebServer#testClassProvidesKeyMaterial()} are both {@code true}.
-     * </p>
-     *
-     * @return an Optional containing the key material, or empty if no key material is provided
-     * @since 1.1
-     */
-    default Optional<KeyMaterialHolder> provideKeyMaterial() {
-        return Optional.empty();
-    }
+
 
     /**
      * Provides HandshakeCertificates for HTTPS configuration.
-     * This is an alternative to {@link #provideKeyMaterial()} that directly provides
-     * OkHttp's HandshakeCertificates, which can be used to configure both server and client.
+     * This method directly provides OkHttp's HandshakeCertificates, which can be used to configure both server and client.
      * <p>
      * The default implementation returns an empty Optional, meaning no HandshakeCertificates are provided.
      * Override this method to provide custom HandshakeCertificates for HTTPS.
@@ -198,20 +180,20 @@ public interface MockWebServerHolder {
      * Provides a custom SSLContext for client connections to the MockWebServer.
      * This is useful when the server is configured to use HTTPS with custom certificates.
      * <p>
-     * The default implementation creates an SSLContext from the key material provided by
-     * {@link #provideKeyMaterial()} if available. If no key material is provided, it returns
+     * The default implementation creates an SSLContext from the HandshakeCertificates provided by
+     * {@link #provideHandshakeCertificates()} if available. If no certificates are provided, it returns
      * an empty Optional.
      * </p>
      * <p>
      * This method can be overridden to provide a custom SSLContext implementation,
-     * but in most cases, it's better to override {@link #provideKeyMaterial()} instead.
+     * but in most cases, it's better to override {@link #provideHandshakeCertificates()} instead.
      * </p>
      *
      * @return an Optional containing the SSLContext, or empty if no custom SSLContext is provided
      * @since 1.1
      */
     default Optional<SSLContext> getSSLContext() {
-        return provideKeyMaterial()
+        return provideHandshakeCertificates()
                 .map(KeyMaterialUtil::createSslContext);
     }
 }

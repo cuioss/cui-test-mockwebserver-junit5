@@ -85,16 +85,16 @@ class HttpsConfigurationTest {
             assertTrue(serverUrl.startsWith("https://"));
 
             // We'll skip the actual HTTP request as it requires more complex SSL setup
-            // Just verify that the SSL context and key material are available
+            // Just verify that the SSL context and certificates are available
             assertTrue(getSSLContext().isPresent());
-            assertTrue(provideKeyMaterial().isPresent());
+            assertTrue(provideHandshakeCertificates().isPresent());
         }
 
         @Override
-        public Optional<KeyMaterialHolder> provideKeyMaterial() {
+        public Optional<okhttp3.tls.HandshakeCertificates> provideHandshakeCertificates() {
             // Create a custom certificate for testing
             return Optional.of(
-                    de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.createSelfSignedCertificate(
+                    de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.createSelfSignedHandshakeCertificates(
                             30, KeyAlgorithm.RSA_2048));
         }
 
