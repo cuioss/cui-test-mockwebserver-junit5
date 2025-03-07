@@ -24,13 +24,10 @@ import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import lombok.Getter;
 import lombok.Setter;
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -38,9 +35,11 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import javax.net.ssl.SSLContext;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Demonstrates how to access a MockWebServer with HTTPS using certificates provided by the test class.

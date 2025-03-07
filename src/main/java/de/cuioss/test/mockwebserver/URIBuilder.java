@@ -30,10 +30,11 @@ import java.util.stream.Collectors;
  * <p>
  * This class simplifies the process of building URIs for test requests by providing
  * a fluent API for adding path segments and query parameters.
- * </p>
+ *
  * <p>
  * Example usage:
  * <pre>
+ * {@code
  * URI uri = URIBuilder.from(serverURL)
  *     .addPathSegment("api")
  *     .addPathSegment("users")
@@ -41,8 +42,9 @@ import java.util.stream.Collectors;
  *     .build();
  * 
  * // Creates a URI like: http://localhost:12345/api/users?filter=active
+ * }
  * </pre>
- * </p>
+ *
  */
 public class URIBuilder {
 
@@ -153,7 +155,7 @@ public class URIBuilder {
     public String buildAsString() {
         return build().toString();
     }
-    
+
     /**
      * Gets the path from the base URL.
      * If path segments have been added, they are not included in this result.
@@ -163,7 +165,7 @@ public class URIBuilder {
     public String getPath() {
         return baseUrl.getPath();
     }
-    
+
     /**
      * Gets the scheme (protocol) from the base URL.
      *
@@ -172,7 +174,7 @@ public class URIBuilder {
     public String getScheme() {
         return baseUrl.getProtocol();
     }
-    
+
     /**
      * Gets the port from the base URL.
      *
@@ -181,7 +183,7 @@ public class URIBuilder {
     public int getPort() {
         return baseUrl.getPort();
     }
-    
+
     /**
      * Sets the path for this URI builder, replacing any existing path segments.
      *
@@ -191,7 +193,7 @@ public class URIBuilder {
     public URIBuilder setPath(String path) {
         // Clear existing path segments
         pathSegments.clear();
-        
+
         // Add the new path as a segment
         return addPathSegment(path);
     }

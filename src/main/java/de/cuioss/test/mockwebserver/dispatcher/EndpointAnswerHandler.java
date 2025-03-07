@@ -40,10 +40,11 @@ import java.util.Optional;
  * var handler = EndpointAnswerHandler.forPositiveGetRequest();
  *
  * // Set custom response
- * handler.setResponse(new MockResponse()
- *     .setResponseCode(200)
- *     .setBody("{'status': 'success'}")
- * );
+ * handler.setResponse(new MockResponse.Builder()
+ *             .addHeader("Content-Type", "text/plain")
+ *                             .body(RESPONSE_SUCCESSFUL_BODY)
+ *                             .code(HttpServletResponse.SC_OK)
+ *                             .build());
  *
  * // Reset to default
  * handler.resetToDefaultResponse();
@@ -155,10 +156,10 @@ public class EndpointAnswerHandler {
     }
 
     /**
-     * Resets the current answer to the default response
+     * Resets the current answer to the default response that was configured during initialization
+     * or set via the setter for defaultResponse.
      *
      * @return The current instance of this Handler
-     * @see #getDefaultResponse()
      */
     public EndpointAnswerHandler resetToDefaultResponse() {
         response = defaultResponse;

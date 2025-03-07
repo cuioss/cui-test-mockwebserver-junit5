@@ -17,13 +17,14 @@ package de.cuioss.test.mockwebserver;
 
 import lombok.Getter;
 import lombok.Setter;
+import okhttp3.Headers;
+import org.jetbrains.annotations.NotNull;
+import org.junit.jupiter.api.Test;
+
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
-import okhttp3.Headers;
-import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 

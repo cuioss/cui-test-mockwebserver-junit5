@@ -16,10 +16,11 @@
 package de.cuioss.test.mockwebserver.dispatcher;
 
 import lombok.NonNull;
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
 
 import java.util.Optional;
+
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 

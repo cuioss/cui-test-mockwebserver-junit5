@@ -269,49 +269,49 @@ class URIBuilderTest {
         // Then
         assertThrows(NullPointerException.class, () -> builder.addQueryParameter("name", null));
     }
-    
+
     @Test
     @DisplayName("Should get path from base URL")
     void shouldGetPathFromBaseUrl() throws Exception {
         // Given
         URL baseUrl = new URL("http://localhost:8080/api/v1/");
         URIBuilder builder = URIBuilder.from(baseUrl);
-        
+
         // When
         String path = builder.getPath();
-        
+
         // Then
         assertEquals("/api/v1/", path);
     }
-    
+
     @Test
     @DisplayName("Should get scheme from base URL")
     void shouldGetSchemeFromBaseUrl() throws Exception {
         // Given
         URL baseUrl = new URL("https://localhost:8443/");
         URIBuilder builder = URIBuilder.from(baseUrl);
-        
+
         // When
         String scheme = builder.getScheme();
-        
+
         // Then
         assertEquals("https", scheme);
     }
-    
+
     @Test
     @DisplayName("Should get port from base URL")
     void shouldGetPortFromBaseUrl() throws Exception {
         // Given
         URL baseUrl = new URL("http://localhost:9090/");
         URIBuilder builder = URIBuilder.from(baseUrl);
-        
+
         // When
         int port = builder.getPort();
-        
+
         // Then
         assertEquals(9090, port);
     }
-    
+
     @Test
     @DisplayName("Should set path replacing existing path segments")
     void shouldSetPathReplacingExistingSegments() throws Exception {
@@ -320,44 +320,44 @@ class URIBuilderTest {
         URIBuilder builder = URIBuilder.from(baseUrl)
                 .addPathSegment("existing")
                 .addPathSegment("segments");
-        
+
         // When
         URI result = builder
                 .setPath("/new/path")
                 .build();
-        
+
         // Then
         assertEquals("http://localhost:8080/new/path", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should set path and then add additional path segments")
     void shouldSetPathAndThenAddSegments() throws Exception {
         // Given
         URL baseUrl = new URL("http://localhost:8080/");
-        
+
         // When
         URI result = URIBuilder.from(baseUrl)
                 .setPath("/api")
                 .addPathSegment("users")
                 .build();
-        
+
         // Then
         assertEquals("http://localhost:8080/api/users", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should set path with query parameters")
     void shouldSetPathWithQueryParameters() throws Exception {
         // Given
         URL baseUrl = new URL("http://localhost:8080/");
-        
+
         // When
         URI result = URIBuilder.from(baseUrl)
                 .addQueryParameter("param", "value")
                 .setPath("/api/users")
                 .build();
-        
+
         // Then
         assertEquals("http://localhost:8080/api/users?param=value", result.toString());
     }

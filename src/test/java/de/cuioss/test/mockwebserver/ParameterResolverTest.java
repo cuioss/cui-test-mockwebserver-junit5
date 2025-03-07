@@ -15,13 +15,12 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import mockwebserver3.MockWebServer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests the ParameterResolver functionality of {@link MockWebServerExtension}.

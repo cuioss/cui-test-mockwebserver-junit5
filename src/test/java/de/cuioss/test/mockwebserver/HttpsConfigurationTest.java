@@ -20,13 +20,14 @@ import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import lombok.Getter;
 import lombok.Setter;
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;

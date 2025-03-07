@@ -19,8 +19,6 @@ import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import lombok.Getter;
 import lombok.Setter;
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -30,6 +28,9 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
 

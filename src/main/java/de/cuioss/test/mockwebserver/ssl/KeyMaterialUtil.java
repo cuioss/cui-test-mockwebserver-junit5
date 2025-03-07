@@ -21,10 +21,6 @@ import lombok.experimental.UtilityClass;
 import okhttp3.tls.HandshakeCertificates;
 import okhttp3.tls.HeldCertificate;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -32,6 +28,11 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Utility class for handling SSL/TLS certificate operations in the context of MockWebServer.
@@ -42,23 +43,21 @@ import java.time.temporal.ChronoUnit;
  *   <li>Converting between different certificate formats</li>
  *   <li>Configuring SSL contexts for server and client use</li>
  * </ul>
- * </p>
+ *
  * <p>
  * The primary use case is to support HTTPS testing with {@link de.cuioss.test.mockwebserver.MockWebServerExtension}.
- * </p>
+ *
  * <p>
  * Example usage:
  * <pre>
- * // Create a self-signed certificate
- * KeyMaterialHolder keyMaterial = KeyMaterialUtil.createSelfSignedCertificate(30, KeyAlgorithm.RSA_2048);
- *
- * // Convert to HandshakeCertificates for MockWebServer
- * HandshakeCertificates certificates = KeyMaterialUtil.convertToHandshakeCertificates(keyMaterial);
+ * {@code
+ * // Create self-signed HandshakeCertificates directly
+ * HandshakeCertificates certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(30, KeyAlgorithm.RSA_2048);
  *
  * // Create an SSLContext for client configuration
- * SSLContext sslContext = KeyMaterialUtil.createSslContext(keyMaterial);
+ * SSLContext sslContext = KeyMaterialUtil.createSslContext(certificates);
  * </pre>
- * </p>
+ *
  *
  * @author Oliver Wolff
  * @since 1.1

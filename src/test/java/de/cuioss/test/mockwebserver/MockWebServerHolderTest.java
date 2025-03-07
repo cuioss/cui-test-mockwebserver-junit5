@@ -17,8 +17,9 @@ package de.cuioss.test.mockwebserver;
 
 import lombok.Getter;
 import lombok.Setter;
-import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
+
+import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;

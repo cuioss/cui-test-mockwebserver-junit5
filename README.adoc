@@ -32,55 +32,78 @@ compared to the original.
 
 == Using MockWebServer
 
-=== Basic usage
+=== Basic usage with Parameter Injection
+
+The recommended approach is to use parameter injection rather than implementing the MockWebServerHolder interface:
 
 [source,java]
 ----
 @EnableMockWebServer
-class MockWebServerExtensionTest implements MockWebServerHolder {
-
-    @Setter
-    private MockWebServer mockWebServer;
+class ParameterResolverTest {
 
     @Test
-    void shouldHandleMockWebServer() {
-        assertNotNull(mockWebServer);
+    @DisplayName("Should inject MockWebServer instance")
+    void shouldInjectMockWebServer(MockWebServer server) {
+        assertNotNull(server);
+        assertTrue(server.getStarted());
+    }
+
+    @Test
+    @DisplayName("Should inject URIBuilder")
+    void shouldInjectUriBuilder(URIBuilder uriBuilder) {
+        assertNotNull(uriBuilder);
+        assertEquals("http", uriBuilder.build().getScheme());
+        assertEquals("/", uriBuilder.getPath());
+    }
+
+    @Test
+    @DisplayName("Should inject multiple parameters")
+    void shouldInjectMultipleParameters(MockWebServer server, URIBuilder uriBuilder) {
+        assertNotNull(server);
+        assertTrue(server.getPort() > 0);
+        assertEquals(server.getPort(), uriBuilder.getPort());
     }
 }
 ----
 
 === Dispatching Requests
 
-Implement custom request handling by extending `MockWebServerHolder.getDispatcher()`:
+The recommended approach is to set up the dispatcher directly in your test method:
 
 [source,java]
 ----
 @EnableMockWebServer
-class ValueSetClientImplFhirTest implements MockWebServerHolder {
-
-    static final FileLoader CONFORMANCE =
-        CuiFileUtil.getLoaderForPath(FileTypePrefix.CLASSPATH + "/fhir/conformance.xml");
-
-    @Override
-    public Dispatcher getDispatcher() {
-        return new Dispatcher() {
-
-            @Override
-            public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
-                switch (request.getPath()) {
-                    case "/metadata":
-                        return new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-                                .addHeader("Content-Type", "application/fhir+xml")
-                                .setBody(CuiFileUtil.toStringUnchecked(CONFORMANCE));
-                    case "/ValueSet/C_GE_DRR_PRACTICESETTING_CODE":
-                        return new MockResponse().setResponseCode(HttpServletResponse.SC_OK)
-                                .addHeader("Content-Type", "application/fhir+xml")
-                                .setBody(CuiFileUtil.toStringUnchecked(CONTENT));
-                    default:
-                        return new MockResponse().setResponseCode(HttpServletResponse.SC_NOT_FOUND);
-                }
-            }
-        };
+class EndpointDispatcherTest {
+    
+    @Test
+    void testWithEndpointDispatcher(MockWebServer server, URIBuilder uriBuilder) throws Exception {
+        // Create an EndpointAnswerHandler for this test
+        var handler = new EndpointAnswerHandler();
+        
+        // Configure endpoint responses
+        handler.addAnswerFor("/api/data", new MockResponse.Builder()
+            .addHeader("Content-Type", "application/json")
+            .body("{'data': 'test'}")
+            .code(HttpServletResponse.SC_OK)
+            .build());
+        
+        // Set the dispatcher for this test
+        server.setDispatcher(handler);
+        
+        // Create HttpClient
+        HttpClient client = HttpClient.newHttpClient();
+        
+        // Create request using the URIBuilder parameter
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(uriBuilder.addPathSegment("api").addPathSegment("data").build())
+            .GET()
+            .build();
+            
+        // Send request and verify response
+        HttpResponse<String> response = client.send(request, 
+            HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+        assertEquals("{'data': 'test'}", response.body());
     }
 }
 ----
@@ -182,95 +205,97 @@ class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer>, M
 }
 ----
 
-=== Parameter Injection (New in 1.1)
+=== Parameter Injection
 
-MockWebServerExtension now implements ParameterResolver, allowing direct injection of MockWebServer and related parameters into test methods:
+MockWebServerExtension implements ParameterResolver, allowing direct injection of MockWebServer and related parameters into test methods. This is the recommended approach for accessing the server and related components.
 
 [source,java]
 ----
 @EnableMockWebServer
-class ParameterInjectionTest {
+class ParameterResolverTest {
 
     @Test
-    void testWithServerInjection(MockWebServer server) {
-        // Server is automatically injected
-        assertNotNull(server);
-        
-        // Use the server directly
-        server.enqueue(new MockResponse().setBody("Hello World"));
-    }
-    
-    @Test
-    void testWithMultipleParameters(MockWebServer server, int port, URL baseUrl) {
+    @DisplayName("Should inject multiple parameters")
+    void shouldInjectMultipleParameters(MockWebServer server, URIBuilder uriBuilder) {
         // Multiple parameters can be injected
         assertNotNull(server);
-        assertTrue(port > 0);
-        assertNotNull(baseUrl);
+        assertTrue(server.getPort() > 0);
+        assertEquals(server.getPort(), uriBuilder.getPort());
+        
+        // Set up a dispatcher for this test
+        server.setDispatcher(new Dispatcher() {
+            @Override
+            public MockResponse dispatch(RecordedRequest request) {
+                if ("/api/test".equals(request.getPath())) {
+                    return new MockResponse.Builder()
+                        .addHeader("Content-Type", "text/plain")
+                        .body("Hello World")
+                        .code(HttpServletResponse.SC_OK)
+                        .build();
+                }
+                return new MockResponse.Builder()
+                    .code(HttpServletResponse.SC_NOT_FOUND)
+                    .build();
+            }
+        });
     }
 }
 ----
 
 Supported parameter types:
 * `MockWebServer` - The server instance
-* `int` or `Integer` - The server port
-* `String` - The base URL as a string
-* `URL` - The base URL as a java.net.URL object
+* `URIBuilder` - A builder for constructing request URIs
 * `SSLContext` - The SSL context for HTTPS connections (when HTTPS is enabled)
 
-=== HTTPS Support (New in 1.1)
-
-==== SSLContext Parameter Resolving (New in 1.2)
+=== HTTPS Support
 
 When HTTPS is enabled, the extension automatically makes the SSLContext available for parameter injection, simplifying HTTPS testing:
 
-MockWebServerExtension now supports HTTPS configuration:
-
 [source,java]
 ----
-// Using self-signed certificates (automatically generated)
-@EnableMockWebServer(useHttps = true)
-class HttpsWithSelfSignedCertTest implements MockWebServerHolder {
+/**
+ * Demonstrates how to access a MockWebServer with HTTPS using Java's HttpClient.
+ *
+ * <p>This test shows how to configure Java's HttpClient to trust certificates provided by the extension.
+ * The key to making HTTPS work with self-signed certificates is to use the same certificate material
+ * for both the server and client.</p>
+ */
+@EnableMockWebServer(
+        useHttps = true
+)
+@DisplayName("HttpClient HTTPS Test")
+class ExtensionProvidedHttpsTest {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
-    
+    /**
+     * Tests a basic HTTPS connection to a default endpoint.
+     * The SSLContext is directly injected as a parameter using the parameter resolving feature.
+     */
     @Test
-    void testHttpsConnection(URL serverURL, SSLContext sslContext) throws IOException {
-        // Server URL will use https://
-        assertTrue(serverURL.toString().startsWith("https://"));
-        
-        // SSLContext is automatically injected as a parameter
-        assertNotNull(sslContext);
-        
+    @DisplayName("Should successfully connect to HTTPS server with extension-provided certificate")
+    void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
+        // Arrange
+        assertNotNull(sslContext, "SSLContext should be injected as a parameter");
+        assertNotNull(serverURIBuilder, "URL builder should be injected as a parameter");
+
+        // Verify the URL builder creates HTTPS URLs
+        URI uri = serverURIBuilder.build();
+        assertEquals("https", uri.getScheme(), "Server URL should use HTTPS");
+
         // Configure HttpClient with the injected SSLContext
         HttpClient client = HttpClient.newBuilder()
                 .sslContext(sslContext)
+                .connectTimeout(Duration.ofSeconds(10))
                 .build();
-                
-        // Make secure requests with the client
+
+        // Act: Make an HTTPS request using the URL builder
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serverURL.toString() + "api/test"))
+                .uri(serverURIBuilder.addPathSegment("api").addPathSegment("test").build())
                 .GET()
                 .build();
-                
+
+        // Assert: Verify successful connection and response
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-    }
-}
-
-// Using custom certificates
-@EnableMockWebServer(useHttps = true, keyMaterialProviderIsTestClass = true)
-class HttpsWithCustomCertTest implements MockWebServerHolder {
-
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
-    
-    @Override
-    public Optional<KeyMaterialHolder> provideKeyMaterial() {
-        // Provide custom key material for HTTPS
-        return Optional.of(
-            KeyMaterialUtil.createSelfSignedCertificate(30, KeyAlgorithm.RSA_2048));
+        assertEquals(200, response.statusCode(), "Should receive 200 OK response");
     }
 }
 ----
