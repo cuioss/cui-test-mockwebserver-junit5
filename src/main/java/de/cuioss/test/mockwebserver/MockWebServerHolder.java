@@ -15,13 +15,10 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
-import de.cuioss.tools.net.ssl.KeyMaterialHolder;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 import okhttp3.tls.HandshakeCertificates;
 
-import javax.net.ssl.SSLContext;
 import java.util.Optional;
 
 /**
@@ -91,8 +88,6 @@ import java.util.Optional;
  *   <li>The {@link #setMockWebServer(MockWebServer)} method must be implemented to receive the server instance</li>
  *   <li>The {@link #getMockWebServer()} method must be implemented to retrieve the server instance</li>
  *   <li>Implement {@link #getDispatcher()} to provide custom request handling logic</li>
- *   <li>Implement {@link #provideKeyMaterial()} to provide custom certificates for HTTPS</li>
- *   <li>Implement {@link #getSSLContext()} to provide a custom SSLContext for client connections</li>
  *   <li>The server instance is managed by {@link MockWebServerExtension}</li>
  *   <li>Default dispatcher returns null, meaning requests are handled by the default MockWebServer behavior</li>
  * </ul>
@@ -110,7 +105,10 @@ public interface MockWebServerHolder {
      * to provide custom access to the server instance.
      *
      * @return the server instance, may be {@code null} if not yet initialized
+     * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead by adding
+     * {@link MockWebServer} as a parameter to your test method. Example: {@code @Test void myTest(MockWebServer server)}
      */
+    @Deprecated(since = "1.1", forRemoval = true)
     default MockWebServer getMockWebServer() {
         return null;
     }
@@ -121,7 +119,10 @@ public interface MockWebServerHolder {
      * to store the server instance for later use.
      *
      * @param mockWebServer The server instance to be used
+     * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead by adding
+     * {@link MockWebServer} as a parameter to your test method. Example: {@code @Test void myTest(MockWebServer server)}
      */
+    @Deprecated(since = "1.1", forRemoval = true)
     default void setMockWebServer(MockWebServer mockWebServer) {
         // Default implementation does nothing
     }
@@ -136,7 +137,6 @@ public interface MockWebServerHolder {
     default Dispatcher getDispatcher() {
         return null;
     }
-
 
 
     /**
@@ -154,46 +154,7 @@ public interface MockWebServerHolder {
      * @return an Optional containing the HandshakeCertificates, or empty if none are provided
      * @since 1.1
      */
-    default Optional<HandshakeCertificates> provideHandshakeCertificates() {
+    default Optional<HandshakeCertificates> getTestProvidedHandshakeCertificates() {
         return Optional.empty();
-    }
-
-    /**
-     * Receives the SSLContext used by the extension to configure HTTPS.
-     * This is called after the extension has configured the server with HTTPS.
-     * <p>
-     * The default implementation does nothing. Override this method to receive and
-     * store the SSLContext for client configuration.
-     * </p>
-     * <p>
-     * This method will only be called if {@link EnableMockWebServer#useHttps()} is {@code true}.
-     * </p>
-     *
-     * @param sslContext the HandshakeCertificates used by the extension
-     * @since 1.1
-     */
-    default void setSslContext(SSLContext sslContext) {
-        // Default implementation does nothing
-    }
-
-    /**
-     * Provides a custom SSLContext for client connections to the MockWebServer.
-     * This is useful when the server is configured to use HTTPS with custom certificates.
-     * <p>
-     * The default implementation creates an SSLContext from the HandshakeCertificates provided by
-     * {@link #provideHandshakeCertificates()} if available. If no certificates are provided, it returns
-     * an empty Optional.
-     * </p>
-     * <p>
-     * This method can be overridden to provide a custom SSLContext implementation,
-     * but in most cases, it's better to override {@link #provideHandshakeCertificates()} instead.
-     * </p>
-     *
-     * @return an Optional containing the SSLContext, or empty if no custom SSLContext is provided
-     * @since 1.1
-     */
-    default Optional<SSLContext> getSSLContext() {
-        return provideHandshakeCertificates()
-                .map(KeyMaterialUtil::createSslContext);
     }
 }

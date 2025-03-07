@@ -24,7 +24,10 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 import javax.net.ssl.SSLContext;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for {@link KeyMaterialUtil}.
@@ -57,42 +60,6 @@ class KeyMaterialUtilTest {
         assertNotNull(certificates);
         assertNotNull(certificates.keyManager());
         assertNotNull(certificates.trustManager());
-    }
-
-
-
-
-
-    @Test
-    @DisplayName("Should validate valid HTTPS configuration")
-    void shouldValidateValidHttpsConfiguration() {
-        // Arrange & Act & Assert
-        assertDoesNotThrow(() ->
-                KeyMaterialUtil.validateHttpsConfiguration(true, true, false));
-
-        assertDoesNotThrow(() ->
-                KeyMaterialUtil.validateHttpsConfiguration(true, false, true));
-
-        assertDoesNotThrow(() ->
-                KeyMaterialUtil.validateHttpsConfiguration(true, true, true));
-    }
-
-    @Test
-    @DisplayName("Should throw exception for invalid HTTPS configuration")
-    void shouldThrowExceptionForInvalidHttpsConfiguration() {
-        // Arrange & Act & Assert
-        var exception = assertThrows(IllegalStateException.class, () ->
-                KeyMaterialUtil.validateHttpsConfiguration(true, false, false));
-
-        assertTrue(exception.getMessage().contains("HTTPS is enabled"));
-    }
-
-    @Test
-    @DisplayName("Should not throw exception when HTTPS is disabled")
-    void shouldNotThrowExceptionWhenHttpsIsDisabled() {
-        // Arrange & Act & Assert
-        assertDoesNotThrow(() ->
-                KeyMaterialUtil.validateHttpsConfiguration(false, false, false));
     }
 
     @Test

@@ -153,4 +153,46 @@ public class URIBuilder {
     public String buildAsString() {
         return build().toString();
     }
+    
+    /**
+     * Gets the path from the base URL.
+     * If path segments have been added, they are not included in this result.
+     *
+     * @return the path from the base URL
+     */
+    public String getPath() {
+        return baseUrl.getPath();
+    }
+    
+    /**
+     * Gets the scheme (protocol) from the base URL.
+     *
+     * @return the scheme from the base URL (e.g., "http" or "https")
+     */
+    public String getScheme() {
+        return baseUrl.getProtocol();
+    }
+    
+    /**
+     * Gets the port from the base URL.
+     *
+     * @return the port from the base URL
+     */
+    public int getPort() {
+        return baseUrl.getPort();
+    }
+    
+    /**
+     * Sets the path for this URI builder, replacing any existing path segments.
+     *
+     * @param path the path to set
+     * @return this builder for method chaining
+     */
+    public URIBuilder setPath(String path) {
+        // Clear existing path segments
+        pathSegments.clear();
+        
+        // Add the new path as a segment
+        return addPathSegment(path);
+    }
 }

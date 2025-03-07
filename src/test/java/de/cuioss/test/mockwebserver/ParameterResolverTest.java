@@ -19,9 +19,9 @@ import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.net.URL;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests the ParameterResolver functionality of {@link MockWebServerExtension}.
@@ -36,40 +36,23 @@ class ParameterResolverTest {
         assertTrue(server.getStarted());
     }
 
-    @Test
-    @DisplayName("Should inject server port as int")
-    void shouldInjectServerPort(int port) {
-        assertTrue(port > 0);
-    }
+    // Tests for port parameter resolver removed as it's redundant with URIBuilder
 
     @Test
-    @DisplayName("Should inject server port as Integer")
-    void shouldInjectServerPortAsInteger(Integer port) {
-        assertTrue(port > 0);
+    @DisplayName("Should inject URIBuilder")
+    void shouldInjectUriBuilder(URIBuilder uriBuilder) {
+        assertNotNull(uriBuilder);
+        assertEquals("http", uriBuilder.build().getScheme());
+        assertEquals("/", uriBuilder.getPath());
     }
 
-    @Test
-    @DisplayName("Should inject server URL")
-    void shouldInjectServerUrl(URL url) {
-        assertNotNull(url);
-        assertEquals("http", url.getProtocol());
-        assertEquals("/", url.getPath());
-    }
-
-    @Test
-    @DisplayName("Should inject server URL as String")
-    void shouldInjectServerUrlAsString(String url) {
-        assertNotNull(url);
-        assertTrue(url.startsWith("http://"));
-        assertTrue(url.endsWith("/"));
-    }
+    // Test for String parameter resolver removed as it's redundant with URIBuilder
 
     @Test
     @DisplayName("Should inject multiple parameters")
-    void shouldInjectMultipleParameters(MockWebServer server, int port, URL url) {
+    void shouldInjectMultipleParameters(MockWebServer server, URIBuilder uriBuilder) {
         assertNotNull(server);
-        assertTrue(port > 0);
-        assertEquals(port, server.getPort());
-        assertEquals(port, url.getPort());
+        assertTrue(server.getPort() > 0);
+        assertEquals(server.getPort(), uriBuilder.getPort());
     }
 }

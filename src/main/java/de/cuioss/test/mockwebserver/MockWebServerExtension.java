@@ -17,7 +17,6 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
-import de.cuioss.tools.net.ssl.KeyMaterialHolder;
 import de.cuioss.tools.string.Joiner;
 import mockwebserver3.MockWebServer;
 import okhttp3.tls.HandshakeCertificates;
@@ -31,7 +30,6 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
 
 import javax.net.ssl.SSLContext;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -55,9 +53,7 @@ import java.util.function.Function;
  * As a {@link ParameterResolver}, this extension can inject the following parameter types:
  * <ul>
  *   <li>{@link MockWebServer} - The server instance</li>
- *   <li>{@code int} or {@code Integer} - The server port</li>
- *   <li>{@code String} - The base URL as a string</li>
- *   <li>{@link URL} - The base URL as a java.net.URL object</li>
+ *   <li>{@link URIBuilder} - A builder for constructing request URLs</li>
  * </ul>
  * </p>
  * <p>
@@ -253,7 +249,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         }
 
         MockWebServerHolder mockWebServerHolder = holder.get();
-        Optional<HandshakeCertificates> handshakeCertificates = mockWebServerHolder.provideHandshakeCertificates();
+        Optional<HandshakeCertificates> handshakeCertificates = mockWebServerHolder.getTestProvidedHandshakeCertificates();
         
         if (handshakeCertificates.isPresent()) {
             LOGGER.debug("Using HandshakeCertificates provided by test class");
@@ -263,28 +259,41 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         return Optional.empty();
     }
 
+    /**
+     * Notifies the test class about the HandshakeCertificates and stores the SSLContext for parameter resolution.
+     * 
+     * @param testInstance the test instance
+     * @param context the extension context
+     * @param handshakeCertificates the HandshakeCertificates
+     */
     private void notifyTestClassAboutCertificates(Object testInstance, ExtensionContext context, HandshakeCertificates handshakeCertificates) {
-        Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
-        if (holder.isPresent()) {
-            SSLContext sslContext = KeyMaterialUtil.createSslContext(handshakeCertificates);
-            holder.get().setSslContext(sslContext);
-
-            // Store the SSLContext in the context store for parameter resolution
-            ExtensionContext rootContext = getRootContext(context);
-            rootContext.getStore(NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
-
-            LOGGER.debug("Notified test class about HandshakeCertificates and stored SSLContext for parameter resolution");
-        }
+        SSLContext sslContext = KeyMaterialUtil.createSslContext(handshakeCertificates);
+        
+        // Store the SSLContext in the context store for parameter resolution
+        ExtensionContext rootContext = getRootContext(context);
+        rootContext.getStore(NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
+        
+        LOGGER.debug("Stored SSLContext for parameter resolution");
     }
 
+    /**
+     * Sets the MockWebServer instance on the test class if it implements MockWebServerHolder.
+     * 
+     * @param testInstance the test instance
+     * @param mockWebServer the MockWebServer instance
+     * @param context the extension context
+     * @deprecated This method uses deprecated methods in MockWebServerHolder interface.
+     * Will be removed in version 1.2 when the deprecated methods are removed.
+     */
+    @Deprecated(since = "1.1", forRemoval = true)
     private void setMockWebServer(Object testInstance, MockWebServer mockWebServer, ExtensionContext context) {
         Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
         if (holder.isPresent()) {
             holder.get().setMockWebServer(mockWebServer);
             Optional.ofNullable(holder.get().getDispatcher()).ifPresent(mockWebServer::setDispatcher);
-            LOGGER.info("Fulfilled interface contract of MockWebServerHolder on %s", holder.get().getClass().getName());
+            LOGGER.info("Fulfilled interface contract of MockWebServerHolder on {}", holder.get().getClass().getName());
         } else {
-            LOGGER.warn("No instance of %s found. Is this intentional?", MockWebServerHolder.class.getName());
+            LOGGER.warn("No instance of {} found. Is this intentional?", MockWebServerHolder.class.getName());
         }
     }
 
@@ -319,7 +328,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         if (optionalMockWebServer.isPresent()) {
             var server = optionalMockWebServer.get();
             if (optionalMockWebServer.get().getStarted()) {
-                LOGGER.info("Shutting down MockWebServer at %s", server.url("/"));
+                LOGGER.info("Shutting down MockWebServer at port {}", server.getPort());
                 server.shutdown();
             } else {
                 LOGGER.warn("Server was not started, therefore can not be shutdown");
@@ -443,10 +452,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      */
     private final Map<Class<?>, Function<MockWebServer, Object>> parameterResolvers = Map.of(
             MockWebServer.class, this::resolveServerParameter,
-            Integer.class, this::resolvePortParameter,
-            int.class, this::resolvePortParameter,
-            URL.class, this::resolveUrlParameter,
-            String.class, this::resolveStringParameter,
             URIBuilder.class, this::resolveUrlBuilderParameter
     );
 
@@ -485,21 +490,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         return server;
     }
 
-    private int resolvePortParameter(MockWebServer server) {
-        return server.getPort();
-    }
-
-    private URL resolveUrlParameter(MockWebServer server) {
-        try {
-            return server.url("/").url();
-        } catch (Exception e) {
-            throw new ParameterResolutionException("Failed to convert HttpUrl to URL", e);
-        }
-    }
-
-    private String resolveStringParameter(MockWebServer server) {
-        return server.url("/").toString();
-    }
+    // Port and String parameter resolvers removed as they're redundant with URIBuilder
 
     /**
      * Resolves a URIBuilder parameter for the given MockWebServer instance.

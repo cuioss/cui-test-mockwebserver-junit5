@@ -18,7 +18,6 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-import de.cuioss.tools.net.ssl.KeyMaterialHolder;
 import lombok.Getter;
 import lombok.Setter;
 import mockwebserver3.Dispatcher;
@@ -84,14 +83,11 @@ class HttpsConfigurationTest {
             String serverUrl = mockWebServer.url("/api").toString();
             assertTrue(serverUrl.startsWith("https://"));
 
-            // We'll skip the actual HTTP request as it requires more complex SSL setup
-            // Just verify that the SSL context and certificates are available
-            assertTrue(getSSLContext().isPresent());
-            assertTrue(provideHandshakeCertificates().isPresent());
+            assertTrue(getTestProvidedHandshakeCertificates().isPresent());
         }
 
         @Override
-        public Optional<okhttp3.tls.HandshakeCertificates> provideHandshakeCertificates() {
+        public Optional<okhttp3.tls.HandshakeCertificates> getTestProvidedHandshakeCertificates() {
             // Create a custom certificate for testing
             return Optional.of(
                     de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil.createSelfSignedHandshakeCertificates(

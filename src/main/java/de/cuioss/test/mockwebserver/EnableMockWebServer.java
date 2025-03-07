@@ -167,7 +167,7 @@ public @interface EnableMockWebServer {
     boolean useHttps() default false;
 
     /**
-     * Indicates that the test class provides certificates through the {@link MockWebServerHolder#provideHandshakeCertificates()}
+     * Indicates that the test class provides certificates through the {@link MockWebServerHolder#getTestProvidedHandshakeCertificates()}
      * method. When {@code true}, the extension will call this method to obtain the certificates for HTTPS configuration.
      * 
      * <p>This approach gives tests full control over certificate generation/loading.</p>

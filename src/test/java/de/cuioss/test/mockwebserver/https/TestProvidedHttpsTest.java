@@ -17,6 +17,7 @@ package de.cuioss.test.mockwebserver.https;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.MockWebServerHolder;
+import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
@@ -31,15 +32,15 @@ import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Demonstrates how to access a MockWebServer with HTTPS using certificates provided by the test class.
@@ -51,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>This test uses the "Test → Extension" approach, where:
  * <ol>
  *   <li>The test creates a self-signed certificate</li>
- *   <li>The test provides the certificate to the extension via the provideHandshakeCertificates method</li>
+ *   <li>The test provides the certificate to the extension via the getTestProvidedHandshakeCertificates method</li>
  *   <li>The extension configures the MockWebServer with this certificate</li>
  *   <li>The test configures Java's HttpClient with the same certificate</li>
  * </ol>
@@ -80,7 +81,7 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
      * @return an Optional containing the HandshakeCertificates for the server to use
      */
     @Override
-    public Optional<HandshakeCertificates> provideHandshakeCertificates() {
+    public Optional<HandshakeCertificates> getTestProvidedHandshakeCertificates() {
         // Create self-signed certificates with a short validity period (1 day) for unit tests
         this.handshakeCertificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
         return Optional.of(this.handshakeCertificates);
@@ -92,14 +93,14 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
      */
     @Test
     @DisplayName("Should successfully connect to HTTPS server with test-provided certificate")
-    void shouldConnectToHttpsServer(URL serverURL, SSLContext sslContext) throws IOException, InterruptedException {
+    void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
         // Arrange
         assertNotNull(mockWebServer);
         assertTrue(mockWebServer.getStarted());
         assertNotNull(handshakeCertificates, "HandshakeCertificates should have been created by the test");
         assertNotNull(sslContext, "SSLContext should be injected as a parameter");
 
-        assertEquals("https", serverURL.getProtocol(), "Server URL should use HTTPS");
+        assertEquals("https", serverURIBuilder.getScheme(), "Server URL should use HTTPS");
 
         // Configure HttpClient with the injected SSLContext
         HttpClient client = HttpClient.newBuilder()
@@ -109,7 +110,7 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
 
         // Act: Make an HTTPS request
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serverURL.toString() + "api/test"))
+                .uri(serverURIBuilder.setPath("/api/test").build())
                 .GET()
                 .build();
 

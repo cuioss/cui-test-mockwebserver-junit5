@@ -17,6 +17,7 @@ package de.cuioss.test.mockwebserver.https;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.MockWebServerHolder;
+import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
 import lombok.Getter;
@@ -28,8 +29,6 @@ import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -61,11 +60,11 @@ class SslContextParameterResolvingTest implements MockWebServerHolder {
      */
     @Test
     @DisplayName("Should inject SSLContext parameter directly")
-    void shouldInjectSslContextParameter(URL serverURL, SSLContext sslContext) throws IOException, InterruptedException {
+    void shouldInjectSslContextParameter(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
         // Arrange
         assertNotNull(mockWebServer, "MockWebServer should be injected");
         assertNotNull(sslContext, "SSLContext should be injected");
-        assertEquals("https", serverURL.getProtocol(), "Server URL should use HTTPS");
+        assertEquals("https", serverURIBuilder.getScheme(), "Server URL should use HTTPS");
 
         // Configure HttpClient with the injected SSLContext
         HttpClient client = HttpClient.newBuilder()
@@ -75,7 +74,7 @@ class SslContextParameterResolvingTest implements MockWebServerHolder {
 
         // Act: Make an HTTPS request
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(serverURL.toString() + "api/test"))
+                .uri(serverURIBuilder.setPath("/api/test").build())
                 .GET()
                 .build();
 
