@@ -18,7 +18,6 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.Joiner;
-import mockwebserver3.MockWebServer;
 import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -29,12 +28,16 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
 
-import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
+import javax.net.ssl.SSLContext;
+
+
+import mockwebserver3.MockWebServer;
 
 /**
  * JUnit 5 extension that manages the lifecycle of {@link MockWebServer} instances.
@@ -160,8 +163,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     public void beforeEach(ExtensionContext context) {
         LOGGER.debug("Setting up MockWebServer for test: %s", context.getDisplayName());
 
+        MockWebServer server = null;
         try {
-            var server = new MockWebServer();
+            server = new MockWebServer();
             var testInstance = context.getRequiredTestInstance();
             Optional<EnableMockWebServer> enableMockWebServerAnnotation = findEnableMockWebServerAnnotation(testInstance);
 
@@ -176,35 +180,67 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             setMockWebServer(testInstance, server, context);
 
             if (!config.isManualStart()) {
-                try {
-                    server.start();
-                    LOGGER.info("Started MockWebServer at %s", server.url("/"));
-                } catch (Exception e) {
-                    String errorMessage = "Failed to start MockWebServer";
-                    LOGGER.error(errorMessage, e);
-                    throw new IllegalStateException(errorMessage, e);
-                }
+                startServer(server);
             } else {
-                // When manual start is requested, ensure the server is not started
-                if (server.getStarted()) {
-                    try {
-                        server.shutdown();
-                        LOGGER.info("Shutdown server to enforce manual start configuration");
-                    } catch (Exception e) {
-                        LOGGER.warn("Failed to shutdown server for manual start: {}", e.getMessage());
-                    }
-                }
-                LOGGER.info("Manual start requested, server not started");
+                ensureServerNotStarted(server);
             }
 
+            // Store the server in context - it will be properly closed in afterEach
             put(server, context);
+            // We've successfully stored the server in context, so don't close it in the finally block
+            server = null;
             LOGGER.debug("MockWebServer setup completed successfully");
         } catch (Exception e) {
             if (!(e instanceof IllegalStateException)) {
                 LOGGER.error("Unexpected error during MockWebServer setup", e);
             }
             throw e;
+        } finally {
+            // Close the server if something went wrong and we didn't store it in context
+            if (server != null) {
+                try {
+                    server.shutdown();
+                    LOGGER.info("Shutdown server due to exception during setup");
+                } catch (IOException closeEx) {
+                    LOGGER.warn("Failed to shutdown server during exception handling: {}", closeEx.getMessage());
+                }
+            }
         }
+    }
+
+    /**
+     * Starts the MockWebServer instance.
+     *
+     * @param server the server to start
+     * @throws IllegalStateException if the server cannot be started
+     */
+    private void startServer(MockWebServer server) {
+        try {
+            server.start();
+            LOGGER.info("Started MockWebServer at %s", server.url("/"));
+        } catch (Exception e) {
+            String errorMessage = "Failed to start MockWebServer";
+            LOGGER.error(errorMessage, e);
+            throw new IllegalStateException(errorMessage, e);
+        }
+    }
+
+    /**
+     * Ensures the server is not started when manual start is requested.
+     *
+     * @param server the server to check
+     */
+    private void ensureServerNotStarted(MockWebServer server) {
+        // When manual start is requested, ensure the server is not started
+        if (server.getStarted()) {
+            try {
+                server.shutdown();
+                LOGGER.info("Shutdown server to enforce manual start configuration");
+            } catch (Exception e) {
+                LOGGER.warn("Failed to shutdown server for manual start: {}", e.getMessage());
+            }
+        }
+        LOGGER.info("Manual start requested, server not started");
     }
 
     /**
@@ -441,23 +477,39 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     }
 
     @Override
-    public void afterEach(ExtensionContext context) throws Exception {
+    public void afterEach(ExtensionContext context) {
         var optionalMockWebServer = get(context);
         if (optionalMockWebServer.isPresent()) {
             var server = optionalMockWebServer.get();
-            if (server.getStarted()) {
-                LOGGER.info("Shutting down MockWebServer at port %s", server.getPort());
-                try {
+            try {
+                if (server.getStarted()) {
+                    LOGGER.info("Shutting down MockWebServer at port %s", server.getPort());
                     server.shutdown();
-                } catch (Exception e) {
-                    LOGGER.error("Failed to shutdown MockWebServer", e);
-                    throw e;
+                    LOGGER.debug("MockWebServer successfully shut down");
+                } else {
+                    LOGGER.debug("Server was not started, no shutdown needed");
                 }
-            } else {
-                LOGGER.warn("Server was not started, therefore can not be shutdown");
+            } catch (IOException e) {
+                LOGGER.error("Failed to shutdown MockWebServer", e);
+                throw new IllegalStateException("Failed to properly shutdown MockWebServer", e);
+            } finally {
+                // Remove the server from the context to prevent memory leaks
+                remove(context);
             }
-        } else {
-            LOGGER.error("Server not present, therefore can not be shutdown");
+        }
+    }
+
+    /**
+     * Removes the MockWebServer instance from the extension context.
+     *
+     * @param context the extension context
+     */
+    private void remove(ExtensionContext context) {
+        try {
+            context.getStore(NAMESPACE).remove(context.getRequiredTestMethod());
+            LOGGER.debug("Removed MockWebServer from context");
+        } catch (Exception e) {
+            LOGGER.warn("Failed to remove MockWebServer from context: {}", e.getMessage());
         }
     }
 

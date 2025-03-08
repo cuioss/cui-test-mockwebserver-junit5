@@ -16,8 +16,6 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -26,11 +24,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class for verifying that the {@link MockWebServerExtension} works correctly

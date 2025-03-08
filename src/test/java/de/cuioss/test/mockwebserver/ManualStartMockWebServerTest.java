@@ -16,8 +16,6 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -25,9 +23,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @EnableMockWebServer(manualStart = true)
 class ManualStartMockWebServerTest implements MockWebServerHolder {
