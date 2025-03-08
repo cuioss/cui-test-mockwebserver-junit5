@@ -17,7 +17,6 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -93,7 +92,7 @@ class MockWebServerHttpsTest implements MockWebServerHolder {
                 .build();
 
         // Make HTTPS request - should fail with SSL handshake exception
-        Assertions.assertDoesNotThrow(() -> {
+        assertDoesNotThrow(() -> {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uriBuilder.addPathSegments("api", "test").build())
                     .GET()
