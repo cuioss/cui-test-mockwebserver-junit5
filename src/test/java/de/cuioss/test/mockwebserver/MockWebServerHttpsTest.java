@@ -65,7 +65,7 @@ public class MockWebServerHttpsTest implements MockWebServerHolder {
         try {
             // Make HTTPS request with timeout using URIBuilder
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uriBuilder.addPathSegment("api").addPathSegment("test").build())
+                    .uri(uriBuilder.addPathSegments("api", "test").build())
                     .timeout(Duration.ofSeconds(2))
                     .GET()
                     .build();
@@ -94,7 +94,7 @@ public class MockWebServerHttpsTest implements MockWebServerHolder {
         // Make HTTPS request - should fail with SSL handshake exception
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uriBuilder.addPathSegment("api").addPathSegment("test").build())
+                    .uri(uriBuilder.addPathSegments("api", "test").build())
                     .GET()
                     .build();
 

@@ -88,7 +88,7 @@ class ExtensionProvidedHttpsTest implements MockWebServerHolder {
 
         // Act: Make an HTTPS request using the URL builder
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(serverURIBuilder.addPathSegment("api").addPathSegment("test").build())
+                .uri(serverURIBuilder.addPathSegments("api", "test").build())
                 .GET()
                 .build();
 

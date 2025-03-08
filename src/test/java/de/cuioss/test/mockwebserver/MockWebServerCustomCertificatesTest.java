@@ -86,7 +86,7 @@ public class MockWebServerCustomCertificatesTest implements MockWebServerHolder 
         try {
             // Make HTTPS request with timeout using URIBuilder
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uriBuilder.addPathSegment("api").addPathSegment("test").build())
+                    .uri(uriBuilder.addPathSegments("api", "test").build())
                     .timeout(Duration.ofSeconds(2))
                     .GET()
                     .build();

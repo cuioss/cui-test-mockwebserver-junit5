@@ -50,7 +50,7 @@ class EndpointDispatcherExampleTest implements MockWebServerHolder {
 
         // Create request using the URIBuilder parameter
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(uriBuilder.addPathSegment("api").addPathSegment("data").build())
+                .uri(uriBuilder.addPathSegments("api", "data").build())
                 .GET()
                 .build();
 

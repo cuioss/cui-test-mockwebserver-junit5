@@ -173,6 +173,20 @@ URI uri = uriBuilder.addPathSegment("api").build();
 server.start();
 URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
 URI uri = properUriBuilder.addPathSegment("api").build();
+
+----
+
+=== URIBuilder Usage
+
+When building URIs with multiple path segments,
+prefer using the `addPathSegments` method instead of chaining multiple `addPathSegment` calls:
+
+[source,java]
+----
+// RECOMMENDED - Use addPathSegments for multiple path segments
+URI uri = uriBuilder.addPathSegments("api", "users", "123").build();
+
+URI uri = uriBuilder.addPathSegment("api").addPathSegment("users").addPathSegment("123").build();
 ----
 
 === Parameter Injection

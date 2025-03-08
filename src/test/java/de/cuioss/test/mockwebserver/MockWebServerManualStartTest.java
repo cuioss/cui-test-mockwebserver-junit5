@@ -67,7 +67,7 @@ public class MockWebServerManualStartTest implements MockWebServerHolder {
 
             // Use the proper URIBuilder to construct the URI
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(properUriBuilder.addPathSegment("api").addPathSegment("test").build())
+                    .uri(properUriBuilder.addPathSegments("api", "test").build())
                     .timeout(Duration.ofSeconds(2))
                     .GET()
                     .build();

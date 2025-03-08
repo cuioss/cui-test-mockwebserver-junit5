@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * Unit tests for {@link URIBuilder}.
  */
+@SuppressWarnings({"DataFlowIssue", "RedundantArrayCreation"})
 class URIBuilderTest {
 
     @Test
@@ -65,9 +66,7 @@ class URIBuilderTest {
 
         // When
         URI result = URIBuilder.from(baseUrl)
-                .addPathSegment("api")
-                .addPathSegment("users")
-                .addPathSegment("123")
+                .addPathSegments("api", "users", "123")
                 .build();
 
         // Then
@@ -97,9 +96,7 @@ class URIBuilderTest {
 
         // When
         URI result = URIBuilder.from(baseUrl)
-                .addPathSegment("/api/")
-                .addPathSegment("//users//")
-                .addPathSegment("/123/")
+                .addPathSegments("/api/", "//users//", "/123/")
                 .build();
 
         // Then
@@ -162,8 +159,7 @@ class URIBuilderTest {
 
         // When
         URI result = URIBuilder.from(baseUrl)
-                .addPathSegment("api")
-                .addPathSegment("users")
+                .addPathSegments("api", "users")
                 .addQueryParameter("filter", "active")
                 .addQueryParameter("page", "1")
                 .build();
@@ -195,9 +191,7 @@ class URIBuilderTest {
 
         // When
         URI result = URIBuilder.from(baseUrl)
-                .addPathSegment("")
-                .addPathSegment("/")
-                .addPathSegment("api")
+                .addPathSegments("", "/", "api")
                 .build();
 
         // Then
