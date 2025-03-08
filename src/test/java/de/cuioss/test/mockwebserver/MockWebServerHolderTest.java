@@ -15,17 +15,69 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import mockwebserver3.MockWebServer;
+import okhttp3.tls.HandshakeCertificates;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+/**
+ * Tests for the default implementations in {@link MockWebServerHolder}.
+ */
 class MockWebServerHolderTest {
 
-    @Test
-    void shouldHandleDefaultMethods() {
-        var holder = new MockWebServerHolder() {
-        };
+    private MockWebServerHolder holder;
+    
+    @BeforeEach
+    void setUp() {
+        // Create a minimal implementation of the interface
+        holder = new MockWebServerHolder() {};
+    }
 
-        assertNull(holder.getDispatcher());
+    @Test
+    void shouldReturnNullForGetMockWebServer() {
+        // tag::test-get-mockwebserver[]
+        // Test the default implementation of getMockWebServer()
+        assertNull(holder.getMockWebServer(), "Default implementation should return null");
+        // end::test-get-mockwebserver[]
+    }
+    
+    @Test
+    void shouldDoNothingForSetMockWebServer() {
+        // tag::test-set-mockwebserver[]
+        // Test the default implementation of setMockWebServer()
+        MockWebServer server = new MockWebServer();
+        assertDoesNotThrow(() -> holder.setMockWebServer(server), 
+                "Default implementation should not throw an exception");
+        // end::test-set-mockwebserver[]
+    }
+    
+    @Test
+    void shouldDoNothingForReceiveHandshakeCertificates() {
+        // tag::test-receive-certificates[]
+        // Test the default implementation of receiveHandshakeCertificates()
+        assertDoesNotThrow(() -> holder.receiveHandshakeCertificates(null), 
+                "Default implementation should not throw an exception even with null input");
+        // end::test-receive-certificates[]
+    }
+    
+    @Test
+    void shouldReturnNullForGetDispatcher() {
+        // tag::test-get-dispatcher[]
+        // Test the default implementation of getDispatcher()
+        assertNull(holder.getDispatcher(), "Default implementation should return null");
+        // end::test-get-dispatcher[]
+    }
+    
+    @Test
+    void shouldReturnEmptyOptionalForGetTestProvidedHandshakeCertificates() {
+        // tag::test-get-certificates[]
+        // Test the default implementation of getTestProvidedHandshakeCertificates()
+        var certificates = holder.getTestProvidedHandshakeCertificates();
+        assertFalse(certificates.isPresent(), "Default implementation should return an empty Optional");
+        // end::test-get-certificates[]
     }
 }
