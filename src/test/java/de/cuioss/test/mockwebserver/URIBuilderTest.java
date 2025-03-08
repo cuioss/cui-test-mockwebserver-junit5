@@ -361,7 +361,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api/users?param=value", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle path segment with only whitespace")
     void shouldHandlePathSegmentWithOnlyWhitespace() throws Exception {
@@ -377,7 +377,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle base URL without trailing slash")
     void shouldHandleBaseUrlWithoutTrailingSlash() throws Exception {
@@ -392,7 +392,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should build URI without any path segments or query parameters")
     void shouldBuildUriWithoutPathOrQuery() throws Exception {
@@ -405,7 +405,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle empty query parameters list")
     void shouldHandleEmptyQueryParametersList() throws Exception {
@@ -421,7 +421,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle path segments with mixed slashes")
     void shouldHandlePathSegmentsWithMixedSlashes() throws Exception {
@@ -437,7 +437,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api/users", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle path segments with only slashes")
     void shouldHandlePathSegmentsWithOnlySlashes() throws Exception {
@@ -454,7 +454,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle base URL with path and trailing slash when adding segments")
     void shouldHandleBaseUrlWithPathAndTrailingSlashWhenAddingSegments() throws Exception {
@@ -470,7 +470,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/base/api/users", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle empty path segments array")
     void shouldHandleEmptyPathSegmentsArray() throws Exception {
@@ -485,7 +485,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle base URL without trailing slash and empty path segments")
     void shouldHandleBaseUrlWithoutTrailingSlashAndEmptyPathSegments() throws Exception {
@@ -500,7 +500,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle base URL with trailing slash and empty path segments")
     void shouldHandleBaseUrlWithTrailingSlashAndEmptyPathSegments() throws Exception {
@@ -515,7 +515,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle multiple query parameters with same name and different values")
     void shouldHandleMultipleQueryParametersWithSameNameAndDifferentValues() throws Exception {
@@ -532,7 +532,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080?param=value1&param=value2&param=value3", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle path segments with encoded special characters")
     void shouldHandlePathSegmentsWithSpecialCharacters() throws Exception {
@@ -548,7 +548,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api/users%20with%20spaces", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle query parameters with encoded special characters")
     void shouldHandleQueryParametersWithSpecialCharacters() throws Exception {
@@ -564,7 +564,7 @@ class URIBuilderTest {
         // Then
         assertEquals("http://localhost:8080/api?filter=name%20with%20spaces", result.toString());
     }
-    
+
     @Test
     @DisplayName("Should handle complex URL with port, path and query parameters")
     void shouldHandleComplexUrlWithPortPathAndQueryParameters() throws Exception {

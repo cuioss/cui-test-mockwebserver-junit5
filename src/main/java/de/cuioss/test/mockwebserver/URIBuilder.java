@@ -123,7 +123,7 @@ public class URIBuilder {
     public URI build() {
         String baseUrlString = baseUrl.toString();
         StringBuilder uriBuilder = new StringBuilder();
-        
+
         // Normalize base URL by removing trailing slash
         if (baseUrlString.endsWith("/")) {
             uriBuilder.append(baseUrlString, 0, baseUrlString.length() - 1);
@@ -139,7 +139,7 @@ public class URIBuilder {
         // Add query parameters
         if (!queryParameters.isEmpty()) {
             uriBuilder.append('?');
-            
+
             String queryString = queryParameters.entrySet().stream()
                     .flatMap(entry -> entry.getValue().stream()
                             .map(value -> entry.getKey() + "=" + value))

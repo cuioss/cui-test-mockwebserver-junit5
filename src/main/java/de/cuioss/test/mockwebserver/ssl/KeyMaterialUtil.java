@@ -175,12 +175,12 @@ public class KeyMaterialUtil {
 
             // Create and initialize the SSLContext with the TrustManager
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            
+
             // Use a properly seeded SecureRandom instance
             // For testing purposes only - not for production use
             SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
             secureRandom.setSeed(System.currentTimeMillis());
-            
+
             sslContext.init(
                     null, // No need for KeyManager as we're configuring client-side trust
                     new TrustManager[]{trustManager},

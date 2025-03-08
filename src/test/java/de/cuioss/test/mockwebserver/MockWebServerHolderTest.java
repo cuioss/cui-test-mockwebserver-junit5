@@ -16,7 +16,6 @@
 package de.cuioss.test.mockwebserver;
 
 import mockwebserver3.MockWebServer;
-import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,11 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class MockWebServerHolderTest {
 
     private MockWebServerHolder holder;
-    
+
     @BeforeEach
     void setUp() {
         // Create a minimal implementation of the interface
-        holder = new MockWebServerHolder() {};
+        holder = new MockWebServerHolder() {
+        };
     }
 
     @Test
@@ -44,26 +44,26 @@ class MockWebServerHolderTest {
         assertNull(holder.getMockWebServer(), "Default implementation should return null");
         // end::test-get-mockwebserver[]
     }
-    
+
     @Test
     void shouldDoNothingForSetMockWebServer() {
         // tag::test-set-mockwebserver[]
         // Test the default implementation of setMockWebServer()
         MockWebServer server = new MockWebServer();
-        assertDoesNotThrow(() -> holder.setMockWebServer(server), 
+        assertDoesNotThrow(() -> holder.setMockWebServer(server),
                 "Default implementation should not throw an exception");
         // end::test-set-mockwebserver[]
     }
-    
+
     @Test
     void shouldDoNothingForReceiveHandshakeCertificates() {
         // tag::test-receive-certificates[]
         // Test the default implementation of receiveHandshakeCertificates()
-        assertDoesNotThrow(() -> holder.receiveHandshakeCertificates(null), 
+        assertDoesNotThrow(() -> holder.receiveHandshakeCertificates(null),
                 "Default implementation should not throw an exception even with null input");
         // end::test-receive-certificates[]
     }
-    
+
     @Test
     void shouldReturnNullForGetDispatcher() {
         // tag::test-get-dispatcher[]
@@ -71,7 +71,7 @@ class MockWebServerHolderTest {
         assertNull(holder.getDispatcher(), "Default implementation should return null");
         // end::test-get-dispatcher[]
     }
-    
+
     @Test
     void shouldReturnEmptyOptionalForGetTestProvidedHandshakeCertificates() {
         // tag::test-get-certificates[]
