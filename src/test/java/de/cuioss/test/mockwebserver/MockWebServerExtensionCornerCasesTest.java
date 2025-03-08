@@ -15,23 +15,17 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
-import okhttp3.tls.HandshakeCertificates;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ParameterResolver;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Optional;
-import javax.net.ssl.SSLContext;
 
 
 import mockwebserver3.Dispatcher;
@@ -42,10 +36,13 @@ import mockwebserver3.RecordedRequest;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for corner cases and error handling in {@link MockWebServerExtension}.
- * This class covers edge cases to improve test coverage.
+ * Tests for unique corner cases in {@link MockWebServerExtension} that aren't covered elsewhere.
+ * <p>
+ * Note: Most corner cases and error handling tests have been consolidated into
+ * {@link MockWebServerExtensionErrorHandlingTest} and {@link MockWebServerExtensionCertificateTest}.
+ * This class only contains tests for specific edge cases not covered by those classes.
  */
-@DisplayName("MockWebServerExtension Corner Cases")
+@DisplayName("MockWebServerExtension Unique Corner Cases")
 class MockWebServerExtensionCornerCasesTest {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerExtensionCornerCasesTest.class);
@@ -54,89 +51,35 @@ class MockWebServerExtensionCornerCasesTest {
     private static final String SERVER_SHOULD_BE_INJECTED = "Server should be injected";
     private static final String SERVER_SHOULD_BE_STARTED = "Server should be started";
     private static final String REQUEST_INTERRUPTED_MESSAGE = "Request was interrupted";
-    private static final String URIBUILDER_SHOULD_BE_INJECTED = "URIBuilder should be injected";
-    private static final String SSL_CONTEXT_SHOULD_BE_INJECTED = "SSL context should be injected";
 
     // tag::extension-corner-cases[]
     /**
-     * Tests for handling of invalid parameter types in {@link ParameterResolver}.
+     * Tests for handling of custom response headers.
      */
     @Nested
-    @DisplayName("Parameter Resolution Tests")
+    @DisplayName("Custom Response Headers Tests")
     @EnableMockWebServer
-    class ParameterResolutionTests {
-
-        @Test
-        @DisplayName("Should resolve all supported parameter types")
-        void shouldResolveAllSupportedParameterTypes(MockWebServer server, URIBuilder uriBuilder) {
-            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
-            assertNotNull(uriBuilder, URIBUILDER_SHOULD_BE_INJECTED);
-
-            // Verify the URIBuilder is properly configured with the server's URL
-            URI uri = uriBuilder.build();
-            assertEquals(server.getPort(), uri.getPort(), "URIBuilder should have correct port");
-        }
-    }
-
-    /**
-     * Tests for handling of class hierarchy and annotation inheritance.
-     */
-    @Nested
-    @DisplayName("Class Hierarchy Tests")
-    @ExtendWith(MockWebServerExtension.class)
-    class ClassHierarchyTests {
-
-        @Test
-        @DisplayName("Should work with extension but no annotation")
-        void shouldWorkWithExtensionButNoAnnotation(MockWebServer server) {
-            // The extension is registered but there's no @EnableMockWebServer annotation
-            // It should still work with default configuration
-            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
-            assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
-        }
-
-        /**
-         * Nested class to test deeper hierarchy
-         */
-        @Nested
-        @DisplayName("Nested Class Tests")
-        class DeeperNestedClass {
-
-            @Test
-            @DisplayName("Should work with extension in parent class")
-            void shouldWorkWithExtensionInParentClass(MockWebServer server) {
-                // The extension is registered on the parent class
-                // It should still work for nested classes
-                assertNotNull(server, SERVER_SHOULD_BE_INJECTED + " in nested class");
-                assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED + " in nested class");
-            }
-        }
-    }
-
-    /**
-     * Tests for error handling during server setup.
-     */
-    @Nested
-    @DisplayName("Error Handling Tests")
-    @EnableMockWebServer
-    class ErrorHandlingTests implements MockWebServerHolder {
+    class CustomResponseHeadersTests implements MockWebServerHolder {
 
         @Override
         public Dispatcher getDispatcher() {
             return new Dispatcher() {
+                @NotNull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@NotNull RecordedRequest request) {
                     return new MockResponse.Builder()
-                            .code(500)
-                            .body("Error response")
+                            .code(200)
+                            .addHeader("X-Custom-Header", "custom-value")
+                            .addHeader("Content-Type", "application/json")
+                            .body("{\"status\": \"success\"}")
                             .build();
                 }
             };
         }
 
         @Test
-        @DisplayName("Should handle server errors gracefully")
-        void shouldHandleServerErrorsGracefully(MockWebServer server, URIBuilder uriBuilder) {
+        @DisplayName("Should handle custom response headers")
+        void shouldHandleCustomResponseHeaders(MockWebServer server, URIBuilder uriBuilder) {
             assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
             assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
 
@@ -146,55 +89,33 @@ class MockWebServerExtensionCornerCasesTest {
                     .build();
 
             try {
-                // Make request that will receive a 500 error
+                // Make request to test custom headers
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(uriBuilder.addPathSegment("error").build())
+                        .uri(uriBuilder.build())
                         .GET()
                         .build();
 
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                assertEquals(500, response.statusCode(), "Should receive error response");
-                assertEquals("Error response", response.body(), "Should receive error body");
+
+                // Verify response code and body
+                assertEquals(200, response.statusCode(), "Should receive success response");
+                assertEquals("{\"status\": \"success\"}", response.body(), "Should receive correct response body");
+
+                // Verify custom headers
+                assertEquals("custom-value", response.headers().firstValue("X-Custom-Header").orElse(null),
+                        "Should have custom header");
+                assertEquals("application/json", response.headers().firstValue("Content-Type").orElse(null),
+                        "Should have correct content type");
+
+                LOGGER.info("Successfully verified custom response headers");
 
             } catch (IOException e) {
                 fail("Request should not throw exception: " + e.getMessage());
             } catch (InterruptedException e) {
-                // Restore the interrupted status
+                // Restore the interrupted status and throw a dedicated exception
                 Thread.currentThread().interrupt();
-                fail(REQUEST_INTERRUPTED_MESSAGE + ": " + e.getMessage());
+                throw new MockWebServerTestException(REQUEST_INTERRUPTED_MESSAGE, e);
             }
-        }
-    }
-
-    /**
-     * Tests for HTTPS configuration with invalid certificates.
-     */
-    @Nested
-    @DisplayName("HTTPS Configuration Tests")
-    @EnableMockWebServer(useHttps = true, testClassProvidesKeyMaterial = true)
-    class HttpsConfigurationTests implements MockWebServerHolder {
-
-        @Override
-        public Optional<HandshakeCertificates> getTestProvidedHandshakeCertificates() {
-            // Return empty to test fallback to self-signed certificates
-            return Optional.empty();
-        }
-
-        @Override
-        public Dispatcher getDispatcher() {
-            return CombinedDispatcher.createAPIDispatcher();
-        }
-
-        @Test
-        @DisplayName("Should fallback to self-signed certificates when test class returns empty")
-        void shouldFallbackToSelfSignedCertificates(MockWebServer server, SSLContext sslContext) {
-            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
-            assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
-            assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
-
-            // The test is configured to provide certificates but returns empty
-            // The extension should fall back to self-signed certificates
-            LOGGER.info("Server started with fallback certificates on port: " + server.getPort());
         }
     }
     // end::extension-corner-cases[]

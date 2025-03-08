@@ -18,10 +18,15 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
 import okhttp3.tls.HandshakeCertificates;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ParameterResolver;
 
+import java.io.IOException;
+import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -40,6 +45,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for error handling in {@link MockWebServerExtension}.
  * This class covers additional edge cases to improve test coverage.
+ * <p>
+ * This class consolidates all error handling and corner case tests to avoid duplication
+ * across multiple test classes while ensuring comprehensive coverage.
  */
 @DisplayName("MockWebServerExtension Error Handling")
 class MockWebServerExtensionErrorHandlingTest {
@@ -50,8 +58,118 @@ class MockWebServerExtensionErrorHandlingTest {
     private static final String SERVER_SHOULD_BE_INJECTED = "Server should be injected";
     private static final String SERVER_SHOULD_BE_STARTED = "Server should be started";
     private static final String SSL_CONTEXT_SHOULD_BE_INJECTED = "SSL context should be injected";
+    private static final String REQUEST_INTERRUPTED_MESSAGE = "Request was interrupted";
+    private static final String URIBUILDER_SHOULD_BE_INJECTED = "URIBuilder should be injected";
 
     // tag::extension-error-handling[]
+    /**
+     * Tests for handling of invalid parameter types in {@link ParameterResolver}.
+     */
+    @Nested
+    @DisplayName("Parameter Resolution Tests")
+    @EnableMockWebServer
+    class ParameterResolutionTests {
+
+        @Test
+        @DisplayName("Should resolve all supported parameter types")
+        void shouldResolveAllSupportedParameterTypes(MockWebServer server, URIBuilder uriBuilder) {
+            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
+            assertNotNull(uriBuilder, URIBUILDER_SHOULD_BE_INJECTED);
+
+            // Verify the URIBuilder is properly configured with the server's URL
+            URI uri = uriBuilder.build();
+            assertEquals(server.getPort(), uri.getPort(), "URIBuilder should have correct port");
+        }
+    }
+
+    /**
+     * Tests for handling of class hierarchy and annotation inheritance.
+     */
+    @Nested
+    @DisplayName("Class Hierarchy Tests")
+    @ExtendWith(MockWebServerExtension.class)
+    class ClassHierarchyTests {
+
+        @Test
+        @DisplayName("Should work with extension but no annotation")
+        void shouldWorkWithExtensionButNoAnnotation(MockWebServer server) {
+            // The extension is registered but there's no @EnableMockWebServer annotation
+            // It should still work with default configuration
+            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
+            assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
+        }
+
+        /**
+         * Nested class to test deeper hierarchy
+         */
+        @Nested
+        @DisplayName("Nested Class Tests")
+        class DeeperNestedClass {
+
+            @Test
+            @DisplayName("Should work with extension in parent class")
+            void shouldWorkWithExtensionInParentClass(MockWebServer server) {
+                // The extension is registered on the parent class
+                // It should still work for nested classes
+                assertNotNull(server, SERVER_SHOULD_BE_INJECTED + " in nested class");
+                assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED + " in nested class");
+            }
+        }
+    }
+
+    /**
+     * Tests for error handling during server setup.
+     */
+    @Nested
+    @DisplayName("Server Error Tests")
+    @EnableMockWebServer
+    class ServerErrorTests implements MockWebServerHolder {
+
+        @Override
+        public Dispatcher getDispatcher() {
+            return new Dispatcher() {
+                @NotNull
+                @Override
+                public MockResponse dispatch(@NotNull RecordedRequest request) {
+                    return new MockResponse.Builder()
+                            .code(500)
+                            .body("Error response")
+                            .build();
+                }
+            };
+        }
+
+        @Test
+        @DisplayName("Should handle server errors gracefully")
+        void shouldHandleServerErrorsGracefully(MockWebServer server, URIBuilder uriBuilder) {
+            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
+            assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
+
+            // Create HTTP client with timeout
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(2))
+                    .build();
+
+            try {
+                // Make request that will receive a 500 error
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(uriBuilder.addPathSegment("error").build())
+                        .GET()
+                        .build();
+
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                assertEquals(500, response.statusCode(), "Should receive error response");
+                assertEquals("Error response", response.body(), "Should receive error body");
+
+            } catch (IOException e) {
+                fail("Request should not throw exception: " + e.getMessage());
+            } catch (InterruptedException e) {
+                // Restore the interrupted status and throw a dedicated exception
+                Thread.currentThread().interrupt();
+                throw new MockWebServerTestException(REQUEST_INTERRUPTED_MESSAGE, e);
+            }
+        }
+    }
 
     /**
      * Tests for handling of multiple annotations in the class hierarchy.
@@ -140,8 +258,9 @@ class MockWebServerExtensionErrorHandlingTest {
         @Override
         public Dispatcher getDispatcher() {
             return new Dispatcher() {
+                @NotNull
                 @Override
-                public MockResponse dispatch(RecordedRequest request) {
+                public MockResponse dispatch(@NotNull RecordedRequest request) {
                     return new MockResponse.Builder()
                             .code(200)
                             .body("Success")
