@@ -171,15 +171,15 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
             var config = getConfig(enableMockWebServerAnnotation.orElse(null));
             LOGGER.debug("Using configuration: useHttps=%s, manualStart=%s, testClassProvidesKeyMaterial=%s",
-                    config.isUseHttps(), config.isManualStart(), config.isTestClassProvidesKeyMaterial());
+                    config.useHttps(), config.manualStart(), config.testClassProvidesKeyMaterial());
 
-            if (config.isUseHttps()) {
+            if (config.useHttps()) {
                 configureHttps(server, testInstance, context, config);
             }
 
             setMockWebServer(testInstance, server, context);
 
-            if (!config.isManualStart()) {
+            if (!config.manualStart()) {
                 startServer(server);
             } else {
                 ensureServerNotStarted(server);
@@ -322,7 +322,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      */
     private Optional<HandshakeCertificates> getHandshakeCertificates(Object testInstance, ExtensionContext context, MockServerConfig config) {
         // Strategy 1: Get certificates from test class if configured
-        if (config.isTestClassProvidesKeyMaterial()) {
+        if (config.testClassProvidesKeyMaterial()) {
             Optional<HandshakeCertificates> testClassCertificates = getTestClassProvidedCertificates(testInstance, context);
             if (testClassCertificates.isPresent()) {
                 LOGGER.info("Using certificates provided by test class");
