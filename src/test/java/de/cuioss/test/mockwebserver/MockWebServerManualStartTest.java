@@ -36,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for manual server start configuration in {@link MockWebServerExtension}.
  */
 @EnableMockWebServer(manualStart = true)
+@SuppressWarnings("java:S1612") // Suppress "Lambdas should be replaced with method references"
+        // Cannot be done here, start() is ambiguous
 class MockWebServerManualStartTest implements MockWebServerHolder {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerManualStartTest.class);

@@ -159,7 +159,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     private static final String SSL_CONTEXT_KEY = "SSL_CONTEXT";
 
     @Override
-    @SuppressWarnings("java:S2093") // owolff we solve it using finally block
+    @SuppressWarnings({"java:S2093", "java:S2095"}) // Owolff we solve it using finally block.
+    // Close is linked to 'shutdown',
+    // and we control it within this class
     public void beforeEach(ExtensionContext context) {
         LOGGER.debug("Setting up MockWebServer for test: %s", context.getDisplayName());
 

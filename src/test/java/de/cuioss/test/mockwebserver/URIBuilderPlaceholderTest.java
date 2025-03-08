@@ -130,6 +130,7 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("placeholderBehaviorTestCases")
+    @SuppressWarnings("java:S2699") // owolff: The assertion is in the lambda
     void placeholderBehavior(String testName, Consumer<URIBuilder> setup, Consumer<URIBuilder> verification) {
         // Given: A placeholder URIBuilder
         URIBuilder placeholder = URIBuilder.placeholder();
