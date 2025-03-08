@@ -147,6 +147,34 @@ class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer>, M
 }
 ----
 
+=== Manual Server Start
+
+The extension supports manual server start with the `manualStart = true` option. This is useful when you need more control over when and how the server is started:
+
+[source,java]
+----
+include::src/test/java/de/cuioss/test/mockwebserver/MockWebServerManualStartTest.java[tags=manual-start-test]
+----
+
+==== Important URIBuilder Precautions with Manual Start
+
+When using `manualStart = true`, you need to be careful with the injected `URIBuilder` parameter:
+
+* Before the server is started, the injected `URIBuilder` is a placeholder that cannot be used to build URIs
+* If you try to build a URI from this placeholder, it will throw an `IllegalStateException`
+* You must create a proper `URIBuilder` *after* manually starting the server
+
+[source,java]
+----
+// INCORRECT - Will throw IllegalStateException if server not started
+URI uri = uriBuilder.addPathSegment("api").build();
+
+// CORRECT - Create a proper URIBuilder after starting the server
+server.start();
+URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
+URI uri = properUriBuilder.addPathSegment("api").build();
+----
+
 === Parameter Injection
 
 MockWebServerExtension implements ParameterResolver, allowing direct injection of MockWebServer and related parameters into test methods. This is the recommended approach for accessing the server and related components.

@@ -16,19 +16,18 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @EnableMockWebServer(manualStart = true)
 class ManualStartMockWebServerTest implements MockWebServerHolder {
@@ -40,13 +39,16 @@ class ManualStartMockWebServerTest implements MockWebServerHolder {
     }
 
     @Test
-    void shouldHandleSimpleRequest(MockWebServer mockWebServer, URIBuilder uriBuilder) throws URISyntaxException, IOException, InterruptedException {
+    void shouldHandleSimpleRequest(MockWebServer mockWebServer) throws IOException, InterruptedException {
 
         assertDoesNotThrow(() -> mockWebServer.start());
 
+        // Create a proper URIBuilder now that the server is started
+        URIBuilder properUriBuilder = URIBuilder.from(mockWebServer.url("/").url());
+
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(uriBuilder.setPath("api").build())
+                .uri(properUriBuilder.setPath("api").build())
                 .GET()
                 .build();
 

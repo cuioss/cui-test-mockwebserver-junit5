@@ -15,13 +15,13 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+
+import mockwebserver3.MockWebServer;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the default implementations in {@link MockWebServerHolder}.

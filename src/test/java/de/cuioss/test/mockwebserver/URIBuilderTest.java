@@ -204,6 +204,73 @@ class URIBuilderTest {
         assertEquals("http://localhost:8080/api", result.toString());
     }
 
+    // tag::uribuilder-placeholder-test[]
+    @Test
+    @DisplayName("Should create a placeholder URIBuilder")
+    void shouldCreatePlaceholderURIBuilder() {
+        // When
+        URIBuilder placeholder = URIBuilder.placeholder();
+
+        // Then - Default values for placeholder
+        assertEquals("/", placeholder.getPath());
+        assertEquals("http", placeholder.getScheme());
+        assertEquals(-1, placeholder.getPort());
+    }
+
+    // end::uribuilder-placeholder-test[]
+    
+    // tag::uribuilder-placeholder-exception-test[]
+    @Test
+    @DisplayName("Should throw IllegalStateException when building URI from placeholder")
+    void shouldThrowExceptionWhenBuildingFromPlaceholder() {
+        // Given
+        URIBuilder placeholder = URIBuilder.placeholder();
+
+        // When/Then
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                placeholder::build);
+        assertEquals("Cannot build URI from placeholder URIBuilder. " +
+                "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())",
+                exception.getMessage());
+    }
+
+    // end::uribuilder-placeholder-exception-test[]
+    
+    @Test
+    @DisplayName("Should throw IllegalStateException when building string from placeholder")
+    void shouldThrowExceptionWhenBuildingStringFromPlaceholder() {
+        // Given
+        URIBuilder placeholder = URIBuilder.placeholder();
+
+        // When/Then
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                placeholder::buildAsString);
+        assertEquals("Cannot build URI from placeholder URIBuilder. " +
+                "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())",
+                exception.getMessage());
+    }
+
+    @Test
+    @DisplayName("Should allow adding path segments to placeholder without error")
+    void shouldAllowAddingPathSegmentsToPlaceholder() {
+        // Given
+        URIBuilder placeholder = URIBuilder.placeholder();
+
+        // When/Then - No exception should be thrown
+        placeholder.addPathSegment("api");
+        placeholder.addPathSegments("users", "123");
+    }
+
+    @Test
+    @DisplayName("Should allow adding query parameters to placeholder without error")
+    void shouldAllowAddingQueryParametersToPlaceholder() {
+        // Given
+        URIBuilder placeholder = URIBuilder.placeholder();
+
+        // When/Then - No exception should be thrown
+        placeholder.addQueryParameter("name", "value");
+    }
+
     @Test
     @DisplayName("Should return URI as string")
     void shouldReturnUriAsString() throws Exception {
@@ -226,6 +293,78 @@ class URIBuilderTest {
         assertThrows(NullPointerException.class, () -> URIBuilder.from(null));
     }
 
+    @Test
+    @DisplayName("Should throw IllegalStateException when baseUrl is null in non-placeholder URIBuilder")
+    void shouldThrowExceptionWhenBaseUrlIsNullInNonPlaceholder() throws Exception {
+        // Create a URIBuilder with reflection to bypass the normal constructor checks
+        URIBuilder builder = URIBuilder.from(new URL("http://localhost:8080/"));
+        
+        // Use reflection to set the baseUrl field to null
+        java.lang.reflect.Field baseUrlField = URIBuilder.class.getDeclaredField("baseUrl");
+        baseUrlField.setAccessible(true);
+        baseUrlField.set(builder, null);
+        
+        // When/Then
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                builder::build);
+        assertEquals("Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.",
+                exception.getMessage());
+    }
+    
+    @Test
+    @DisplayName("Should handle null baseUrl in getPath()")
+    void shouldHandleNullBaseUrlInGetPath() throws Exception {
+        // Create a URIBuilder with reflection to bypass the normal constructor checks
+        URIBuilder builder = URIBuilder.from(new URL("http://localhost:8080/"));
+        
+        // Use reflection to set the baseUrl field to null
+        java.lang.reflect.Field baseUrlField = URIBuilder.class.getDeclaredField("baseUrl");
+        baseUrlField.setAccessible(true);
+        baseUrlField.set(builder, null);
+        
+        // When/Then
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                builder::getPath);
+        assertEquals("Cannot access path with null baseUrl. This might indicate an incorrectly initialized URIBuilder.",
+                exception.getMessage());
+    }
+    
+    @Test
+    @DisplayName("Should handle null baseUrl in getScheme()")
+    void shouldHandleNullBaseUrlInGetScheme() throws Exception {
+        // Create a URIBuilder with reflection to bypass the normal constructor checks
+        URIBuilder builder = URIBuilder.from(new URL("http://localhost:8080/"));
+        
+        // Use reflection to set the baseUrl field to null
+        java.lang.reflect.Field baseUrlField = URIBuilder.class.getDeclaredField("baseUrl");
+        baseUrlField.setAccessible(true);
+        baseUrlField.set(builder, null);
+        
+        // When/Then
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                builder::getScheme);
+        assertEquals("Cannot access scheme with null baseUrl. This might indicate an incorrectly initialized URIBuilder.",
+                exception.getMessage());
+    }
+    
+    @Test
+    @DisplayName("Should handle null baseUrl in getPort()")
+    void shouldHandleNullBaseUrlInGetPort() throws Exception {
+        // Create a URIBuilder with reflection to bypass the normal constructor checks
+        URIBuilder builder = URIBuilder.from(new URL("http://localhost:8080/"));
+        
+        // Use reflection to set the baseUrl field to null
+        java.lang.reflect.Field baseUrlField = URIBuilder.class.getDeclaredField("baseUrl");
+        baseUrlField.setAccessible(true);
+        baseUrlField.set(builder, null);
+        
+        // When/Then
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                builder::getPort);
+        assertEquals("Cannot access port with null baseUrl. This might indicate an incorrectly initialized URIBuilder.",
+                exception.getMessage());
+    }
+    
     @Test
     @DisplayName("Should throw NullPointerException when path segment is null")
     void shouldThrowExceptionWhenPathSegmentIsNull() throws Exception {

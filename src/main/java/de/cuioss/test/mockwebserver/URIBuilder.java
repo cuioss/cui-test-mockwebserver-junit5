@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
  * Example usage:
  * <pre>
  * {@code
+ * // tag::uribuilder-basic-usage[]
  * URI uri = URIBuilder.from(serverURL)
  *     .addPathSegment("api")
  *     .addPathSegment("users")
@@ -43,6 +44,7 @@ import java.util.stream.Collectors;
  *     .build();
  *
  * // Creates a URI like: http://localhost:12345/api/users?filter=active
+ * // end::uribuilder-basic-usage[]
  * }
  * </pre>
  */
@@ -51,10 +53,27 @@ public class URIBuilder {
     private final URL baseUrl;
     private final List<String> pathSegments = new ArrayList<>();
     private final Map<String, List<String>> queryParameters = new LinkedHashMap<>();
+    private final boolean placeholder;
 
     private URIBuilder(URL baseUrl) {
         this.baseUrl = baseUrl;
+        this.placeholder = false;
     }
+
+    /**
+     * Creates a placeholder URIBuilder that can be used when the server is not yet started.
+     * This is useful for manual server start configurations.
+     * 
+     * @implNote When using a placeholder URIBuilder, you must start the server before calling
+     * {@link #build()} or any other method that requires the base URL.
+     */
+    // tag::uribuilder-placeholder-constructor[]
+    private URIBuilder() {
+        this.baseUrl = null;
+        this.placeholder = true;
+    }
+
+    // end::uribuilder-placeholder-constructor[]
 
     /**
      * Creates a new builder with the given base URL.
@@ -65,6 +84,21 @@ public class URIBuilder {
     public static URIBuilder from(@NonNull URL baseUrl) {
         return new URIBuilder(baseUrl);
     }
+
+    /**
+     * Creates a placeholder URIBuilder that can be used when the server is not yet started.
+     * This is useful for manual server start configurations.
+     * 
+     * @return a new placeholder builder instance
+     * @implNote When using a placeholder URIBuilder, you must start the server before calling
+     * {@link #build()} or any other method that requires the base URL.
+     */
+    // tag::uribuilder-placeholder[]
+    public static URIBuilder placeholder() {
+        return new URIBuilder();
+    }
+
+    // end::uribuilder-placeholder[]
 
     /**
      * Adds a path segment to the URI.
@@ -121,6 +155,15 @@ public class URIBuilder {
      * @return the constructed URI
      */
     public URI build() {
+        if (placeholder) {
+            throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
+                    "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())");
+        }
+        
+        if (baseUrl == null) {
+            throw new IllegalStateException("Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
+        }
+
         String baseUrlString = baseUrl.toString();
         StringBuilder uriBuilder = new StringBuilder();
 
@@ -155,8 +198,17 @@ public class URIBuilder {
      * Builds the URI and returns it as a string.
      *
      * @return the constructed URI as a string
+     * @throws IllegalStateException if this is a placeholder URIBuilder
      */
     public String buildAsString() {
+        if (placeholder) {
+            throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
+                    "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())");
+        }
+        
+        if (baseUrl == null) {
+            throw new IllegalStateException("Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
+        }
         return build().toString();
     }
 
@@ -167,6 +219,12 @@ public class URIBuilder {
      * @return the path from the base URL
      */
     public String getPath() {
+        if (placeholder) {
+            return "/";
+        }
+        if (baseUrl == null) {
+            throw new IllegalStateException("Cannot access path with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
+        }
         return baseUrl.getPath();
     }
 
@@ -176,6 +234,12 @@ public class URIBuilder {
      * @return the scheme from the base URL (e.g., "http" or "https")
      */
     public String getScheme() {
+        if (placeholder) {
+            return "http";
+        }
+        if (baseUrl == null) {
+            throw new IllegalStateException("Cannot access scheme with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
+        }
         return baseUrl.getProtocol();
     }
 
@@ -185,6 +249,12 @@ public class URIBuilder {
      * @return the port from the base URL
      */
     public int getPort() {
+        if (placeholder) {
+            return -1; // -1 indicates no port is explicitly set
+        }
+        if (baseUrl == null) {
+            throw new IllegalStateException("Cannot access port with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
+        }
         return baseUrl.getPort();
     }
 

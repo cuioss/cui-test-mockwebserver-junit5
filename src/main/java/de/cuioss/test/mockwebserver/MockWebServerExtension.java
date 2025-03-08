@@ -18,6 +18,7 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.Joiner;
+import mockwebserver3.MockWebServer;
 import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -28,16 +29,12 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
 
+import javax.net.ssl.SSLContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import javax.net.ssl.SSLContext;
-
-
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
 
 /**
  * JUnit 5 extension that manages the lifecycle of {@link MockWebServer} instances.
@@ -160,7 +157,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     private static final String SSL_CONTEXT_KEY = "SSL_CONTEXT";
 
     @Override
-    public void beforeEach(ExtensionContext context) throws Exception {
+    public void beforeEach(ExtensionContext context) {
         LOGGER.debug("Setting up MockWebServer for test: %s", context.getDisplayName());
 
         try {
@@ -188,6 +185,15 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                     throw new IllegalStateException(errorMessage, e);
                 }
             } else {
+                // When manual start is requested, ensure the server is not started
+                if (server.getStarted()) {
+                    try {
+                        server.shutdown();
+                        LOGGER.info("Shutdown server to enforce manual start configuration");
+                    } catch (Exception e) {
+                        LOGGER.warn("Failed to shutdown server for manual start: {}", e.getMessage());
+                    }
+                }
                 LOGGER.info("Manual start requested, server not started");
             }
 
@@ -290,7 +296,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         }
 
         // Strategy 2: Try to get cached certificates from context
-        Optional<HandshakeCertificates> cachedCertificates = getSelfSignedCertificatesFromContext(context, config);
+        Optional<HandshakeCertificates> cachedCertificates = getSelfSignedCertificatesFromContext(context);
         if (cachedCertificates.isPresent()) {
             LOGGER.info("Reusing cached self-signed HandshakeCertificates");
             return cachedCertificates;
@@ -314,7 +320,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                     config.getKeyAlgorithm());
 
             // Store in context for reuse
-            storeSelfSignedCertificatesInContext(context, certificates, config);
+            storeSelfSignedCertificatesInContext(context, certificates);
 
             LOGGER.info("Generated and cached new self-signed HandshakeCertificates with algorithm %s and duration %s days",
                     config.getKeyAlgorithm(), config.getCertificateDuration());
@@ -479,10 +485,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Retrieves cached certificates from the context.
      *
      * @param context the extension context
-     * @param config the configuration
      * @return an Optional containing HandshakeCertificates
      */
-    private Optional<HandshakeCertificates> getSelfSignedCertificatesFromContext(ExtensionContext context, MockServerConfig config) {
+    private Optional<HandshakeCertificates> getSelfSignedCertificatesFromContext(ExtensionContext context) {
         // Get the root context to ensure certificates are shared across all tests in the class
         ExtensionContext rootContext = getRootContext(context);
 
@@ -500,9 +505,8 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      *
      * @param context the extension context
      * @param certificates the certificates to store
-     * @param config the configuration
      */
-    private void storeSelfSignedCertificatesInContext(ExtensionContext context, HandshakeCertificates certificates, MockServerConfig config) {
+    private void storeSelfSignedCertificatesInContext(ExtensionContext context, HandshakeCertificates certificates) {
         // Store in the root context to ensure certificates are shared across all tests in the class
         ExtensionContext rootContext = getRootContext(context);
 
@@ -628,7 +632,15 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      */
     private URIBuilder resolveUrlBuilderParameter(MockWebServer server) {
         try {
-            return URIBuilder.from(server.url("/").url());
+            // Check if the server is already started
+            if (server.getStarted()) {
+                return URIBuilder.from(server.url("/").url());
+            } else {
+                // For manual start configuration, create a placeholder URIBuilder
+                // that will be updated when the server is actually started
+                LOGGER.debug("Creating placeholder URIBuilder for non-started server");
+                return URIBuilder.placeholder();
+            }
         } catch (Exception e) {
             LOGGER.error("Failed to create URIBuilder from MockWebServer URL", e);
             throw new ParameterResolutionException(
