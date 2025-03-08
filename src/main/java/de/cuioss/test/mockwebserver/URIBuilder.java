@@ -260,6 +260,36 @@ public class URIBuilder {
 
     /**
      * Sets the path for this URI builder, replacing any existing path segments.
+     * <p>
+     * This method provides several benefits compared to using {@link #addPathSegment(String)}:
+     * <ul>
+     *   <li>Complete path replacement: Clears all existing path segments and sets a new path</li>
+     *   <li>Convenience for complete paths: When you already have a complete path string (like "/api/users")</li>
+     *   <li>Working with existing path strings: Allows direct use of paths from other sources</li>
+     *   <li>Compatibility with APIs that return full paths: Use complete paths as-is</li>
+     * </ul>
+     * </p>
+     * <p>
+     * Example usage:
+     * <pre>
+     * {@code
+     * // Using a complete path directly
+     * String apiPath = "/api/v2/users";
+     * URIBuilder.from(baseUrl).setPath(apiPath).build();
+     * 
+     * // Replacing an existing path
+     * builder.setPath("/new/path").build();
+     * }
+     * </pre>
+     * </p>
+     * <p>
+     * In contrast, {@link #addPathSegment(String)} is preferred when:
+     * <ul>
+     *   <li>Building paths from logical components with clear segment separation</li>
+     *   <li>Adding path parts conditionally or incrementally</li>
+     *   <li>Avoiding manual path string manipulation and slash handling</li>
+     * </ul>
+     * </p>
      *
      * @param path the path to set
      * @return this builder for method chaining
