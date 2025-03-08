@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for parameter resolution functionality in {@link MockWebServerExtension}.
  */
 @EnableMockWebServer
-public class MockWebServerParameterResolutionTest {
+class MockWebServerParameterResolutionTest {
 
     // tag::parameter-resolution-test[]
     @Test

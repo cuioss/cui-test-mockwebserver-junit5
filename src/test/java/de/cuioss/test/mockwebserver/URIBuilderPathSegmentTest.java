@@ -112,7 +112,7 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("pathSegmentTestCases")
-    void testPathSegmentHandling(String testName, String baseUrlString, String[] pathSegments, String expectedResult) {
+    void pathSegmentHandling(String testName, String baseUrlString, String[] pathSegments, String expectedResult) {
         // Use the utility method from the base class to test path segment handling
         // This provides a consistent way to test URI building across all test classes
         assertUriPathBuilding(baseUrlString, builder -> {

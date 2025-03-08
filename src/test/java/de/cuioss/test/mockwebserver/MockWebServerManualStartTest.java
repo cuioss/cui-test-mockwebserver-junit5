@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for manual server start configuration in {@link MockWebServerExtension}.
  */
 @EnableMockWebServer(manualStart = true)
-public class MockWebServerManualStartTest implements MockWebServerHolder {
+class MockWebServerManualStartTest implements MockWebServerHolder {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerManualStartTest.class);
 

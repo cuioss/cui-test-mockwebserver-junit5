@@ -18,6 +18,8 @@ package de.cuioss.test.mockwebserver;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 
 import mockwebserver3.MockWebServer;
 
@@ -49,9 +51,12 @@ class MockWebServerHolderTest {
     void shouldDoNothingForSetMockWebServer() {
         // tag::test-set-mockwebserver[]
         // Test the default implementation of setMockWebServer()
-        MockWebServer server = new MockWebServer();
-        assertDoesNotThrow(() -> holder.setMockWebServer(server),
-                "Default implementation should not throw an exception");
+        try (MockWebServer server = new MockWebServer()) {
+            assertDoesNotThrow(() -> holder.setMockWebServer(server),
+                    "Default implementation should not throw an exception");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         // end::test-set-mockwebserver[]
     }
 

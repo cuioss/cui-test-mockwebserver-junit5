@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
 import okhttp3.tls.HandshakeCertificates;
 
 import java.util.Optional;

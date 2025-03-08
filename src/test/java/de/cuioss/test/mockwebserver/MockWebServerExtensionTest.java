@@ -20,7 +20,6 @@ import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -45,7 +44,7 @@ class MockWebServerExtensionTest implements MockWebServerHolder {
     }
 
     @Test
-    void shouldHandleSimpleRequest(URIBuilder uriBuilder) throws URISyntaxException, IOException, InterruptedException {
+    void shouldHandleSimpleRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uriBuilder.setPath("api").build())

@@ -18,9 +18,11 @@ package de.cuioss.test.mockwebserver.dispatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.Setter;
-import mockwebserver3.MockResponse;
 
 import java.util.Optional;
+
+
+import mockwebserver3.MockResponse;
 
 /**
  * Utility class for managing HTTP responses in test scenarios. Provides pre-configured responses
@@ -91,9 +93,9 @@ public class EndpointAnswerHandler {
      */
     public static final MockResponse RESPONSE_OK = new MockResponse.Builder()
             .addHeader("Content-Type", "text/plain")
-                            .body(RESPONSE_SUCCESSFUL_BODY)
-                            .code(HttpServletResponse.SC_OK)
-                            .build();;
+            .body(RESPONSE_SUCCESSFUL_BODY)
+            .code(HttpServletResponse.SC_OK)
+            .build();
 
     /**
      * Empty response with status code 204 No Content.

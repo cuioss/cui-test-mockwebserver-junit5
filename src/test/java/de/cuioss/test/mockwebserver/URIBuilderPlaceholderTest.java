@@ -74,7 +74,7 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("placeholderExceptionTestCases")
-    void testPlaceholderExceptions(String testName, Function<URIBuilder, Object> functionToCall, String expectedMessage) {
+    void placeholderExceptions(String testName, Function<URIBuilder, Object> functionToCall, String expectedMessage) {
         // Given: A placeholder URIBuilder
         URIBuilder placeholder = URIBuilder.placeholder();
 
@@ -130,7 +130,7 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("placeholderBehaviorTestCases")
-    void testPlaceholderBehavior(String testName, Consumer<URIBuilder> setup, Consumer<URIBuilder> verification) {
+    void placeholderBehavior(String testName, Consumer<URIBuilder> setup, Consumer<URIBuilder> verification) {
         // Given: A placeholder URIBuilder
         URIBuilder placeholder = URIBuilder.placeholder();
 

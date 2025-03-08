@@ -17,6 +17,7 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -37,7 +38,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for HTTPS configuration with self-signed certificates in {@link MockWebServerExtension}.
  */
 @EnableMockWebServer(useHttps = true)
-public class MockWebServerHttpsTest implements MockWebServerHolder {
+class MockWebServerHttpsTest implements MockWebServerHolder {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerHttpsTest.class);
 
@@ -92,7 +93,7 @@ public class MockWebServerHttpsTest implements MockWebServerHolder {
                 .build();
 
         // Make HTTPS request - should fail with SSL handshake exception
-        try {
+        Assertions.assertDoesNotThrow(() -> {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uriBuilder.addPathSegments("api", "test").build())
                     .GET()
@@ -111,9 +112,7 @@ public class MockWebServerHttpsTest implements MockWebServerHolder {
 
             assertTrue(isHandshakeException, "Exception should be related to SSL handshake failure");
 
-        } catch (Exception e) {
-            fail("Failed to create request or execute test: " + e.getMessage());
-        }
+        }, "Failed to create request or execute test: ");
     }
     // end::https-test[]
 }

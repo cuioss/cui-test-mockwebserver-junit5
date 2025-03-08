@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for inheritance behavior with the {@link MockWebServerExtension}.
  */
 @EnableMockWebServer
-public class MockWebServerInheritanceTest implements MockWebServerHolder {
+class MockWebServerInheritanceTest implements MockWebServerHolder {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerInheritanceTest.class);
 

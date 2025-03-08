@@ -43,7 +43,7 @@ class EndpointDispatcherExampleTest implements MockWebServerHolder {
 
     @Test
     @DisplayName("Should handle requests using EndpointAnswerHandler")
-    void testWithEndpointDispatcher(URIBuilder uriBuilder) throws IOException, InterruptedException {
+    void withEndpointDispatcher(URIBuilder uriBuilder) throws IOException, InterruptedException {
 
         // Create HttpClient
         HttpClient client = HttpClient.newHttpClient();

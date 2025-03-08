@@ -58,7 +58,7 @@ class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("specialCharacterTestCases")
-    void testSpecialCharacterHandling(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
+    void specialCharacterHandling(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
         // Use the utility method from the base class to test URI building with special characters
         // This handles both path segments and query parameters in a consistent way
         assertUriBuilding(baseUrlString, setup, expectedResult);
@@ -92,7 +92,7 @@ class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("complexUrlBuildingTestCases")
-    void testComplexUrlBuilding(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
+    void complexUrlBuilding(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
         // Use the utility method from the base class to test complex URL building
         // This handles both path segments and query parameters in a consistent way
         assertUriBuilding(baseUrlString, setup, expectedResult);

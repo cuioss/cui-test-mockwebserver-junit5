@@ -80,7 +80,7 @@ class KeyMaterialUtilTest {
     void shouldThrowExceptionWhenHandshakeCertificatesIsNull() {
         // Arrange & Act & Assert
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> KeyMaterialUtil.createSslContext((HandshakeCertificates) null));
+                () -> KeyMaterialUtil.createSslContext(null));
 
         assertEquals("HandshakeCertificates must not be null", exception.getMessage(),
                 "Exception message should indicate null HandshakeCertificates");
@@ -107,7 +107,7 @@ class KeyMaterialUtilTest {
     void shouldThrowExceptionWhenSslContextIsNull() {
         // Arrange & Act & Assert
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                () -> KeyMaterialUtil.convertToHandshakeCertificates((SSLContext) null));
+                () -> KeyMaterialUtil.convertToHandshakeCertificates(null));
 
         assertEquals("SSLContext must not be null", exception.getMessage(),
                 "Exception message should indicate null SSLContext");

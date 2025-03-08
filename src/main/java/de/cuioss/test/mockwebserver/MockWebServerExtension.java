@@ -51,12 +51,12 @@ import mockwebserver3.MockWebServer;
  *   <li>Integration with {@link MockWebServerHolder} for server access (legacy approach)</li>
  *   <li>HTTPS support with both self-signed and custom certificates</li>
  * </ul>
- * 
+ *
  * <h2>Recommended Usage: Parameter Injection</h2>
  * <p>
  * The recommended approach is to use parameter injection rather than implementing the
  * {@link MockWebServerHolder} interface:
- * 
+ *
  * <pre>
  * {@code
  * @EnableMockWebServer
@@ -74,7 +74,7 @@ import mockwebserver3.MockWebServer;
  *                     .build();
  *             }
  *         });
- *         
+ *
  *         // Use the URIBuilder for request construction
  *         URI requestUri = uriBuilder.addPathSegment("api").addPathSegment("data").build();
  *     }
@@ -108,20 +108,20 @@ import mockwebserver3.MockWebServer;
  *                 return new MockResponse().setResponseCode(404);
  *             }
  *         });
- *         
+ *
  *         // Create HttpClient with the injected SSLContext
  *         HttpClient client = HttpClient.newBuilder()
  *             .sslContext(sslContext)
  *             .build();
- *             
+ *
  *         // Create request using the URIBuilder parameter
  *         HttpRequest request = HttpRequest.newBuilder()
  *             .uri(uriBuilder.setPath("/api/data").build())
  *             .GET()
  *             .build();
- *             
+ *
  *         // Send request and verify response
- *         HttpResponse<String> response = client.send(request, 
+ *         HttpResponse<String> response = client.send(request,
  *             HttpResponse.BodyHandlers.ofString());
  *         assertEquals(200, response.statusCode());
  *         assertEquals("Hello World", response.body());
@@ -129,7 +129,6 @@ import mockwebserver3.MockWebServer;
  * }
  * }
  * </pre>
- *
  *
  * @author Oliver Wolff
  * @see EnableMockWebServer
@@ -160,6 +159,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     private static final String SSL_CONTEXT_KEY = "SSL_CONTEXT";
 
     @Override
+    @SuppressWarnings("java:S2093") // owolff we solve it using finally block
     public void beforeEach(ExtensionContext context) {
         LOGGER.debug("Setting up MockWebServer for test: %s", context.getDisplayName());
 
@@ -191,10 +191,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             server = null;
             LOGGER.debug("MockWebServer setup completed successfully");
         } catch (Exception e) {
-            if (!(e instanceof IllegalStateException)) {
+            if (e instanceof IllegalStateException stateException) {
+                throw stateException;
+            } else {
                 LOGGER.error("Unexpected error during MockWebServer setup", e);
             }
-            throw e;
         } finally {
             // Close the server if something went wrong and we didn't store it in context
             if (server != null) {
@@ -254,8 +255,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
         return classHierarchy.stream()
                 .map(clazz -> AnnotationSupport.findAnnotation(clazz, EnableMockWebServer.class))
-                .filter(Optional::isPresent)
-                .map(Optional::get)
+                .flatMap(Optional::stream)
                 .findFirst();
     }
 
@@ -280,10 +280,10 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     /**
      * Configures HTTPS for the MockWebServer instance.
      *
-     * @param server the MockWebServer instance to configure
+     * @param server       the MockWebServer instance to configure
      * @param testInstance the test class instance
-     * @param context the extension context
-     * @param config the configuration settings
+     * @param context      the extension context
+     * @param config       the configuration settings
      * @throws IllegalStateException if certificate material cannot be obtained
      */
     private void configureHttps(MockWebServer server, Object testInstance, ExtensionContext context, MockServerConfig config) {
@@ -316,8 +316,8 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Obtains HandshakeCertificates for HTTPS configuration.
      *
      * @param testInstance the test class instance
-     * @param context the extension context
-     * @param config the configuration
+     * @param context      the extension context
+     * @param config       the configuration
      * @return an Optional containing HandshakeCertificates if available
      */
     private Optional<HandshakeCertificates> getHandshakeCertificates(Object testInstance, ExtensionContext context, MockServerConfig config) {
@@ -346,7 +346,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Creates self-signed certificates and stores them in the context.
      *
      * @param context the extension context
-     * @param config the configuration
+     * @param config  the configuration
      * @return an Optional containing the created HandshakeCertificates
      */
     private Optional<HandshakeCertificates> createAndStoreSelfSignedCertificates(ExtensionContext context, MockServerConfig config) {
@@ -372,7 +372,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Retrieves HandshakeCertificates from the test class.
      *
      * @param testInstance the test class instance
-     * @param context the extension context
+     * @param context      the extension context
      * @return an Optional containing HandshakeCertificates
      */
     private Optional<HandshakeCertificates> getTestClassProvidedCertificates(Object testInstance, ExtensionContext context) {
@@ -394,9 +394,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
     /**
      * Stores the SSLContext for parameter resolution.
-     * 
-     * @param testInstance the test instance
-     * @param context the extension context
+     *
+     * @param testInstance          the test instance
+     * @param context               the extension context
      * @param handshakeCertificates the HandshakeCertificates
      */
     private void notifyTestClassAboutCertificates(Object testInstance, ExtensionContext context, HandshakeCertificates handshakeCertificates) {
@@ -425,10 +425,10 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
     /**
      * Sets the MockWebServer instance on the test class if it implements MockWebServerHolder.
-     * 
-     * @param testInstance the test instance
+     *
+     * @param testInstance  the test instance
      * @param mockWebServer the MockWebServer instance
-     * @param context the extension context
+     * @param context       the extension context
      * @deprecated This method uses deprecated methods in MockWebServerHolder interface.
      * Will be removed in version 1.2 when the deprecated methods are removed.
      */
@@ -448,7 +448,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Finds a MockWebServerHolder implementation in the test class hierarchy.
      *
      * @param testInstance the test class instance
-     * @param context the extension context
+     * @param context      the extension context
      * @return an Optional containing the MockWebServerHolder
      */
     private Optional<MockWebServerHolder> findMockWebServerHolder(Object testInstance, ExtensionContext context) {
@@ -517,7 +517,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Stores the MockWebServer instance in the extension context.
      *
      * @param mockWebServer the MockWebServer instance to store
-     * @param context the extension context
+     * @param context       the extension context
      */
     private static void put(MockWebServer mockWebServer, ExtensionContext context) {
         context.getStore(NAMESPACE).put(MockWebServer.class.getName(), mockWebServer);
@@ -555,7 +555,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     /**
      * Stores certificates in the extension context.
      *
-     * @param context the extension context
+     * @param context      the extension context
      * @param certificates the certificates to store
      */
     private void storeSelfSignedCertificatesInContext(ExtensionContext context, HandshakeCertificates certificates) {
@@ -572,6 +572,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @param context the current extension context
      * @return the root context
      */
+    @SuppressWarnings("java:S3655") // owolff: This is a false positive, the check for present is in the while loop
     private ExtensionContext getRootContext(ExtensionContext context) {
         ExtensionContext current = context;
         while (current.getParent().isPresent()) {
@@ -611,7 +612,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     /**
      * Adds a class and its superclasses to the hierarchy list.
      *
-     * @param clazz the starting class
+     * @param clazz     the starting class
      * @param hierarchy the list to add classes to
      */
     private void addClassHierarchy(Class<?> clazz, List<Class<?>> hierarchy) {
@@ -702,7 +703,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
     /**
      * Resolves an SSLContext parameter for test methods.
-     * 
+     *
      * @param context the extension context
      * @return the SSLContext for HTTPS configuration
      * @throws ParameterResolutionException if no SSLContext is available

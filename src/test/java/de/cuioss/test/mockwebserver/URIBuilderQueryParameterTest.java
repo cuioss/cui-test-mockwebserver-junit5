@@ -82,7 +82,7 @@ class URIBuilderQueryParameterTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("queryParameterTestCases")
-    void testQueryParameterHandling(String testName, String baseUrlString, Map<String, String[]> queryParams, String expectedResult) {
+    void queryParameterHandling(String testName, String baseUrlString, Map<String, String[]> queryParams, String expectedResult) {
         // Given: Create a URIBuilder with the specified base URL
         URI baseUri = URI.create(baseUrlString);
         URIBuilder builder = URIBuilder.from(baseUri);

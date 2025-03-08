@@ -39,6 +39,8 @@ class ManualStartMockWebServerTest implements MockWebServerHolder {
     }
 
     @Test
+    @SuppressWarnings("java:S1612") // Suppress "Lambdas should be replaced with method references"
+    // Cannot be done here, start() is ambiguous
     void shouldHandleSimpleRequest(MockWebServer mockWebServer) throws IOException, InterruptedException {
 
         assertDoesNotThrow(() -> mockWebServer.start());

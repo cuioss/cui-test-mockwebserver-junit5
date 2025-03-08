@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 /**
  * Tests for exception handling functionality of {@link URIBuilder}.
  */
-@SuppressWarnings("ConstantValue")
+@SuppressWarnings({"ConstantValue", "DataFlowIssue"})
 class URIBuilderExceptionTest extends URIBuilderTestBase {
 
     // tag::exception-handling[]
@@ -73,7 +73,7 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("nullBaseUrlExceptionTestCases")
-    void testNullBaseUrlExceptions(String testName, Function<URIBuilder, Object> functionToCall, String expectedMessage)
+    void nullBaseUrlExceptions(String testName, Function<URIBuilder, Object> functionToCall, String expectedMessage)
             throws NoSuchFieldException, IllegalAccessException {
         // Given: Create a URIBuilder and set its baseUrl field to null using reflection
         URIBuilder builder = URIBuilder.from(URI.create(BASE_URL));

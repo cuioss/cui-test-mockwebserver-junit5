@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for HTTPS configuration with custom certificates provided by the test class.
  */
 @EnableMockWebServer(useHttps = true, testClassProvidesKeyMaterial = true)
-public class MockWebServerCustomCertificatesTest implements MockWebServerHolder {
+class MockWebServerCustomCertificatesTest implements MockWebServerHolder {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerCustomCertificatesTest.class);
 
