@@ -36,6 +36,9 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @ExtendWith(MockWebServerExtension.class)
 @EnableMockWebServer(manualStart = true)
+@SuppressWarnings("java:S1612")
+// Suppress "Lambdas should be replaced with method references"
+// Cannot be done here, start() is ambiguous
 class MockWebServerExtensionManualTest implements MockWebServerHolder {
 
     @Test

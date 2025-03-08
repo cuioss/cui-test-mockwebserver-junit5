@@ -52,6 +52,7 @@ class MockWebServerExtensionErrorHandlingTest {
     private static final String SSL_CONTEXT_SHOULD_BE_INJECTED = "SSL context should be injected";
 
     // tag::extension-error-handling[]
+
     /**
      * Tests for handling of multiple annotations in the class hierarchy.
      */
@@ -124,7 +125,7 @@ class MockWebServerExtensionErrorHandlingTest {
             assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
 
             // The test returns empty for certificates, but the extension should fall back to self-signed
-            LOGGER.info("Server started with fallback certificates on port: " + server.getPort());
+            LOGGER.info("Server started with fallback certificates on port: %s", server.getPort());
         }
     }
 
@@ -162,7 +163,7 @@ class MockWebServerExtensionErrorHandlingTest {
                         secondServer.start(server.getPort())
                 );
 
-                LOGGER.info("Expected port conflict exception: " + exception.getMessage());
+                LOGGER.info("Expected port conflict exception: %s", exception.getMessage());
 
                 // The original server should still be functional
                 HttpClient client = HttpClient.newBuilder()
