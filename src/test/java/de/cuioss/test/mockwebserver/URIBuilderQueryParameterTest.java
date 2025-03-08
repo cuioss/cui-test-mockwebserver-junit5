@@ -22,15 +22,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests for query parameter handling functionality of {@link URIBuilder}.
  */
+@SuppressWarnings("DataFlowIssue")
 class URIBuilderQueryParameterTest extends URIBuilderTestBase {
 
     // tag::query-parameter-handling[]
@@ -93,21 +93,10 @@ class URIBuilderQueryParameterTest extends URIBuilderTestBase {
                 builder.addQueryParameter(paramName, value);
             }
         });
-        URI result = builder.build();
 
-        // Then: Verify components separately since query parameter order may vary
-        URI expectedUri = URI.create(expectedResult);
-
-        // Verify scheme, host, port, and path are the same
-        assertEquals(expectedUri.getScheme(), result.getScheme());
-        assertEquals(expectedUri.getHost(), result.getHost());
-        assertEquals(expectedUri.getPort(), result.getPort());
-        assertEquals(expectedUri.getPath(), result.getPath());
-
-        // Verify query parameters (order-independent)
-        Map<String, List<String>> expectedParams = parseQueryParams(expectedUri.getQuery());
-        Map<String, List<String>> actualParams = parseQueryParams(result.getQuery());
-        assertEquals(expectedParams, actualParams, "Query parameters don't match");
+        // Then: Use the utility method from the base class to verify the result
+        // This handles query parameter order differences automatically
+        assertUriBuilding(baseUrlString, b -> builder, expectedResult);
     }
 
     // end::query-parameter-handling[]
@@ -115,61 +104,49 @@ class URIBuilderQueryParameterTest extends URIBuilderTestBase {
     @Test
     @DisplayName("Should combine path segments and query parameters")
     void shouldCombinePathSegmentsAndQueryParameters() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
+        // Given: Expected URI with path segments and query parameters
+        String expectedUri = BASE_URL_NO_SLASH + "/" + API_PATH + "/" + USERS_PATH + "?filter=active&page=1";
 
-        // When: Adding path segments and query parameters
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegments(API_PATH, USERS_PATH)
-                .addQueryParameter(FILTER_PARAM, "active")
-                .addQueryParameter(PAGE_PARAM, "1")
-                .build();
-
-        // Then: Verify the result contains both path segments and query parameters
-        assertEquals(BASE_URL_NO_SLASH + "/" + API_PATH + "/" + USERS_PATH + "?filter=active&page=1", result.toString());
+        // When/Then: Use the utility method from the base class to verify the result
+        assertUriBuilding(BASE_URL, builder -> builder
+                        .addPathSegments(API_PATH, USERS_PATH)
+                        .addQueryParameter(FILTER_PARAM, "active")
+                        .addQueryParameter(PAGE_PARAM, "1"),
+                expectedUri);
     }
 
     @Test
     @DisplayName("Should handle empty query parameters list")
     void shouldHandleEmptyQueryParametersList() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
+        // Given: Expected URI with only path segment
+        String expectedUri = BASE_URL_NO_SLASH + "/" + API_PATH;
 
-        // When: Adding path segment but no query parameters
-        URI result = URIBuilder.from(baseUri)
+        // When/Then: Use the utility method from the base class to verify the result
+        assertUriPathBuilding(BASE_URL, builder -> builder
+                        .addPathSegment(API_PATH),
+                expectedUri);
+
+        // Additional verification for null query
+        URI result = URIBuilder.from(URI.create(BASE_URL))
                 .addPathSegment(API_PATH)
-                // No query parameters added
                 .build();
-
-        // Then: Verify the result has no query string
-        assertEquals(BASE_URL_NO_SLASH + "/" + API_PATH, result.toString());
-        // Verify the query string is empty
-        assertNull(result.getQuery());
+        assertNull(result.getQuery(), "Query string should be null");
     }
 
     @Test
     @DisplayName("Should handle multiple query parameters with same name and different values")
     void shouldHandleMultipleQueryParametersWithSameNameAndDifferentValues() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding multiple query parameters with the same name
-        URI result = URIBuilder.from(baseUri)
-                .addQueryParameter(PARAM_NAME, VALUE1_PARAM)
-                .addQueryParameter(PARAM_NAME, VALUE2_PARAM)
-                .addQueryParameter(PARAM_NAME, VALUE3_PARAM)
-                .build();
-
-        // Then: Verify all parameters are included
+        // Given: Expected URI with multiple query parameters with the same name
         String expectedUri = BASE_URL_NO_SLASH + "?" + PARAM_NAME + "=" + VALUE1_PARAM +
                 "&" + PARAM_NAME + "=" + VALUE2_PARAM +
                 "&" + PARAM_NAME + "=" + VALUE3_PARAM;
 
-        // Compare using the query parameter map to handle order differences
-        URI expectedUriObj = URI.create(expectedUri);
-        Map<String, List<String>> expectedParams = parseQueryParams(expectedUriObj.getQuery());
-        Map<String, List<String>> actualParams = parseQueryParams(result.getQuery());
-        assertEquals(expectedParams, actualParams, "Query parameters don't match");
+        // When/Then: Use the utility method from the base class to verify the result
+        assertUriBuilding(BASE_URL, builder -> builder
+                        .addQueryParameter(PARAM_NAME, VALUE1_PARAM)
+                        .addQueryParameter(PARAM_NAME, VALUE2_PARAM)
+                        .addQueryParameter(PARAM_NAME, VALUE3_PARAM),
+                expectedUri);
     }
 
     @Test
@@ -179,8 +156,11 @@ class URIBuilderQueryParameterTest extends URIBuilderTestBase {
         URI baseUri = URI.create(BASE_URL);
         URIBuilder builder = URIBuilder.from(baseUri);
 
-        // Then: Verify NullPointerException is thrown
-        assertThrows(NullPointerException.class, () -> builder.addQueryParameter(null, VALUE_PARAM));
+        // Then: Verify NullPointerException is thrown using the utility method
+        assertThrowsWithMessage(
+                NullPointerException.class,
+                () -> builder.addQueryParameter(null, VALUE_PARAM),
+                "name is marked non-null but is null");
     }
 
     @Test
@@ -190,7 +170,10 @@ class URIBuilderQueryParameterTest extends URIBuilderTestBase {
         URI baseUri = URI.create(BASE_URL);
         URIBuilder builder = URIBuilder.from(baseUri);
 
-        // Then: Verify NullPointerException is thrown
-        assertThrows(NullPointerException.class, () -> builder.addQueryParameter(NAME_PARAM, null));
+        // Then: Verify NullPointerException is thrown using the utility method
+        assertThrowsWithMessage(
+                NullPointerException.class,
+                () -> builder.addQueryParameter(NAME_PARAM, null),
+                "value is marked non-null but is null");
     }
 }

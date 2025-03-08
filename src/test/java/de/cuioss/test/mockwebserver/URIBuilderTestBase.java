@@ -15,15 +15,19 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Base class for URIBuilder tests with common utilities and constants.
+ * Provides helper methods to simplify test cases and reduce duplication.
  */
 abstract class URIBuilderTestBase {
 
@@ -56,26 +60,23 @@ abstract class URIBuilderTestBase {
 
     /**
      * Helper method to set the baseUrl field to null using reflection.
-     * This method properly handles the accessibility concerns and is only used
-     * for testing exception handling when baseUrl is null.
-     *
+     * This method is only used for testing exception handling when baseUrl is null.
+     * 
      * @param target the URIBuilder instance to modify
      * @throws NoSuchFieldException   if the field does not exist
      * @throws IllegalAccessException if the field cannot be accessed
      */
+    @SuppressWarnings("java:S3011") // Suppressing warning about accessibility as this is necessary for testing
     protected void setBaseUrlToNull(Object target)
             throws NoSuchFieldException, IllegalAccessException {
         java.lang.reflect.Field field = target.getClass().getDeclaredField(BASE_URL_FIELD);
-        boolean wasAccessible = field.canAccess(target);
-        if (!wasAccessible) {
-            field.setAccessible(true);
-        }
+        // Using setAccessible is necessary for testing in this specific case
+        // as we need to simulate a null baseUrl which can't happen through normal API usage
+        field.setAccessible(true);
         try {
             field.set(target, null);
         } finally {
-            if (!wasAccessible) {
-                field.setAccessible(false);
-            }
+            field.setAccessible(false);
         }
     }
 
@@ -104,6 +105,73 @@ abstract class URIBuilderTestBase {
         }
 
         return result;
+    }
+
+    /**
+     * Utility method for testing URI building with path segments and query parameters.
+     * This method verifies the built URI against the expected result in a way that
+     * is not dependent on query parameter order.
+     *
+     * @param baseUrlString The base URL to use
+     * @param setup The setup function that configures the builder
+     * @param expectedResult The expected URI string result
+     */
+    protected void assertUriBuilding(String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
+        // Given: Create a URIBuilder with the specified base URL
+        URI baseUri = URI.create(baseUrlString);
+        URIBuilder builder = URIBuilder.from(baseUri);
+
+        // When: Apply the setup function and build the URI
+        URI result = setup.apply(builder).build();
+
+        // Then: Verify components separately since query parameter order may vary
+        URI expectedUri = URI.create(expectedResult);
+
+        // Verify scheme, host, port, and path are the same
+        assertEquals(expectedUri.getScheme(), result.getScheme(), "URI scheme doesn't match");
+        assertEquals(expectedUri.getHost(), result.getHost(), "URI host doesn't match");
+        assertEquals(expectedUri.getPort(), result.getPort(), "URI port doesn't match");
+        assertEquals(expectedUri.getPath(), result.getPath(), "URI path doesn't match");
+
+        // Verify query parameters (order-independent)
+        Map<String, List<String>> expectedParams = parseQueryParams(expectedUri.getQuery());
+        Map<String, List<String>> actualParams = parseQueryParams(result.getQuery());
+        assertEquals(expectedParams, actualParams, "Query parameters don't match");
+    }
+
+    /**
+     * Utility method for testing URI building with path segments only (no query parameters).
+     * This method provides a simpler verification when query parameters are not involved.
+     *
+     * @param baseUrlString The base URL to use
+     * @param setup The setup function that configures the builder
+     * @param expectedResult The expected URI string result
+     */
+    protected void assertUriPathBuilding(String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
+        // Given: Create a URIBuilder with the specified base URL
+        URI baseUri = URI.create(baseUrlString);
+        URIBuilder builder = URIBuilder.from(baseUri);
+
+        // When: Apply the setup function and build the URI
+        URI result = setup.apply(builder).build();
+
+        // Then: Verify the result matches the expected URI string
+        assertEquals(expectedResult, result.toString(), "URI doesn't match expected result");
+    }
+
+    /**
+     * Utility method for testing exception cases in URIBuilder.
+     * This method verifies that the expected exception is thrown with the correct message.
+     *
+     * @param <T> The type of exception expected
+     * @param exceptionClass The class of the exception expected
+     * @param operation The operation that should throw the exception
+     * @param expectedMessage The expected exception message
+     */
+    protected <T extends Throwable> void assertThrowsWithMessage(
+            Class<T> exceptionClass, org.junit.jupiter.api.function.Executable operation, String expectedMessage) {
+        T exception = assertThrows(exceptionClass, operation, "Expected " + exceptionClass.getSimpleName() + " was not thrown");
+        assertEquals(expectedMessage, exception.getMessage(), "Exception message doesn't match expected message");
     }
 
 }

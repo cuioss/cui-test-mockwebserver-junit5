@@ -19,11 +19,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.net.URI;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for special character handling functionality of {@link URIBuilder}.
@@ -62,15 +59,9 @@ class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
     @ParameterizedTest(name = "{0}")
     @MethodSource("specialCharacterTestCases")
     void testSpecialCharacterHandling(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
-        // Given: Create a URIBuilder with the specified base URL
-        URI baseUri = URI.create(baseUrlString);
-        URIBuilder builder = URIBuilder.from(baseUri);
-
-        // When: Apply the setup function and build the URI
-        URI result = setup.apply(builder).build();
-
-        // Then: Verify the result matches the expected URI string
-        assertEquals(expectedResult, result.toString());
+        // Use the utility method from the base class to test URI building with special characters
+        // This handles both path segments and query parameters in a consistent way
+        assertUriBuilding(baseUrlString, setup, expectedResult);
     }
 
     // end::special-character-handling[]
@@ -102,14 +93,8 @@ class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
     @ParameterizedTest(name = "{0}")
     @MethodSource("complexUrlBuildingTestCases")
     void testComplexUrlBuilding(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
-        // Given: Create a URIBuilder with the specified base URL
-        URI baseUri = URI.create(baseUrlString);
-        URIBuilder builder = URIBuilder.from(baseUri);
-
-        // When: Apply the setup function and build the URI
-        URI result = setup.apply(builder).build();
-
-        // Then: Verify the result matches the expected URI string
-        assertEquals(expectedResult, result.toString());
+        // Use the utility method from the base class to test complex URL building
+        // This handles both path segments and query parameters in a consistent way
+        assertUriBuilding(baseUrlString, setup, expectedResult);
     }
 }

@@ -78,10 +78,11 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
         // Given: A placeholder URIBuilder
         URIBuilder placeholder = URIBuilder.placeholder();
 
-        // When/Then: Verify the expected exception is thrown with the correct message
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> functionToCall.apply(placeholder));
-        assertEquals(expectedMessage, exception.getMessage());
+        // When/Then: Use the utility method from the base class to test exception handling
+        assertThrowsWithMessage(
+                IllegalStateException.class,
+                () -> functionToCall.apply(placeholder),
+                expectedMessage);
     }
 
     // end::uribuilder-placeholder-exception-test[]

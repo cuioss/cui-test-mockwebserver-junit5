@@ -25,12 +25,10 @@ import java.net.URI;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 /**
  * Tests for exception handling functionality of {@link URIBuilder}.
  */
+@SuppressWarnings("ConstantValue")
 class URIBuilderExceptionTest extends URIBuilderTestBase {
 
     // tag::exception-handling[]
@@ -40,8 +38,11 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
         // Given: A null URI
         URI nullUri = null;
 
-        // When/Then: Verify NullPointerException is thrown
-        assertThrows(NullPointerException.class, () -> URIBuilder.from(nullUri));
+        // When/Then: Use the utility method from the base class to test exception handling
+        assertThrowsWithMessage(
+                NullPointerException.class,
+                () -> URIBuilder.from(nullUri),
+                "baseUri is marked non-null but is null");
     }
 
     /**
@@ -78,10 +79,11 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
         URIBuilder builder = URIBuilder.from(URI.create(BASE_URL));
         setBaseUrlToNull(builder);
 
-        // When/Then: Verify the expected exception is thrown with the correct message
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                () -> functionToCall.apply(builder));
-        assertEquals(expectedMessage, exception.getMessage());
+        // When/Then: Use the utility method from the base class to test exception handling
+        assertThrowsWithMessage(
+                IllegalStateException.class,
+                () -> functionToCall.apply(builder),
+                expectedMessage);
     }
 
     // end::exception-handling[]
@@ -94,10 +96,10 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
         URIBuilder builder = URIBuilder.from(URI.create(BASE_URL));
         setBaseUrlToNull(builder);
 
-        // When/Then: Verify the expected exception is thrown with the correct message
-        IllegalStateException exception = assertThrows(IllegalStateException.class,
-                builder::getPort);
-        assertEquals("Cannot access port with null baseUrl. This might indicate an incorrectly initialized URIBuilder.",
-                exception.getMessage());
+        // When/Then: Use the utility method from the base class to test exception handling
+        assertThrowsWithMessage(
+                IllegalStateException.class,
+                builder::getPort,
+                "Cannot access port with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
     }
 }

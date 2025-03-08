@@ -25,7 +25,6 @@ import java.net.URI;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for path segment handling functionality of {@link URIBuilder}.
@@ -114,18 +113,14 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
     @ParameterizedTest(name = "{0}")
     @MethodSource("pathSegmentTestCases")
     void testPathSegmentHandling(String testName, String baseUrlString, String[] pathSegments, String expectedResult) {
-        // Given: Create a URIBuilder with the specified base URL
-        URI baseUri = URI.create(baseUrlString);
-        URIBuilder builder = URIBuilder.from(baseUri);
-
-        // When: Add path segments if any and build the URI
-        if (pathSegments.length > 0) {
-            builder.addPathSegments(pathSegments);
-        }
-        URI result = builder.build();
-
-        // Then: Verify the result matches the expected URI string
-        assertEquals(expectedResult, result.toString());
+        // Use the utility method from the base class to test path segment handling
+        // This provides a consistent way to test URI building across all test classes
+        assertUriPathBuilding(baseUrlString, builder -> {
+            if (pathSegments.length > 0) {
+                builder.addPathSegments(pathSegments);
+            }
+            return builder;
+        }, expectedResult);
     }
 
     // end::path-segment-handling[]
@@ -133,62 +128,37 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
     @Test
     @DisplayName("Should add multiple path segments with varargs method")
     void shouldAddMultiplePathSegmentsWithVarargs() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding multiple path segments with varargs and building the URI
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegments(API_PATH, USERS_PATH, ID_123)
-                .build();
-
-        // Then: Verify the result has all path segments
-        assertEquals(BASE_URL_WITH_API_USERS_123, result.toString());
+        // Use the utility method from the base class to test varargs path segment handling
+        assertUriPathBuilding(BASE_URL,
+                builder -> builder.addPathSegments(API_PATH, USERS_PATH, ID_123),
+                BASE_URL_WITH_API_USERS_123);
     }
 
     @Test
     @DisplayName("Should trim leading and trailing slashes from path segments")
     void shouldTrimSlashesFromPathSegments() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding path segments with extra slashes
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegments("/" + API_PATH + "/", "//" + USERS_PATH + "//", "/" + ID_123 + "/")
-                .build();
-
-        // Then: Verify slashes are properly trimmed
-        assertEquals(BASE_URL_WITH_API_USERS_123, result.toString());
+        // Use the utility method from the base class to test slash trimming
+        assertUriPathBuilding(BASE_URL,
+                builder -> builder.addPathSegments("/" + API_PATH + "/", "//" + USERS_PATH + "//", "/" + ID_123 + "/"),
+                BASE_URL_WITH_API_USERS_123);
     }
 
     @Test
     @DisplayName("Should handle empty path segments")
     void shouldHandleEmptyPathSegments() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding empty path segments and a valid one
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegments("", "/", API_PATH)
-                .build();
-
-        // Then: Verify empty segments are ignored
-        assertEquals(BASE_URL_NO_SLASH + "/" + API_PATH, result.toString());
+        // Use the utility method from the base class to test empty path segment handling
+        assertUriPathBuilding(BASE_URL,
+                builder -> builder.addPathSegments("", "/", API_PATH),
+                BASE_URL_NO_SLASH + "/" + API_PATH);
     }
 
     @Test
     @DisplayName("Should handle path segment with only whitespace")
     void shouldHandlePathSegmentWithOnlyWhitespace() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding a whitespace path segment and a valid one
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegment("   ")
-                .addPathSegment(API_PATH)
-                .build();
-
-        // Then: Verify whitespace segments are ignored
-        assertEquals(BASE_URL_NO_SLASH + "/" + API_PATH, result.toString());
+        // Use the utility method from the base class to test whitespace path segment handling
+        assertUriPathBuilding(BASE_URL,
+                builder -> builder.addPathSegment("   ").addPathSegment(API_PATH),
+                BASE_URL_NO_SLASH + "/" + API_PATH);
     }
 
     @Test
@@ -209,65 +179,44 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
     @Test
     @DisplayName("Should handle path segments with mixed slashes")
     void shouldHandlePathSegmentsWithMixedSlashes() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding path segments with mixed slashes
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegment(API_PATH + "/")
-                .addPathSegment("/" + USERS_PATH)
-                .build();
-
-        // Then: Verify slashes are properly handled
-        assertEquals(BASE_URL_NO_SLASH + "/" + API_PATH + "/" + USERS_PATH, result.toString());
+        // Use the utility method from the base class to test mixed slashes handling
+        assertUriPathBuilding(BASE_URL,
+                builder -> builder
+                        .addPathSegment(API_PATH + "/")
+                        .addPathSegment("/" + USERS_PATH),
+                BASE_URL_NO_SLASH + "/" + API_PATH + "/" + USERS_PATH);
     }
 
     @Test
     @DisplayName("Should handle path segments with only slashes")
     void shouldHandlePathSegmentsWithOnlySlashes() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding path segments with only slashes
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegment("/")
-                .addPathSegment("///")
-                .addPathSegment(API_PATH)
-                .build();
-
-        // Then: Verify segments with only slashes are ignored
-        assertEquals(BASE_URL_NO_SLASH + "/" + API_PATH, result.toString());
+        // Use the utility method from the base class to test handling of path segments with only slashes
+        assertUriPathBuilding(BASE_URL,
+                builder -> builder
+                        .addPathSegment("/")
+                        .addPathSegment("///")
+                        .addPathSegment(API_PATH),
+                BASE_URL_NO_SLASH + "/" + API_PATH);
     }
 
     @Test
     @DisplayName("Should handle base URL with path and trailing slash when adding segments")
     void shouldHandleBaseUrlWithPathAndTrailingSlashWhenAddingSegments() {
-        // Given: A base URI with path and trailing slash
-        URI baseUri = URI.create(BASE_URL_WITH_BASE);
-
-        // When: Adding path segments
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegment(API_PATH)
-                .addPathSegment(USERS_PATH)
-                .build();
-
-        // Then: Verify path segments are properly added
-        assertEquals(BASE_URL_WITH_BASE_NO_SLASH + "/" + API_PATH + "/" + USERS_PATH, result.toString());
+        // Use the utility method from the base class to test base URL with path and trailing slash
+        assertUriPathBuilding(BASE_URL_WITH_BASE,
+                builder -> builder
+                        .addPathSegment(API_PATH)
+                        .addPathSegment(USERS_PATH),
+                BASE_URL_WITH_BASE_NO_SLASH + "/" + API_PATH + "/" + USERS_PATH);
     }
 
     @Test
     @DisplayName("Should handle empty path segments array")
     void shouldHandleEmptyPathSegmentsArray() {
-        // Given: A base URI
-        URI baseUri = URI.create(BASE_URL);
-
-        // When: Adding an empty path segments array
-        URI result = URIBuilder.from(baseUri)
-                .addPathSegments()
-                .build();
-
-        // Then: Verify the URI is unchanged
-        assertEquals(BASE_URL_NO_SLASH, result.toString());
+        // Use the utility method from the base class to test empty path segments array
+        assertUriPathBuilding(BASE_URL,
+                URIBuilder::addPathSegments,
+                BASE_URL_NO_SLASH);
     }
 
     @Test
@@ -277,8 +226,11 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
         URI baseUri = URI.create(BASE_URL);
         URIBuilder builder = URIBuilder.from(baseUri);
 
-        // Then: Verify NullPointerException is thrown
-        assertThrows(NullPointerException.class, () -> builder.addPathSegment(null));
+        // Then: Use the utility method from the base class to test exception handling
+        assertThrowsWithMessage(
+                NullPointerException.class,
+                () -> builder.addPathSegment(null),
+                "segment is marked non-null but is null");
     }
 
     @Test
@@ -288,7 +240,10 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
         URI baseUri = URI.create(BASE_URL);
         URIBuilder builder = URIBuilder.from(baseUri);
 
-        // Then: Verify NullPointerException is thrown
-        assertThrows(NullPointerException.class, () -> builder.addPathSegments((String[]) null));
+        // Then: Use the utility method from the base class to test exception handling
+        assertThrowsWithMessage(
+                NullPointerException.class,
+                () -> builder.addPathSegments((String[]) null),
+                "segments is marked non-null but is null");
     }
 }
