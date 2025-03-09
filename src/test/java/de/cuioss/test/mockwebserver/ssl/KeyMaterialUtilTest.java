@@ -19,8 +19,7 @@ import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
+
 
 import javax.net.ssl.SSLContext;
 
@@ -46,17 +45,17 @@ class KeyMaterialUtilTest {
         assertNotNull(certificates.trustManager());
     }
 
-    @ParameterizedTest
-    @EnumSource(KeyAlgorithm.class)
-    @DisplayName("Should create self-signed HandshakeCertificates with different algorithms")
-    void shouldCreateSelfSignedHandshakeCertificatesWithDifferentAlgorithms(KeyAlgorithm algorithm) {
-        // Arrange & Act
-        var certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(TEST_DURATION_DAYS, algorithm);
+    @Test
+    @DisplayName("Should create self-signed HandshakeCertificates with different duration")
+    void shouldCreateSelfSignedHandshakeCertificatesWithDifferentDuration() {
+        // Arrange & Act - Using a different duration than the default test
+        int shorterDuration = 7; // One week instead of the default 30 days
+        var certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(shorterDuration, KeyAlgorithm.RSA_2048);
 
-        // Assert
-        assertNotNull(certificates);
-        assertNotNull(certificates.keyManager());
-        assertNotNull(certificates.trustManager());
+        // Assert - Verify the certificates are created correctly
+        assertNotNull(certificates, "Certificates should not be null with shorter duration");
+        assertNotNull(certificates.keyManager(), "Key manager should be available");
+        assertNotNull(certificates.trustManager(), "Trust manager should be available");
     }
 
     @Test

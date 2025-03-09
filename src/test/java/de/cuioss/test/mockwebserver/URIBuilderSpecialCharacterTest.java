@@ -15,12 +15,8 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
-import java.util.function.UnaryOperator;
-import java.util.stream.Stream;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests for special character handling functionality of {@link URIBuilder}.
@@ -28,73 +24,38 @@ import java.util.stream.Stream;
 class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
 
     // tag::special-character-handling[]
-    /**
-     * Provides test cases for special character handling in URIs.
-     * Each test case consists of:
-     * 1. A display name for the test
-     * 2. The base URL to use
-     * 3. A setup function that configures the builder with special characters
-     * 4. The expected URI string result
-     */
-    static Stream<Arguments> specialCharacterTestCases() {
-        return Stream.of(
-                // Test path segments with encoded special characters
-                Arguments.of("Should handle path segments with encoded special characters",
-                        BASE_URL,
-                        (UnaryOperator<URIBuilder>) builder ->
-                                builder.addPathSegment(API_PATH)
-                                        .addPathSegment(ENCODED_SPACES),
-                        BASE_URL_NO_SLASH + "/" + API_PATH + "/" + ENCODED_SPACES),
-
-                // Test query parameters with encoded special characters
-                Arguments.of("Should handle query parameters with encoded special characters",
-                        BASE_URL,
-                        (UnaryOperator<URIBuilder>) builder ->
-                                builder.addPathSegment(API_PATH)
-                                        .addQueryParameter(FILTER_PARAM, ENCODED_NAME_SPACES),
-                        BASE_URL_NO_SLASH + "/" + API_PATH + "?" + FILTER_PARAM + "=" + ENCODED_NAME_SPACES)
-        );
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("specialCharacterTestCases")
-    void specialCharacterHandling(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
+    @Test
+    @DisplayName("Should handle path segments with encoded special characters")
+    void shouldHandlePathSegmentsWithEncodedSpecialCharacters() {
         // Use the utility method from the base class to test URI building with special characters
-        // This handles both path segments and query parameters in a consistent way
-        assertUriBuilding(baseUrlString, setup, expectedResult);
+        assertUriBuilding(BASE_URL, 
+                builder -> builder.addPathSegment(API_PATH)
+                                 .addPathSegment(ENCODED_SPACES),
+                BASE_URL_NO_SLASH + "/" + API_PATH + "/" + ENCODED_SPACES);
     }
 
+    @Test
+    @DisplayName("Should handle query parameters with encoded special characters")
+    void shouldHandleQueryParametersWithEncodedSpecialCharacters() {
+        // Use the utility method from the base class to test URI building with special characters
+        assertUriBuilding(BASE_URL,
+                builder -> builder.addPathSegment(API_PATH)
+                                 .addQueryParameter(FILTER_PARAM, ENCODED_NAME_SPACES),
+                BASE_URL_NO_SLASH + "/" + API_PATH + "?" + FILTER_PARAM + "=" + ENCODED_NAME_SPACES);
+    }
     // end::special-character-handling[]
 
-    /**
-     * Provides test cases for complex URL building.
-     * Each test case consists of:
-     * 1. A display name for the test
-     * 2. The base URL to use
-     * 3. A setup function that configures the builder with multiple components
-     * 4. The expected URI string result
-     */
-    static Stream<Arguments> complexUrlBuildingTestCases() {
-        return Stream.of(
-                // Test complex URL with port, path and query parameters
-                Arguments.of("Should handle complex URL with port, path and query parameters",
-                        COMPLEX_BASE_URL,
-                        (UnaryOperator<URIBuilder>) builder ->
-                                builder.addPathSegment(API_V1_PATH)
-                                        .addPathSegment(RESOURCES_PATH)
-                                        .addQueryParameter(PAGE_PARAM, "1")
-                                        .addQueryParameter(SIZE_PARAM, "10")
-                                        .addQueryParameter(SORT_PARAM, "name,asc"),
-                        COMPLEX_BASE_URL + "/" + API_V1_PATH + "/" + RESOURCES_PATH + "?" +
-                                PAGE_PARAM + "=1&" + SIZE_PARAM + "=10&" + SORT_PARAM + "=name,asc")
-        );
-    }
-
-    @ParameterizedTest(name = "{0}")
-    @MethodSource("complexUrlBuildingTestCases")
-    void complexUrlBuilding(String testName, String baseUrlString, UnaryOperator<URIBuilder> setup, String expectedResult) {
+    @Test
+    @DisplayName("Should handle complex URL with port, path and query parameters")
+    void shouldHandleComplexUrlWithPortPathAndQueryParameters() {
         // Use the utility method from the base class to test complex URL building
-        // This handles both path segments and query parameters in a consistent way
-        assertUriBuilding(baseUrlString, setup, expectedResult);
+        assertUriBuilding(COMPLEX_BASE_URL,
+                builder -> builder.addPathSegment(API_V1_PATH)
+                                 .addPathSegment(RESOURCES_PATH)
+                                 .addQueryParameter(PAGE_PARAM, "1")
+                                 .addQueryParameter(SIZE_PARAM, "10")
+                                 .addQueryParameter(SORT_PARAM, "name,asc"),
+                COMPLEX_BASE_URL + "/" + API_V1_PATH + "/" + RESOURCES_PATH + "?" +
+                        PAGE_PARAM + "=1&" + SIZE_PARAM + "=10&" + SORT_PARAM + "=name,asc");
     }
 }
