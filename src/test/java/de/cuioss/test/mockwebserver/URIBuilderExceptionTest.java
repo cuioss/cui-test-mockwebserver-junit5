@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -43,6 +44,19 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
                 NullPointerException.class,
                 () -> URIBuilder.from(nullUri),
                 "baseUri is marked non-null but is null");
+    }
+
+    @Test
+    @DisplayName("Should throw Exception when base URL is Invalid")
+    void shouldThrowExceptionWhenURIisInvalid() throws URISyntaxException {
+        // Given: A null URI
+        URI invalidURL = new URI("invalid://example.com");
+
+        // When/Then: Use the utility method from the base class to test exception handling
+        assertThrowsWithMessage(
+                IllegalArgumentException.class,
+                () -> URIBuilder.from(invalidURL),
+                "Could not convert URI to URL: invalid://example.com");
     }
 
     /**
