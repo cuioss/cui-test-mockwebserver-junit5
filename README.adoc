@@ -196,6 +196,7 @@ MockWebServerExtension implements ParameterResolver, allowing direct injection o
 See the examples above for how to use parameter injection in your tests.
 
 Supported parameter types:
+
 * `MockWebServer` - The server instance
 * `URIBuilder` - A builder for constructing request URIs
 * `SSLContext` - The SSL context for HTTPS connections (when HTTPS is enabled)
@@ -210,6 +211,7 @@ include::src/test/java/de/cuioss/test/mockwebserver/https/ExtensionProvidedHttps
 ----
 
 HTTPS configuration options:
+
 * `useHttps` - Enable HTTPS support (default: false)
 * `keyMaterialProviderIsSelfSigned` - Use auto-generated self-signed certificates (default: false)
 * `keyMaterialProviderIsTestClass` - Use custom certificates provided by the test class (default: false)
