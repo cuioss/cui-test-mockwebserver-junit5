@@ -17,6 +17,7 @@ package de.cuioss.test.mockwebserver.https;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.MockWebServerHolder;
+import de.cuioss.test.mockwebserver.TestProvidedCertificate;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
@@ -31,11 +32,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Optional;
 import javax.net.ssl.SSLContext;
 
-
 import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -59,10 +59,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * <p>This approach gives the test more control over certificate creation but requires more code
  * in the test class.</p>
  */
-@EnableMockWebServer(
-        useHttps = true,
-        testClassProvidesKeyMaterial = true
-)
+@EnableMockWebServer(useHttps = true)
+@TestProvidedCertificate(methodName = "provideHandshakeCertificates")
 @DisplayName("Test-Provided HTTPS Test")
 class TestProvidedHttpsTest implements MockWebServerHolder {
 
@@ -73,15 +71,14 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
      * This method is called by the extension to get the certificates that should be used by the server.
      * In this case, we create self-signed certificates and provide them to the extension.
      * 
-     * @return an Optional containing the HandshakeCertificates for the server to use
+     * @return the HandshakeCertificates for the server to use
      */
-    @Override
-    public Optional<HandshakeCertificates> getTestProvidedHandshakeCertificates() {
+    public HandshakeCertificates provideHandshakeCertificates() {
         // Create self-signed certificates with a short validity period (1 day) for unit tests
         if (null == handshakeCertificates) {
             handshakeCertificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
         }
-        return Optional.of(handshakeCertificates);
+        return handshakeCertificates;
     }
 
     /**
@@ -90,7 +87,7 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
      */
     @Test
     @DisplayName("Should successfully connect to HTTPS server with test-provided certificate")
-    void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
+    void shouldConnectToHttpsServer(MockWebServer server, URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
         // Arrange
         assertNotNull(handshakeCertificates, "HandshakeCertificates should have been created by the test");
         assertNotNull(sslContext, "SSLContext should be injected as a parameter");

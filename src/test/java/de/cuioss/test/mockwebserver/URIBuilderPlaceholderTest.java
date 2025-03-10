@@ -20,9 +20,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for placeholder functionality of {@link URIBuilder}.
@@ -72,6 +70,7 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
                 "Cannot build URI from placeholder URIBuilder. " +
                         "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())");
     }
+
     // end::uribuilder-placeholder-exception-test[]
 
     @Test

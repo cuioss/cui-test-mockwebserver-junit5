@@ -28,9 +28,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.Optional;
 import javax.net.ssl.SSLContext;
-
 
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
@@ -40,7 +38,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests for HTTPS configuration with custom certificates provided by the test class.
  */
-@EnableMockWebServer(useHttps = true, testClassProvidesKeyMaterial = true)
+@EnableMockWebServer(useHttps = true)
+@TestProvidedCertificate(methodName = "provideHandshakeCertificates")
 class MockWebServerCustomCertificatesTest implements MockWebServerHolder {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerCustomCertificatesTest.class);
@@ -59,9 +58,14 @@ class MockWebServerCustomCertificatesTest implements MockWebServerHolder {
         }
     }
 
-    @Override
-    public Optional<HandshakeCertificates> getTestProvidedHandshakeCertificates() {
-        return Optional.ofNullable(certificates);
+    /**
+     * Provides custom certificates for HTTPS testing.
+     * This method is called by the MockWebServerExtension via the @TestProvidedCertificate annotation.
+     * 
+     * @return the HandshakeCertificates to be used for HTTPS testing
+     */
+    public HandshakeCertificates provideHandshakeCertificates() {
+        return certificates;
     }
 
     @Override

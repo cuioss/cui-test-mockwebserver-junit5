@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.Joiner;
 import okhttp3.tls.HandshakeCertificates;
@@ -35,7 +34,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
-
 
 import mockwebserver3.MockWebServer;
 
@@ -146,17 +144,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Identifies the {@link Namespace} under which the concrete instance of
      * {@link MockWebServer} is stored.
      */
-    private static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
+    public static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
 
-    /**
-     * Key for storing self-signed certificates in the extension context.
-     */
-    private static final String SELF_SIGNED_CERTIFICATES_KEY = "SELF_SIGNED_CERTIFICATES";
-
-    /**
-     * Key for storing the SSLContext in the extension context.
-     */
-    private static final String SSL_CONTEXT_KEY = "SSL_CONTEXT";
+    // Certificate handling has been moved to CertificateResolver
 
     @Override
     @SuppressWarnings({"java:S2093", "java:S2095"}) // Owolff we solve it using finally block.
@@ -172,11 +162,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             Optional<EnableMockWebServer> enableMockWebServerAnnotation = findEnableMockWebServerAnnotation(testInstance);
 
             var config = getConfig(enableMockWebServerAnnotation.orElse(null));
-            LOGGER.debug("Using configuration: useHttps=%s, manualStart=%s, testClassProvidesKeyMaterial=%s",
-                    config.useHttps(), config.manualStart(), config.testClassProvidesKeyMaterial());
+            LOGGER.debug("Using configuration: useHttps=%s, manualStart=%s",
+                    config.useHttps(), config.manualStart());
 
             if (config.useHttps()) {
-                configureHttps(server, testInstance, context, config);
+                configureHttps(server, context, config);
             }
 
             setMockWebServer(testInstance, server, context);
@@ -274,8 +264,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
         return new MockServerConfig(
                 enableMockWebServerAnnotation.manualStart(),
-                enableMockWebServerAnnotation.useHttps(),
-                enableMockWebServerAnnotation.testClassProvidesKeyMaterial()
+                enableMockWebServerAnnotation.useHttps()
         );
     }
 
@@ -283,16 +272,16 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Configures HTTPS for the MockWebServer instance.
      *
      * @param server       the MockWebServer instance to configure
-     * @param testInstance the test class instance
      * @param context      the extension context
      * @param config       the configuration settings
      * @throws IllegalStateException if certificate material cannot be obtained
      */
-    private void configureHttps(MockWebServer server, Object testInstance, ExtensionContext context, MockServerConfig config) {
+    private void configureHttps(MockWebServer server, ExtensionContext context, MockServerConfig config) {
         LOGGER.info("Configuring HTTPS for MockWebServer");
 
-        // Get certificates based on configuration
-        Optional<HandshakeCertificates> handshakeCertificates = getHandshakeCertificates(testInstance, context, config);
+        // Use the CertificateResolver to get HandshakeCertificates
+        CertificateResolver certificateResolver = new CertificateResolver();
+        Optional<HandshakeCertificates> handshakeCertificates = certificateResolver.getHandshakeCertificates(context, config);
 
         if (handshakeCertificates.isPresent()) {
             try {
@@ -300,8 +289,8 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                 server.useHttps(handshakeCertificates.get().sslSocketFactory());
                 LOGGER.info("HTTPS configured for MockWebServer");
 
-                // Share certificates with test class
-                notifyTestClassAboutCertificates(testInstance, context, handshakeCertificates.get());
+                // Store certificates for parameter resolution
+                certificateResolver.createAndStoreSSLContext(context, handshakeCertificates.get());
             } catch (Exception e) {
                 String errorMessage = "Failed to configure HTTPS with available certificates";
                 LOGGER.error(errorMessage, e);
@@ -314,116 +303,12 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         }
     }
 
-    /**
-     * Obtains HandshakeCertificates for HTTPS configuration.
-     *
-     * @param testInstance the test class instance
-     * @param context      the extension context
-     * @param config       the configuration
-     * @return an Optional containing HandshakeCertificates if available
-     */
-    private Optional<HandshakeCertificates> getHandshakeCertificates(Object testInstance, ExtensionContext context, MockServerConfig config) {
-        // Strategy 1: Get certificates from test class if configured
-        if (config.testClassProvidesKeyMaterial()) {
-            Optional<HandshakeCertificates> testClassCertificates = getTestClassProvidedCertificates(testInstance, context);
-            if (testClassCertificates.isPresent()) {
-                LOGGER.info("Using certificates provided by test class");
-                return testClassCertificates;
-            }
-            LOGGER.warn("Test class is configured to provide certificates but none were provided");
-        }
+    // Certificate handling has been moved to CertificateResolver
 
-        // Strategy 2: Try to get cached certificates from context
-        Optional<HandshakeCertificates> cachedCertificates = getSelfSignedCertificatesFromContext(context);
-        if (cachedCertificates.isPresent()) {
-            LOGGER.info("Reusing cached self-signed HandshakeCertificates");
-            return cachedCertificates;
-        }
+    // Certificate handling has been moved to CertificateResolver
 
-        // Strategy 3: Create new self-signed certificates
-        return createAndStoreSelfSignedCertificates(context, config);
-    }
 
-    /**
-     * Creates self-signed certificates and stores them in the context.
-     *
-     * @param context the extension context
-     * @param config  the configuration
-     * @return an Optional containing the created HandshakeCertificates
-     */
-    private Optional<HandshakeCertificates> createAndStoreSelfSignedCertificates(ExtensionContext context, MockServerConfig config) {
-        try {
-            HandshakeCertificates certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(
-                    config.getCertificateDuration(),
-                    config.getKeyAlgorithm());
-
-            // Store in context for reuse
-            storeSelfSignedCertificatesInContext(context, certificates);
-
-            LOGGER.info("Generated and cached new self-signed HandshakeCertificates with algorithm %s and duration %s days",
-                    config.getKeyAlgorithm(), config.getCertificateDuration());
-
-            return Optional.of(certificates);
-        } catch (Exception e) {
-            LOGGER.error("Failed to create self-signed certificates", e);
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * Retrieves HandshakeCertificates from the test class.
-     *
-     * @param testInstance the test class instance
-     * @param context      the extension context
-     * @return an Optional containing HandshakeCertificates
-     */
-    private Optional<HandshakeCertificates> getTestClassProvidedCertificates(Object testInstance, ExtensionContext context) {
-        Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
-        if (holder.isEmpty()) {
-            return Optional.empty();
-        }
-
-        MockWebServerHolder mockWebServerHolder = holder.get();
-        Optional<HandshakeCertificates> handshakeCertificates = mockWebServerHolder.getTestProvidedHandshakeCertificates();
-
-        if (handshakeCertificates.isPresent()) {
-            LOGGER.debug("Using HandshakeCertificates provided by test class");
-            return handshakeCertificates;
-        }
-
-        return Optional.empty();
-    }
-
-    /**
-     * Stores the SSLContext for parameter resolution.
-     *
-     * @param testInstance          the test instance
-     * @param context               the extension context
-     * @param handshakeCertificates the HandshakeCertificates
-     */
-    private void notifyTestClassAboutCertificates(Object testInstance, ExtensionContext context, HandshakeCertificates handshakeCertificates) {
-        try {
-            SSLContext sslContext = KeyMaterialUtil.createSslContext(handshakeCertificates);
-
-            // Store the SSLContext in the context store for parameter resolution
-            ExtensionContext rootContext = getRootContext(context);
-            rootContext.getStore(NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
-
-            LOGGER.debug("Stored SSLContext for parameter resolution");
-
-            // Notify test class if it implements MockWebServerHolder
-            Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
-            if (holder.isPresent()) {
-                LOGGER.debug("Test class implements MockWebServerHolder, but receiveHandshakeCertificates method is not available");
-                // The MockWebServerHolder interface doesn't have a receiveHandshakeCertificates method
-                // If this functionality is needed, it should be added to the interface first
-            }
-        } catch (Exception e) {
-            String errorMessage = "Failed to create or store SSLContext";
-            LOGGER.error(errorMessage, e);
-            throw new IllegalStateException(errorMessage, e);
-        }
-    }
+    // Certificate handling has been moved to CertificateResolver
 
     /**
      * Sets the MockWebServer instance on the test class if it implements MockWebServerHolder.
@@ -535,38 +420,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(MockWebServer.class.getName()));
     }
 
-    /**
-     * Retrieves cached certificates from the context.
-     *
-     * @param context the extension context
-     * @return an Optional containing HandshakeCertificates
-     */
-    private Optional<HandshakeCertificates> getSelfSignedCertificatesFromContext(ExtensionContext context) {
-        // Get the root context to ensure certificates are shared across all tests in the class
-        ExtensionContext rootContext = getRootContext(context);
+    // Certificate handling has been moved to CertificateResolver
 
-        HandshakeCertificates certificates = rootContext.getStore(NAMESPACE).get(SELF_SIGNED_CERTIFICATES_KEY, HandshakeCertificates.class);
-        if (certificates != null) {
-            // Since we use fixed certificate parameters, we can always reuse the cached certificates
-            return Optional.of(certificates);
-        }
-
-        return Optional.empty();
-    }
-
-    /**
-     * Stores certificates in the extension context.
-     *
-     * @param context      the extension context
-     * @param certificates the certificates to store
-     */
-    private void storeSelfSignedCertificatesInContext(ExtensionContext context, HandshakeCertificates certificates) {
-        // Store in the root context to ensure certificates are shared across all tests in the class
-        ExtensionContext rootContext = getRootContext(context);
-
-        // Store the certificates directly without the wrapper
-        rootContext.getStore(NAMESPACE).put(SELF_SIGNED_CERTIFICATES_KEY, certificates);
-    }
+    // Certificate handling has been moved to CertificateResolver
 
     /**
      * Gets the root context to ensure certificates are shared across all tests in the class.
@@ -711,12 +567,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @throws ParameterResolutionException if no SSLContext is available
      */
     private SSLContext resolveSslContextParameter(ExtensionContext context) {
-        // Get the root context to access the store
-        ExtensionContext rootContext = getRootContext(context);
-
-        // Try to get the SSLContext from the store
-        Optional<SSLContext> sslContext = Optional.ofNullable(rootContext.getStore(NAMESPACE)
-                .get(SSL_CONTEXT_KEY, SSLContext.class));
+        // Use CertificateResolver to get the SSLContext
+        CertificateResolver certificateResolver = new CertificateResolver();
+        Optional<SSLContext> sslContext = certificateResolver.getSSLContext(context);
 
         if (sslContext.isEmpty()) {
             String errorMessage = "No SSLContext available. Make sure HTTPS is enabled with @EnableMockWebServer(useHttps = true)";

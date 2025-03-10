@@ -20,10 +20,10 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-
 import mockwebserver3.MockWebServer;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Tests for the default implementations in {@link MockWebServerHolder}.
@@ -68,12 +68,5 @@ class MockWebServerHolderTest {
         // end::test-get-dispatcher[]
     }
 
-    @Test
-    void shouldReturnEmptyOptionalForGetTestProvidedHandshakeCertificates() {
-        // tag::test-get-certificates[]
-        // Test the default implementation of getTestProvidedHandshakeCertificates()
-        var certificates = holder.getTestProvidedHandshakeCertificates();
-        assertFalse(certificates.isPresent(), "Default implementation should return an empty Optional");
-        // end::test-get-certificates[]
-    }
+
 }

@@ -15,12 +15,10 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import javax.net.ssl.SSLContext;
+
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
-import okhttp3.tls.HandshakeCertificates;
-
-import javax.net.ssl.SSLContext;
-import java.util.Optional;
 
 /**
  * Interface for test classes that need access to a {@link MockWebServer} instance.
@@ -202,28 +200,15 @@ public interface MockWebServerHolder {
      * Override this method to provide custom request handling logic.
      *
      * @return the dispatcher to be used, or {@code null} to use the default dispatcher
+     * 
+     * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead and set the
+     * dispatcher directly on the server instance in your test method:
+     * {@code server.setDispatcher(new MyDispatcher())}
      */
+    @Deprecated(since = "1.1", forRemoval = true)
     default Dispatcher getDispatcher() {
         return null;
     }
 
 
-    /**
-     * Provides HandshakeCertificates for HTTPS configuration.
-     * This method directly provides OkHttp's HandshakeCertificates, which can be used to configure both server and client.
-     * <p>
-     * The default implementation returns an empty Optional, meaning no HandshakeCertificates are provided.
-     * Override this method to provide custom HandshakeCertificates for HTTPS.
-     * </p>
-     * <p>
-     * This method will only be called if {@link EnableMockWebServer#useHttps()} and
-     * {@link EnableMockWebServer#testClassProvidesKeyMaterial()} are both {@code true}.
-     * </p>
-     *
-     * @return an Optional containing the HandshakeCertificates, or empty if none are provided
-     * @since 1.1
-     */
-    default Optional<HandshakeCertificates> getTestProvidedHandshakeCertificates() {
-        return Optional.empty();
-    }
 }

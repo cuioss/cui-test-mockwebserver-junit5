@@ -318,7 +318,11 @@ Supported parameter types:
 
 === HTTPS Support
 
-When HTTPS is enabled, the extension automatically makes the SSLContext available for parameter injection, simplifying HTTPS testing:
+When HTTPS is enabled, the extension automatically makes the SSLContext available for parameter injection, simplifying HTTPS testing.
+
+==== Extension-Provided Certificates
+
+The simplest approach is to let the extension generate certificates for you:
 
 [source,java]
 ----
@@ -371,8 +375,34 @@ class ExtensionProvidedHttpsTest {
 }
 ----
 
-HTTPS configuration options:
+==== Custom Certificate Provision with @TestProvidedCertificate
+
+For more control over certificate creation, use the `@TestProvidedCertificate` annotation. This approach allows you to provide custom certificates in a flexible way:
+
+[source,java]
+----
+include::src/test/java/de/cuioss/test/mockwebserver/https/AnnotationProvidedCertificateTest.java[tags=annotation-certificate-example]
+----
+
+==== Using a Provider Class
+
+You can also use a separate provider class for better reuse of certificate creation logic:
+
+[source,java]
+----
+include::src/test/java/de/cuioss/test/mockwebserver/https/CertificateProviderTest.java[tags=provider-class-example]
+----
+
+The certificate provider class implementation:
+
+[source,java]
+----
+include::src/test/java/de/cuioss/test/mockwebserver/https/CertificateProviderTest.java[tags=certificate-provider]
+----
+
+==== HTTPS Configuration Options
 
 * `useHttps` - Enable HTTPS support (default: false)
-* `keyMaterialProviderIsSelfSigned` - Use auto-generated self-signed certificates (default: false)
-* `keyMaterialProviderIsTestClass` - Use custom certificates provided by the test class (default: false)
+* `@TestProvidedCertificate` - Annotation to specify custom certificate provision
+  * `methodName` - Name of the static method that provides certificates
+  * `providerClass` - Class that contains the certificate provider method

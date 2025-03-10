@@ -24,9 +24,10 @@ import de.cuioss.tools.net.ssl.KeyAlgorithm;
  * providing type-safe access to configuration values and sensible defaults.
  * </p>
  *
- * @param manualStart Instance fields - configuration options from annotation
+ * @param manualStart controls whether the server starts automatically or manually
+ * @param useHttps controls whether the server uses HTTPS instead of HTTP
  */
-record MockServerConfig(boolean manualStart, boolean useHttps, boolean testClassProvidesKeyMaterial) {
+record MockServerConfig(boolean manualStart, boolean useHttps) {
     // Fixed values for certificate generation
     private static final int CERTIFICATE_DURATION = 1; // 1 day validity for unit tests
     private static final KeyAlgorithm KEY_ALGORITHM = KeyAlgorithm.RSA_2048;
@@ -36,13 +37,12 @@ record MockServerConfig(boolean manualStart, boolean useHttps, boolean testClass
      * <ul>
      *   <li>manualStart = false (server starts automatically)</li>
      *   <li>useHttps = false (server uses HTTP)</li>
-     *   <li>testClassProvidesKeyMaterial = false (extension provides certificates)</li>
      * </ul>
      *
      * @return a new configuration instance with default values
      */
     static MockServerConfig getDefaults() {
-        return new MockServerConfig(false, false, false);
+        return new MockServerConfig(false, false);
     }
 
     /**

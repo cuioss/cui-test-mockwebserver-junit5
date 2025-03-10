@@ -21,7 +21,6 @@ import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-
 import mockwebserver3.MockWebServer;
 
 import static java.lang.annotation.ElementType.TYPE;
@@ -160,26 +159,14 @@ public @interface EnableMockWebServer {
      * Controls whether the MockWebServer should use HTTPS instead of HTTP.
      * When set to {@code true}, the extension will either:
      * <ul>
-     *   <li>Use certificates provided by the test class if {@link #testClassProvidesKeyMaterial()} is {@code true}</li>
-     *   <li>Automatically generate self-signed certificates if {@link #testClassProvidesKeyMaterial()} is {@code false}</li>
+     *   <li>Use certificates provided by the test class if it is annotated with {@link TestProvidedCertificate}</li>
+     *   <li>Automatically generate self-signed certificates if no {@link TestProvidedCertificate} annotation is present</li>
      * </ul>
      *
      * @return {@code true} if the server should use HTTPS, {@code false} for HTTP (default)
+     * @see TestProvidedCertificate
      */
     boolean useHttps() default false;
-
-    /**
-     * Indicates that the test class provides certificates through the {@link MockWebServerHolder#getTestProvidedHandshakeCertificates()}
-     * method. When {@code true}, the extension will call this method to obtain the certificates for HTTPS configuration.
-     * 
-     * <p>This approach gives tests full control over certificate generation/loading.</p>
-     * 
-     * <p>When {@code false}, the extension will automatically generate self-signed certificates
-     * with a short validity period suitable for unit tests.</p>
-     *
-     * @return {@code true} if the test class provides certificates, {@code false} otherwise (default)
-     */
-    boolean testClassProvidesKeyMaterial() default false;
 
 
 }

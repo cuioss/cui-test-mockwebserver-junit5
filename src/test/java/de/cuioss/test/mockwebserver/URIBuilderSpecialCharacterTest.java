@@ -28,9 +28,9 @@ class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
     @DisplayName("Should handle path segments with encoded special characters")
     void shouldHandlePathSegmentsWithEncodedSpecialCharacters() {
         // Use the utility method from the base class to test URI building with special characters
-        assertUriBuilding(BASE_URL, 
+        assertUriBuilding(BASE_URL,
                 builder -> builder.addPathSegment(API_PATH)
-                                 .addPathSegment(ENCODED_SPACES),
+                        .addPathSegment(ENCODED_SPACES),
                 BASE_URL_NO_SLASH + "/" + API_PATH + "/" + ENCODED_SPACES);
     }
 
@@ -40,9 +40,10 @@ class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
         // Use the utility method from the base class to test URI building with special characters
         assertUriBuilding(BASE_URL,
                 builder -> builder.addPathSegment(API_PATH)
-                                 .addQueryParameter(FILTER_PARAM, ENCODED_NAME_SPACES),
+                        .addQueryParameter(FILTER_PARAM, ENCODED_NAME_SPACES),
                 BASE_URL_NO_SLASH + "/" + API_PATH + "?" + FILTER_PARAM + "=" + ENCODED_NAME_SPACES);
     }
+
     // end::special-character-handling[]
 
     @Test
@@ -51,10 +52,10 @@ class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
         // Use the utility method from the base class to test complex URL building
         assertUriBuilding(COMPLEX_BASE_URL,
                 builder -> builder.addPathSegment(API_V1_PATH)
-                                 .addPathSegment(RESOURCES_PATH)
-                                 .addQueryParameter(PAGE_PARAM, "1")
-                                 .addQueryParameter(SIZE_PARAM, "10")
-                                 .addQueryParameter(SORT_PARAM, "name,asc"),
+                        .addPathSegment(RESOURCES_PATH)
+                        .addQueryParameter(PAGE_PARAM, "1")
+                        .addQueryParameter(SIZE_PARAM, "10")
+                        .addQueryParameter(SORT_PARAM, "name,asc"),
                 COMPLEX_BASE_URL + "/" + API_V1_PATH + "/" + RESOURCES_PATH + "?" +
                         PAGE_PARAM + "=1&" + SIZE_PARAM + "=10&" + SORT_PARAM + "=name,asc");
     }

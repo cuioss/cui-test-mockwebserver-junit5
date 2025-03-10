@@ -19,7 +19,6 @@ import de.cuioss.tools.string.MoreStrings;
 
 import java.util.Optional;
 
-
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 

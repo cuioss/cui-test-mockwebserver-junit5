@@ -20,7 +20,6 @@ import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-
 import javax.net.ssl.SSLContext;
 
 import static org.junit.jupiter.api.Assertions.*;
