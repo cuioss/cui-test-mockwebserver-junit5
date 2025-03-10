@@ -38,7 +38,36 @@ The recommended approach is to use parameter injection rather than implementing 
 
 [source,java]
 ----
-include::src/test/java/de/cuioss/test/mockwebserver/ParameterResolverTest.java[tags=parameter-resolver-example]
+@EnableMockWebServer
+class ParameterResolverTest {
+
+    @Test
+    @DisplayName("Should inject MockWebServer instance")
+    void shouldInjectMockWebServer(MockWebServer server) {
+        assertNotNull(server);
+        assertTrue(server.getStarted());
+    }
+
+    // Tests for port parameter resolver removed as it's redundant with URIBuilder
+
+    @Test
+    @DisplayName("Should inject URIBuilder")
+    void shouldInjectUriBuilder(URIBuilder uriBuilder) {
+        assertNotNull(uriBuilder);
+        assertEquals("http", uriBuilder.build().getScheme());
+        assertEquals("/", uriBuilder.getPath());
+    }
+
+    // Test for String parameter resolver removed as it's redundant with URIBuilder
+
+    @Test
+    @DisplayName("Should inject multiple parameters")
+    void shouldInjectMultipleParameters(MockWebServer server, URIBuilder uriBuilder) {
+        assertNotNull(server);
+        assertTrue(server.getPort() > 0);
+        assertEquals(server.getPort(), uriBuilder.getPort());
+    }
+}
 ----
 
 === Dispatching Requests
@@ -47,7 +76,42 @@ The recommended approach is to set up the dispatcher directly in your test metho
 
 [source,java]
 ----
-include::src/test/java/de/cuioss/test/mockwebserver/dispatcher/EndpointDispatcherExampleTest.java[tags=dispatcher-example]
+@EnableMockWebServer
+@DisplayName("Endpoint Dispatcher Example")
+class EndpointDispatcherExampleTest {
+
+    @Test
+    @DisplayName("Should handle requests using EndpointAnswerHandler")
+    void withEndpointDispatcher(MockWebServer server, URIBuilder uriBuilder) throws IOException, InterruptedException {
+        // Configure the dispatcher
+        var apiDispatcher = new BaseAllAcceptDispatcher("/api");
+        
+        // Configure the GET response handler with proper JSON and Content-Type
+        apiDispatcher.getGetResult().setResponse(new MockResponse.Builder()
+                .addHeader("Content-Type", "application/json")
+                .body("{\"data\": \"test\"}")
+                .code(HttpServletResponse.SC_OK)
+                .build());
+                
+        // Set the dispatcher on the server
+        server.setDispatcher(new CombinedDispatcher(apiDispatcher));
+
+        // Create HttpClient
+        HttpClient client = HttpClient.newHttpClient();
+
+        // Create request using the URIBuilder parameter
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uriBuilder.addPathSegments("api", "data").build())
+                .GET()
+                .build();
+
+        // Send request and verify response
+        HttpResponse<String> response = client.send(request,
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+        assertEquals("{\"data\": \"test\"}", response.body());
+    }
+}
 ----
 
 === ModuleDispatcherElement
@@ -103,20 +167,18 @@ Implementation example:
 @EnableAutoWeld
 @EnablePortalConfiguration
 @EnableMockWebServer
-class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer>, MockWebServerHolder {
-
-    @Setter
-    private MockWebServer mockWebServer;
-
-    protected int mockserverPort;
+class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer> {
 
     private final JwksResolveDispatcher jwksResolveDispatcher = new JwksResolveDispatcher();
-
-    @Getter
-    private final CombinedDispatcher dispatcher = new CombinedDispatcher().addDispatcher(jwksResolveDispatcher);
+    private int mockserverPort;
 
     @BeforeEach
-    void setupMockServer() {
+    void setupMockServer(MockWebServer mockWebServer) {
+        // Configure the dispatcher
+        CombinedDispatcher dispatcher = new CombinedDispatcher().addDispatcher(jwksResolveDispatcher);
+        mockWebServer.setDispatcher(dispatcher);
+        
+        // Setup configuration
         mockserverPort = mockWebServer.getPort();
         configuration.put(VERIFY_SIGNATURE_JWKS_URL,
                 "http://localhost:" + mockserverPort + jwksResolveDispatcher.getBaseUrl());
@@ -153,7 +215,60 @@ The extension supports manual server start with the `manualStart = true` option.
 
 [source,java]
 ----
-include::src/test/java/de/cuioss/test/mockwebserver/MockWebServerManualStartTest.java[tags=manual-start-test]
+@EnableMockWebServer(manualStart = true)
+class MockWebServerManualStartTest {
+
+    private static final CuiLogger LOGGER = new CuiLogger(MockWebServerManualStartTest.class);
+
+    @Test
+    @DisplayName("Server should not be started automatically when manualStart=true")
+    void shouldNotStartServerAutomatically(MockWebServer server) {
+        assertNotNull(server, "Server should be injected");
+        assertFalse(server.getStarted(), "Server should not be started automatically");
+
+        // Start the server manually
+        try {
+            // Configure the dispatcher before starting
+            server.setDispatcher(CombinedDispatcher.createAPIDispatcher());
+            
+            // Start the server
+            server.start();
+            assertTrue(server.getStarted(), "Server should be started after manual start");
+
+            // Verify server is accessible with timeout
+            HttpClient client = HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(2))
+                    .build();
+
+            // Create a proper URIBuilder now that the server is started
+            URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
+
+            // Use the proper URIBuilder to construct the URI
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(properUriBuilder.addPathSegments("api", "test").build())
+                    .timeout(Duration.ofSeconds(2))
+                    .GET()
+                    .build();
+                    
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, response.statusCode(), "Should receive OK response");
+            LOGGER.info("Successfully received response from manually started server: " + response.body());
+            
+        } catch (Exception e) {
+            LOGGER.error("Failed to start or use server", e);
+            fail("Failed to start or use server: " + e.getMessage());
+        } finally {
+            // Clean up
+            try {
+                if (server.getStarted()) {
+                    server.shutdown();
+                }
+            } catch (IOException e) {
+                // Ignore shutdown errors in tests
+            }
+        }
+    }
+}
 ----
 
 ==== Important URIBuilder Precautions with Manual Start
@@ -207,7 +322,53 @@ When HTTPS is enabled, the extension automatically makes the SSLContext availabl
 
 [source,java]
 ----
-include::src/test/java/de/cuioss/test/mockwebserver/https/ExtensionProvidedHttpsTest.java[tags=https-example]
+@EnableMockWebServer(
+        useHttps = true
+)
+@DisplayName("HttpClient HTTPS Test")
+class ExtensionProvidedHttpsTest {
+
+    /**
+     * Tests a basic HTTPS connection to a default endpoint.
+     * This demonstrates the most common use case for HTTPS testing.
+     * <p>
+     * The SSLContext is directly injected as a parameter using the parameter resolving feature.
+     */
+    @Test
+    @DisplayName("Should successfully connect to HTTPS server with extension-provided certificate")
+    void shouldConnectToHttpsServer(MockWebServer server, URIBuilder serverURIBuilder, SSLContext sslContext) 
+            throws IOException, InterruptedException {
+        // Arrange
+        assertNotNull(sslContext, "SSLContext should be injected as a parameter");
+        assertNotNull(serverURIBuilder, "URL builder should be injected as a parameter");
+        
+        // Configure the dispatcher
+        server.setDispatcher(CombinedDispatcher.createAPIDispatcher());
+
+        // Verify the URL builder creates HTTPS URLs
+        URI uri = serverURIBuilder.build();
+        assertEquals("https", uri.getScheme(), "Server URL should use HTTPS");
+
+        // Configure HttpClient with the injected SSLContext
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .connectTimeout(Duration.ofSeconds(10))
+                .build();
+
+        // Act: Make an HTTPS request using the URL builder
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(serverURIBuilder.addPathSegments("api", "test").build())
+                .GET()
+                .build();
+
+        // Assert: Verify successful connection and response
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(200, response.statusCode(), "Should receive 200 OK response");
+        assertEquals(EndpointAnswerHandler.RESPONSE_SUCCESSFUL_BODY, response.body(), 
+                "Response body should match expected content");
+    }
+}
 ----
 
 HTTPS configuration options:
