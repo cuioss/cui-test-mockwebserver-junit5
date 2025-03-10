@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
 
+
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 
@@ -65,9 +66,9 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  * </ul>
  *
  * @author Oliver Wolff
- * @since 1.0
  * @see EndpointAnswerHandler
  * @see ModuleDispatcherElement
+ * @since 1.0
  */
 @RequiredArgsConstructor
 public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
@@ -111,6 +112,11 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     @Override
     public Optional<MockResponse> handleDelete(@NonNull RecordedRequest request) {
         return deleteResult.respond();
+    }
+
+    @Override
+    public @NonNull Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.values());
     }
 
     @Override

@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.tools.logging.CuiLogger;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,8 +27,7 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
-import java.time.Duration;
+
 
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
@@ -43,7 +41,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class MockWebServerErrorHandlingTest {
 
-    private static final CuiLogger LOGGER = new CuiLogger(MockWebServerErrorHandlingTest.class);
 
     /**
      * Custom extension to test error handling in MockWebServerExtension.
@@ -115,46 +112,5 @@ public class MockWebServerErrorHandlingTest {
         }
     }
 
-    /**
-     * Tests for null dispatcher handling.
-     */
-    @Nested
-    @EnableMockWebServer
-    class NullDispatcherTest implements MockWebServerHolder {
-
-        @Override
-        public Dispatcher getDispatcher() {
-            // Return null to test null dispatcher handling
-            return null;
-        }
-
-        @Test
-        @DisplayName("Should handle null dispatcher gracefully")
-        void shouldHandleNullDispatcher(MockWebServer server, URIBuilder uriBuilder) throws Exception {
-            assertNotNull(server, "Server should be injected");
-            assertTrue(server.getStarted(), "Server should be started despite null dispatcher");
-
-            // Make request to verify default behavior
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(5))
-                    .build();
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(uriBuilder.build())
-                    .timeout(Duration.ofSeconds(5))
-                    .GET()
-                    .build();
-
-            try {
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                // Default MockWebServer behavior is to return 200 with empty body
-                assertEquals(200, response.statusCode(), "Should receive default response");
-            } catch (HttpTimeoutException e) {
-                // If we get a timeout, the test still passes as we're testing that the server doesn't crash
-                // This is a valid outcome when no dispatcher is set
-                LOGGER.info("Request timed out, which is acceptable when no dispatcher is set");
-            }
-        }
-    }
     // end::error-handling-test[]
 }

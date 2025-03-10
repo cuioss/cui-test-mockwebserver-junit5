@@ -15,6 +15,10 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
+import lombok.NonNull;
+
+import java.util.Set;
+
 public class PassThroughDispatcher implements ModuleDispatcherElement {
 
     public static final String BASE = "/pass";
@@ -24,4 +28,9 @@ public class PassThroughDispatcher implements ModuleDispatcherElement {
         return BASE;
     }
 
+
+    @Override
+    public @NonNull Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.values());
+    }
 }

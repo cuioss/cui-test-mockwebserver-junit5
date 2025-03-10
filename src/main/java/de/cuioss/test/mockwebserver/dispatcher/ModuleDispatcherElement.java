@@ -19,6 +19,8 @@ import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import lombok.NonNull;
 
 import java.util.Optional;
+import java.util.Set;
+
 
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
@@ -134,4 +136,13 @@ public interface ModuleDispatcherElement {
     default Optional<MockResponse> handleDelete(@NonNull RecordedRequest request) {
         return Optional.empty();
     }
+
+    /**
+     * Returns the set of HTTP methods supported by this dispatcher element.
+     * This is used for validation and to prevent null pointer exceptions in the dispatcher resolution process.
+     *
+     * @return a set of supported {@link HttpMethodMapper} values, never null or empty
+     */
+    @NonNull
+    Set<HttpMethodMapper> supportedMethods();
 }

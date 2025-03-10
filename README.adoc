@@ -114,6 +114,145 @@ class EndpointDispatcherExampleTest {
 }
 ----
 
+=== Migration Guide: From MockWebServerHolder to Annotation-Based Dispatchers
+
+Starting with version 1.1, the `MockWebServerHolder` interface and its `getDispatcher()` method are deprecated and will be removed in a future version. The recommended approach is to use the new annotation-based dispatcher configuration.
+
+==== Before (Deprecated)
+
+[source,java]
+----
+@EnableMockWebServer
+class MyTest implements MockWebServerHolder {
+
+    @Override
+    public Dispatcher getDispatcher() {
+        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+    }
+    
+    @Test
+    void testSomething(URIBuilder uriBuilder) {
+        // Test code
+    }
+}
+----
+
+==== After (Recommended)
+
+[source,java]
+----
+@EnableMockWebServer
+@ModuleDispatcher // No parameters means look for getModuleDispatcher() method
+class MyTest {
+
+    ModuleDispatcherElement getModuleDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
+    }
+    
+    @Test
+    void testSomething(URIBuilder uriBuilder) {
+        // Test code
+    }
+}
+----
+
+==== Migration Steps
+
+1. Add the `@ModuleDispatcher` annotation to your test class
+2. Replace the `getDispatcher()` method with `getModuleDispatcher()` that returns a `ModuleDispatcherElement`
+3. If your dispatcher is not a `ModuleDispatcherElement`, wrap it in a `CombinedDispatcher`
+4. Remove the `implements MockWebServerHolder` from your class declaration
+
+=== Annotation-Based Dispatchers (New in 1.1)
+
+Starting with version 1.1, you can use the `@ModuleDispatcher` annotation to configure dispatchers for your tests. This approach is recommended over implementing the `MockWebServerHolder` interface, which is now deprecated.
+
+==== Basic Usage with Class Reference
+
+[source,java]
+----
+@EnableMockWebServer
+@ModuleDispatcher(UserApiDispatcher.class)
+class SimpleTest {
+    
+    @Test
+    void shouldHandleRequests(MockWebServer server, URIBuilder uriBuilder) throws IOException {
+        // The UserApiDispatcher is automatically configured
+        // No need to call server.setDispatcher()
+        
+        // Create HttpClient
+        HttpClient client = HttpClient.newHttpClient();
+        
+        // Create request
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(uriBuilder.addPathSegments("api", "users").build())
+                .GET()
+                .build();
+                
+        // Send request
+        HttpResponse<String> response = client.send(request, 
+                HttpResponse.BodyHandlers.ofString());
+                
+        // Verify response
+        assertEquals(200, response.statusCode());
+        assertEquals("{\"users\": []}", response.body());
+    }
+}
+----
+
+==== Using a Provider Method
+
+[source,java]
+----
+@EnableMockWebServer
+@ModuleDispatcher(provider = DispatcherFactory.class, providerMethod = "createApiDispatcher")
+class FactoryTest {
+    
+    @Test
+    void shouldUseFactoryDispatcher(URIBuilder uriBuilder) {
+        // The dispatcher is created by calling DispatcherFactory.createApiDispatcher()
+        // ...
+    }
+}
+
+// Factory class that provides dispatchers
+class DispatcherFactory {
+    
+    // Static factory method
+    public static ModuleDispatcherElement createApiDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
+    }
+}
+----
+
+==== Using a Method in the Test Class
+
+[source,java]
+----
+@EnableMockWebServer
+@ModuleDispatcher // No parameters means look for getModuleDispatcher() method
+class CustomTest {
+    
+    // This method will be called to get the dispatcher
+    ModuleDispatcherElement getModuleDispatcher() {
+        var dispatcher = new BaseAllAcceptDispatcher("/api");
+        dispatcher.getGetResult().setResponse(
+            new MockResponse.Builder()
+                .addHeader("Content-Type", "application/json")
+                .body("{\"status\": \"ok\"}")
+                .code(200)
+                .build());
+        return dispatcher;
+    }
+    
+    @Test
+    void shouldUseCustomDispatcher(URIBuilder uriBuilder) {
+        // The dispatcher is created by calling getModuleDispatcher()
+        // ...
+    }
+}
+----
+
 === ModuleDispatcherElement
 
 `ModuleDispatcherElement` enables reusable request handling in `EnableMockWebServer` contexts. It returns an `Optional<MockResponse>` for matching requests.

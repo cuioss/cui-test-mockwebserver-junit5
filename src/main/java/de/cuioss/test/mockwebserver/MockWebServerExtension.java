@@ -15,6 +15,7 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.test.mockwebserver.dispatcher.DispatcherResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.Joiner;
 import okhttp3.tls.HandshakeCertificates;
@@ -35,6 +36,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 
+
+import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 
 /**
@@ -141,6 +144,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerExtension.class);
 
     /**
+     * Resolver for dispatchers based on annotations and test class methods.
+     */
+    private final DispatcherResolver dispatcherResolver = new DispatcherResolver();
+
+    /**
      * Identifies the {@link Namespace} under which the concrete instance of
      * {@link MockWebServer} is stored.
      */
@@ -169,6 +177,13 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                 configureHttps(server, context, config);
             }
 
+            // Configure dispatcher using the new resolver
+            Dispatcher dispatcher = dispatcherResolver.resolveDispatcher(
+                    testInstance.getClass(), testInstance, context);
+            server.setDispatcher(dispatcher);
+            LOGGER.debug("Configured dispatcher: %s", dispatcher.getClass().getName());
+
+            // Legacy support for MockWebServerHolder
             setMockWebServer(testInstance, server, context);
 
             if (!config.manualStart()) {
@@ -271,9 +286,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     /**
      * Configures HTTPS for the MockWebServer instance.
      *
-     * @param server       the MockWebServer instance to configure
-     * @param context      the extension context
-     * @param config       the configuration settings
+     * @param server  the MockWebServer instance to configure
+     * @param context the extension context
+     * @param config  the configuration settings
      * @throws IllegalStateException if certificate material cannot be obtained
      */
     private void configureHttps(MockWebServer server, ExtensionContext context, MockServerConfig config) {
@@ -312,6 +327,8 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
     /**
      * Sets the MockWebServer instance on the test class if it implements MockWebServerHolder.
+     * Note: The dispatcher resolution is now handled by DispatcherResolver, but we still
+     * call setMockWebServer for backward compatibility.
      *
      * @param testInstance  the test instance
      * @param mockWebServer the MockWebServer instance
@@ -324,10 +341,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
         if (holder.isPresent()) {
             holder.get().setMockWebServer(mockWebServer);
-            Optional.ofNullable(holder.get().getDispatcher()).ifPresent(mockWebServer::setDispatcher);
+            // We no longer set the dispatcher here since it's handled by DispatcherResolver
             LOGGER.info("Fulfilled interface contract of MockWebServerHolder on {}", holder.get().getClass().getName());
         } else {
-            LOGGER.warn("No instance of {} found. Is this intentional?", MockWebServerHolder.class.getName());
+            LOGGER.debug("No instance of {} found. This is expected with the new annotation-based approach.",
+                    MockWebServerHolder.class.getName());
         }
     }
 

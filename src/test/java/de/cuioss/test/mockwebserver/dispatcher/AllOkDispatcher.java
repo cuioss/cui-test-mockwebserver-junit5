@@ -18,6 +18,8 @@ package de.cuioss.test.mockwebserver.dispatcher;
 import lombok.NonNull;
 
 import java.util.Optional;
+import java.util.Set;
+
 
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
@@ -55,4 +57,9 @@ public class AllOkDispatcher implements ModuleDispatcherElement {
         return Optional.of(OK_RESPONSE);
     }
 
+
+    @Override
+    public @NonNull Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.values());
+    }
 }

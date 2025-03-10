@@ -33,6 +33,7 @@ import java.time.Duration;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 
+
 import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -267,7 +268,7 @@ class MockWebServerExtensionCertificateTest {
             } catch (InterruptedException e) {
                 // Restore the interrupted status
                 Thread.currentThread().interrupt();
-                LOGGER.error("Request was interrupted", e);
+                LOGGER.error(REQUEST_INTERRUPTED_MESSAGE, e);
                 fail(REQUEST_INTERRUPTED_MESSAGE + ": " + e.getMessage());
             } catch (Exception e) {
                 LOGGER.error("Failed to make HTTPS request with custom certificates", e);
