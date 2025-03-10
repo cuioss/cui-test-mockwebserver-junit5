@@ -15,14 +15,12 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import okhttp3.tls.HandshakeCertificates;
-
-import java.util.Optional;
-import javax.net.ssl.SSLContext;
-
-
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
+import okhttp3.tls.HandshakeCertificates;
+
+import javax.net.ssl.SSLContext;
+import java.util.Optional;
 
 /**
  * Interface for test classes that need access to a {@link MockWebServer} instance.
@@ -39,7 +37,7 @@ import mockwebserver3.MockWebServer;
  * {@code
  * @EnableMockWebServer
  * class BasicHttpTest {
- *     
+ *
  *     @Test
  *     void testHttpRequest(MockWebServer server, URIBuilder uriBuilder) throws Exception {
  *         // Create a dispatcher for this test
@@ -58,18 +56,18 @@ import mockwebserver3.MockWebServer;
  *                     .build();
  *             }
  *         });
- *         
+ *
  *         // Create HttpClient
  *         HttpClient client = HttpClient.newHttpClient();
- *         
+ *
  *         // Create request using the URIBuilder parameter
  *         HttpRequest request = HttpRequest.newBuilder()
  *             .uri(uriBuilder.addPathSegment("api").addPathSegment("data").build())
  *             .GET()
  *             .build();
- *             
+ *
  *         // Send request and verify response
- *         HttpResponse<String> response = client.send(request, 
+ *         HttpResponse<String> response = client.send(request,
  *             HttpResponse.BodyHandlers.ofString());
  *         assertEquals(200, response.statusCode());
  *         assertEquals("Hello World", response.body());
@@ -82,30 +80,30 @@ import mockwebserver3.MockWebServer;
  * {@code
  * @EnableMockWebServer
  * class EndpointDispatcherTest {
- *     
+ *
  *     @Test
  *     void testWithEndpointDispatcher(MockWebServer server, URIBuilder uriBuilder) throws Exception {
  *         // Create an EndpointAnswerHandler for this test
  *         var handler = new EndpointAnswerHandler();
- *         
+ *
  *         // Configure endpoint responses
  *         handler.addAnswerFor("/api/data", new MockResponse()
  *             .setBody("{'data': 'test'}"));
- *         
+ *
  *         // Set the dispatcher for this test
  *         server.setDispatcher(handler);
- *         
+ *
  *         // Create HttpClient
  *         HttpClient client = HttpClient.newHttpClient();
- *         
+ *
  *         // Create request using the URIBuilder parameter
  *         HttpRequest request = HttpRequest.newBuilder()
  *             .uri(uriBuilder.addPathSegment("api").addPathSegment("data").build())
  *             .GET()
  *             .build();
- *             
+ *
  *         // Send request and verify response
- *         HttpResponse<String> response = client.send(request, 
+ *         HttpResponse<String> response = client.send(request,
  *             HttpResponse.BodyHandlers.ofString());
  *         assertEquals(200, response.statusCode());
  *         assertEquals("{'data': 'test'}", response.body());
@@ -118,7 +116,7 @@ import mockwebserver3.MockWebServer;
  * {@code
  * @EnableMockWebServer(useHttps = true)
  * class HttpsTest {
- *     
+ *
  *     @Test
  *     void testHttpsRequest(MockWebServer server, SSLContext sslContext, URIBuilder uriBuilder) throws Exception {
  *         // Create a dispatcher for this test
@@ -131,20 +129,20 @@ import mockwebserver3.MockWebServer;
  *                 return new MockResponse().setResponseCode(404);
  *             }
  *         });
- *         
+ *
  *         // Create HttpClient with the injected SSLContext
  *         HttpClient client = HttpClient.newBuilder()
  *             .sslContext(sslContext)
  *             .build();
- *         
+ *
  *         // Create request using the URIBuilder parameter
  *         HttpRequest request = HttpRequest.newBuilder()
  *             .uri(uriBuilder.addPathSegment("secure").addPathSegment("data").build())
  *             .GET()
  *             .build();
- *             
+ *
  *         // Send request and verify response
- *         HttpResponse<String> response = client.send(request, 
+ *         HttpResponse<String> response = client.send(request,
  *             HttpResponse.BodyHandlers.ofString());
  *         assertEquals(200, response.statusCode());
  *         assertEquals("Hello Secure World", response.body());
@@ -195,18 +193,6 @@ public interface MockWebServerHolder {
      */
     @Deprecated(since = "1.1", forRemoval = true)
     default void setMockWebServer(MockWebServer mockWebServer) {
-        // Default implementation does nothing
-    }
-
-    /**
-     * Callback method to receive HandshakeCertificates from the extension.
-     * The default implementation does nothing. Override this method to receive
-     * and store the certificates for use in your tests.
-     *
-     * @param certificates the HandshakeCertificates to be used for HTTPS configuration
-     * @since 1.1
-     */
-    default void receiveHandshakeCertificates(HandshakeCertificates certificates) {
         // Default implementation does nothing
     }
 

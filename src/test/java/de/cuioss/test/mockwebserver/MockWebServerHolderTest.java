@@ -61,15 +61,6 @@ class MockWebServerHolderTest {
     }
 
     @Test
-    void shouldDoNothingForReceiveHandshakeCertificates() {
-        // tag::test-receive-certificates[]
-        // Test the default implementation of receiveHandshakeCertificates()
-        assertDoesNotThrow(() -> holder.receiveHandshakeCertificates(null),
-                "Default implementation should not throw an exception even with null input");
-        // end::test-receive-certificates[]
-    }
-
-    @Test
     void shouldReturnNullForGetDispatcher() {
         // tag::test-get-dispatcher[]
         // Test the default implementation of getDispatcher()
