@@ -80,7 +80,7 @@ public class MockResponseResolver {
             try {
                 result.add(new MockResponseDispatcherElement(annotation));
             } catch (Exception e) {
-                LOGGER.error("Failed to create MockResponseDispatcherElement from annotation on class %s: %s",
+                LOGGER.error(e, "Failed to create MockResponseDispatcherElement from annotation on class %s: %s",
                         clazz.getName(), e.getMessage());
             }
         }

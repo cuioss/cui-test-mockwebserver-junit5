@@ -153,11 +153,12 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     }
 
     /**
-     * Sets the result for all but the given
+     * Sets the given MockResponse for all HTTP methods EXCEPT the specified ones.
+     * This is useful when you want to configure a default response for most methods
+     * while handling specific methods differently.
      *
-     * @param mapper       One or more mapper to identify the corresponding
-     *                     {@link HttpMethodMapper}
-     * @param mockResponse maybe null
+     * @param mockResponse The MockResponse to set for all non-specified methods, may be null
+     * @param mapper       One or more HTTP methods to exclude from this configuration
      */
     public void setAllButGivenMethodToResult(MockResponse mockResponse, HttpMethodMapper... mapper) {
         Set<HttpMethodMapper> all = mutableSet(HttpMethodMapper.values());

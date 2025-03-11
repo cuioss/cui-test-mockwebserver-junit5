@@ -197,10 +197,10 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             LOGGER.debug("MockWebServer setup completed successfully");
         } catch (Exception e) {
             if (e instanceof IllegalStateException || e instanceof DispatcherResolutionException) {
-                LOGGER.error("Critical error during MockWebServer setup: {}", e.getMessage());
+                LOGGER.error(e, "Critical error during MockWebServer setup: %s", e.getMessage());
                 throw e; // Propagate these exceptions directly
             } else {
-                LOGGER.error("Unexpected error during MockWebServer setup", e);
+                LOGGER.error(e, "Unexpected error during MockWebServer setup");
             }
         } finally {
             // Close the server if something went wrong and we didn't store it in context
@@ -227,7 +227,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             LOGGER.info("Started MockWebServer at %s", server.url("/"));
         } catch (Exception e) {
             String errorMessage = "Failed to start MockWebServer";
-            LOGGER.error(errorMessage, e);
+            LOGGER.error(e, errorMessage);
             throw new IllegalStateException(errorMessage, e);
         }
     }
@@ -307,7 +307,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                 certificateResolver.createAndStoreSSLContext(context, handshakeCertificates.get());
             } catch (Exception e) {
                 String errorMessage = "Failed to configure HTTPS with available certificates";
-                LOGGER.error(errorMessage, e);
+                LOGGER.error(e, errorMessage);
                 throw new IllegalStateException(errorMessage, e);
             }
         } else {

@@ -76,15 +76,6 @@ public class DispatcherResolver {
      * @since 1.1
      */
     @NonNull
-    /**
-     * Resolves a dispatcher for the given test class and instance.
-     * This is the main entry point for dispatcher resolution.
-     *
-     * @param testClass the test class
-     * @param testInstance the test instance
-     * @param extensionContext the extension context
-     * @return the resolved dispatcher
-     */
     public Dispatcher resolveDispatcher(Class<?> testClass, Object testInstance, ExtensionContext extensionContext) {
         LOGGER.info("Resolving dispatcher for test class: %s", testClass.getName());
 
@@ -343,7 +334,7 @@ public class DispatcherResolver {
                     testInstance.getClass().getName());
             return Optional.empty();
         } catch (SecurityException e) {
-            LOGGER.error("Security violation accessing getModuleDispatcher method", e);
+            LOGGER.error(e, "Security violation accessing getModuleDispatcher method");
             throw new DispatcherResolutionException("Security violation accessing getModuleDispatcher method", e);
         }
     }
@@ -399,10 +390,10 @@ public class DispatcherResolver {
                                 result.getClass().getName());
             }
         } catch (IllegalAccessException e) {
-            LOGGER.error("Cannot access getModuleDispatcher method", e);
+            LOGGER.error(e, "Cannot access getModuleDispatcher method");
             throw new DispatcherResolutionException("Cannot access getModuleDispatcher method", e);
         } catch (InvocationTargetException e) {
-            LOGGER.error("getModuleDispatcher method threw an exception", e.getCause());
+            LOGGER.error(e.getCause(), "getModuleDispatcher method threw an exception");
             throw new DispatcherResolutionException("getModuleDispatcher method threw an exception", e.getCause());
         }
     }
