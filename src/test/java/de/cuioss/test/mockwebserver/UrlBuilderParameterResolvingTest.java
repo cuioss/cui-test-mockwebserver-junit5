@@ -15,7 +15,10 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import org.jetbrains.annotations.NotNull;
+import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
+import lombok.NonNull;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -23,20 +26,50 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Optional;
+import java.util.Set;
 
 
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-/**
- * Demonstrates the usage of the {@link URIBuilder} parameter resolving feature.
- */
+
 @EnableMockWebServer
-class UrlBuilderParameterResolvingTest implements MockWebServerHolder {
+@ModuleDispatcher()
+class UrlBuilderParameterResolvingTest {
+
+    /**
+     * Provides a dispatcher for the mock web server
+     *
+     * @return a dispatcher that handles API requests
+     */
+    public ModuleDispatcherElement getModuleDispatcher() {
+        // Create a direct implementation of Dispatcher that echoes back the request path
+        // This is critical for the test to verify the correct path construction
+        return new ModuleDispatcherElement() {
+            @Override
+            public String getBaseUrl() {
+                return "/";
+            }
+
+            @Override
+            public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
+                return Optional.of(new MockResponse.Builder()
+                        .code(200)
+                        .body("Request to: " + request.getPath())
+                        .build());
+            }
+
+            @Override
+            public @NonNull Set<HttpMethodMapper> supportedMethods() {
+                return Set.of(HttpMethodMapper.GET);
+            }
+        };
+
+    }
 
 
     @Test
@@ -68,18 +101,5 @@ class UrlBuilderParameterResolvingTest implements MockWebServerHolder {
                 "Response body should contain the correct path and query parameters");
     }
 
-    @Override
-    public Dispatcher getDispatcher() {
-        return new Dispatcher() {
-            @NotNull
-            @Override
-            public MockResponse dispatch(@NotNull RecordedRequest request) {
-                // Echo back the path and query for verification
-                return new MockResponse.Builder()
-                        .code(200)
-                        .body("Request to: " + request.getPath())
-                        .build();
-            }
-        };
-    }
+
 }

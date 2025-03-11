@@ -16,6 +16,7 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,7 +28,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 
 
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -42,7 +42,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @SuppressWarnings("java:S1612")
 // Suppress "Lambdas should be replaced with method references"
 // Cannot be done here, start() is ambiguous
-class MockWebServerManualStartTest implements MockWebServerHolder {
+@ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
+class MockWebServerManualStartTest {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerManualStartTest.class);
 
@@ -52,10 +53,7 @@ class MockWebServerManualStartTest implements MockWebServerHolder {
     private static final String SERVER_SHOULD_BE_STARTED = "Server should be started after manual start";
     private static final String REQUEST_INTERRUPTED_MESSAGE = "Request was interrupted";
 
-    @Override
-    public Dispatcher getDispatcher() {
-        return CombinedDispatcher.createAPIDispatcher();
-    }
+    // The dispatcher is now provided via the @ModuleDispatcher annotation
 
     // tag::manual-start-test[]
     @Test

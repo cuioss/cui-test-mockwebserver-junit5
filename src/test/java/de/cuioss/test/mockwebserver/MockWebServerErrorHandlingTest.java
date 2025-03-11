@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -29,10 +28,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
-import mockwebserver3.RecordedRequest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,6 +36,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for error handling in the {@link MockWebServerExtension}.
  */
 public class MockWebServerErrorHandlingTest {
+
+    /**
+     * Constant for error response message
+     */
+    private static final String ERROR_RESPONSE_MESSAGE = "Error response for testing";
 
 
     /**
@@ -56,7 +57,7 @@ public class MockWebServerErrorHandlingTest {
         }
     }
 
-    // tag::error-handling-test[]
+
     @Nested
     @ExtendWith(MockExtensionWithoutServer.class)
     class ParameterResolutionErrorTest {
@@ -76,23 +77,8 @@ public class MockWebServerErrorHandlingTest {
      */
     @Nested
     @EnableMockWebServer
-    class DispatcherTest implements MockWebServerHolder {
-
-        @Override
-        public Dispatcher getDispatcher() {
-            // Return a dispatcher that always returns 500 errors
-            return new Dispatcher() {
-                @NotNull
-                @Override
-                public MockResponse dispatch(@NotNull RecordedRequest request) {
-                    return new MockResponse.Builder()
-                            .code(500)
-                            .addHeader("Content-Type", "text/plain")
-                            .body("Error response for testing")
-                            .build();
-                }
-            };
-        }
+    @de.cuioss.test.mockwebserver.mockresponse.MockResponse(status = 500, textContent = ERROR_RESPONSE_MESSAGE)
+    class DispatcherTest {
 
         @Test
         @DisplayName("Should use dispatcher from MockWebServerHolder")
@@ -108,9 +94,9 @@ public class MockWebServerErrorHandlingTest {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             assertEquals(500, response.statusCode(), "Should receive error response from custom dispatcher");
-            assertEquals("Error response for testing", response.body(), "Should receive error message from custom dispatcher");
+            assertEquals(ERROR_RESPONSE_MESSAGE, response.body(), "Should receive error message from custom dispatcher");
         }
     }
 
-    // end::error-handling-test[]
+
 }

@@ -16,7 +16,6 @@
 package de.cuioss.test.mockwebserver.dispatcher;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
-import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +27,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,7 +37,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 // tag::dispatcher-example[]
 @EnableMockWebServer
 @DisplayName("Endpoint Dispatcher Example")
-class EndpointDispatcherExampleTest implements MockWebServerHolder {
+@ModuleDispatcher(provider = EndpointDispatcherExampleTest.class, providerMethod = "createDispatcher")
+class EndpointDispatcherExampleTest {
 
     @Test
     @DisplayName("Should handle requests using EndpointAnswerHandler")
@@ -61,8 +60,12 @@ class EndpointDispatcherExampleTest implements MockWebServerHolder {
         assertEquals("{\"data\": \"test\"}", response.body());
     }
 
-    @Override
-    public Dispatcher getDispatcher() {
+    /**
+     * Creates a custom dispatcher for the test.
+     *
+     * @return the dispatcher element
+     */
+    public static ModuleDispatcherElement createDispatcher() {
         // Create a dispatcher for the /api path
         var apiDispatcher = new BaseAllAcceptDispatcher("/api");
 
@@ -73,8 +76,7 @@ class EndpointDispatcherExampleTest implements MockWebServerHolder {
                 .code(HttpServletResponse.SC_OK)
                 .build());
 
-        // Return the dispatcher
-        return new CombinedDispatcher(apiDispatcher);
+        return apiDispatcher;
     }
 }
 // end::dispatcher-example[]

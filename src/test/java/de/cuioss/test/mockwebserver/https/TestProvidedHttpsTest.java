@@ -16,11 +16,11 @@
 package de.cuioss.test.mockwebserver.https;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
-import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.TestProvidedCertificate;
 import de.cuioss.test.mockwebserver.URIBuilder;
-import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import okhttp3.tls.HandshakeCertificates;
@@ -35,7 +35,6 @@ import java.time.Duration;
 import javax.net.ssl.SSLContext;
 
 
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -62,8 +61,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @EnableMockWebServer(useHttps = true)
 @TestProvidedCertificate(methodName = "provideHandshakeCertificates")
+@ModuleDispatcher(provider = BaseAllAcceptDispatcher.class, providerMethod = "getOptimisticAPIDispatcher")
 @DisplayName("Test-Provided HTTPS Test")
-class TestProvidedHttpsTest implements MockWebServerHolder {
+class TestProvidedHttpsTest {
 
 
     private HandshakeCertificates handshakeCertificates;
@@ -140,8 +140,5 @@ class TestProvidedHttpsTest implements MockWebServerHolder {
         assertNotNull(convertedCertificates.trustManager(), "Converted HandshakeCertificates should have a TrustManager");
     }
 
-    @Override
-    public Dispatcher getDispatcher() {
-        return CombinedDispatcher.createAPIDispatcher();
-    }
+    // Removed getDispatcher() method in favor of @ModuleDispatcher annotation
 }

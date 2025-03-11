@@ -17,6 +17,7 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
@@ -48,7 +49,9 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests for certificate handling in MockWebServerExtension")
 @EnableMockWebServer(useHttps = true)
 @TestProvidedCertificate
+@ModuleDispatcher(provider = BaseAllAcceptDispatcher.class, providerMethod = "getOptimisticAPIDispatcher")
 class MockWebServerExtensionCertificateTest {
+
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerExtensionCertificateTest.class);
 
@@ -60,23 +63,12 @@ class MockWebServerExtensionCertificateTest {
 
     private SSLContext customSslContext;
 
-    /**
-     * Sets up the dispatcher for the test.
-     * This is called in the test methods instead of using the deprecated getDispatcher() method.
-     * 
-     * @param server the MockWebServer instance to configure
-     */
-    private void setupDispatcher(MockWebServer server) {
-        server.setDispatcher(new CombinedDispatcher(new BaseAllAcceptDispatcher("/api")));
-    }
-
 
     // tag::certificate-tests[]
     @Test
     @DisplayName("Should create and use self-signed certificates")
     void shouldCreateAndUseSelfSignedCertificates(MockWebServer server, SSLContext sslContext) {
-        // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
-        setupDispatcher(server);
+
         assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
         assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
         assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
@@ -113,8 +105,7 @@ class MockWebServerExtensionCertificateTest {
     @Test
     @DisplayName("Should resolve SSLContext parameter correctly")
     void shouldResolveSslContextParameter(MockWebServer server, SSLContext sslContext) {
-        // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
-        setupDispatcher(server);
+
         assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
         assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
         assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
@@ -153,8 +144,7 @@ class MockWebServerExtensionCertificateTest {
     @Test
     @DisplayName("Should fail HTTPS connection without proper SSL context")
     void shouldFailWithoutProperSslContext(MockWebServer server, URIBuilder uriBuilder) {
-        // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
-        setupDispatcher(server);
+
         assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
         assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
 
@@ -203,6 +193,7 @@ class MockWebServerExtensionCertificateTest {
     @DisplayName("Custom Certificate Tests")
     @EnableMockWebServer(useHttps = true)
     @TestProvidedCertificate
+    @ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
     class CustomCertificateTests {
 
         private HandshakeCertificates certificates;
@@ -230,20 +221,11 @@ class MockWebServerExtensionCertificateTest {
             return certificates;
         }
 
-        /**
-         * Sets up the dispatcher for the test.
-         * 
-         * @param server the MockWebServer instance to configure
-         */
-        private void setupDispatcher(MockWebServer server) {
-            server.setDispatcher(CombinedDispatcher.createAPIDispatcher());
-        }
 
         @Test
         @DisplayName("Should use certificates provided by test class")
         void shouldUseCustomCertificates(MockWebServer server, SSLContext sslContext, URIBuilder uriBuilder) {
-            // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
-            setupDispatcher(server);
+
             assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
             assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
             assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
@@ -284,6 +266,7 @@ class MockWebServerExtensionCertificateTest {
     @DisplayName("Certificate Fallback Tests")
     @EnableMockWebServer(useHttps = true)
     @TestProvidedCertificate
+    @ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
     class CertificateFallbackTests {
 
         /**
@@ -299,20 +282,11 @@ class MockWebServerExtensionCertificateTest {
             return null;
         }
 
-        /**
-         * Sets up the dispatcher for the test.
-         * 
-         * @param server the MockWebServer instance to configure
-         */
-        private void setupDispatcher(MockWebServer server) {
-            server.setDispatcher(CombinedDispatcher.createAPIDispatcher());
-        }
 
         @Test
         @DisplayName("Should fallback to self-signed certificates when test class returns empty")
         void shouldFallbackToSelfSignedCertificates(MockWebServer server, SSLContext sslContext) {
-            // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
-            setupDispatcher(server);
+
             assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
             assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
             assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);

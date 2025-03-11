@@ -257,6 +257,12 @@ class CustomTest {
 
 `ModuleDispatcherElement` enables reusable request handling in `EnableMockWebServer` contexts. It returns an `Optional<MockResponse>` for matching requests.
 
+The interface requires implementing the following methods:
+
+1. `String getBaseUrl()` - Returns the base URL path that this dispatcher handles
+2. `Set<HttpMethodMapper> supportedMethods()` - Returns the set of HTTP methods supported by this dispatcher element
+3. HTTP method handlers like `handleGet()`, `handlePost()`, etc. (only for methods returned by `supportedMethods()`)
+
 Example JWKS endpoint dispatcher:
 
 [source,java]
@@ -286,6 +292,11 @@ public class JwksResolveDispatcher implements ModuleDispatcherElement {
     @Override
     public String getBaseUrl() {
         return LOCAL_PATH;
+    }
+    
+    @Override
+    public @NonNull Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.GET);
     }
 
     /**

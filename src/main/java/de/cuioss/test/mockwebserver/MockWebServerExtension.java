@@ -15,6 +15,7 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.test.mockwebserver.dispatcher.DispatcherResolutionException;
 import de.cuioss.test.mockwebserver.dispatcher.DispatcherResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.Joiner;
@@ -178,10 +179,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             }
 
             // Configure dispatcher using the new resolver
-            Dispatcher dispatcher = dispatcherResolver.resolveDispatcher(
-                    testInstance.getClass(), testInstance, context);
-            server.setDispatcher(dispatcher);
-            LOGGER.debug("Configured dispatcher: %s", dispatcher.getClass().getName());
+            configureDispatcher(server, testInstance, context);
 
             // Legacy support for MockWebServerHolder
             setMockWebServer(testInstance, server, context);
@@ -198,8 +196,9 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             server = null;
             LOGGER.debug("MockWebServer setup completed successfully");
         } catch (Exception e) {
-            if (e instanceof IllegalStateException stateException) {
-                throw stateException;
+            if (e instanceof IllegalStateException || e instanceof DispatcherResolutionException) {
+                LOGGER.error("Critical error during MockWebServer setup: {}", e.getMessage());
+                throw e; // Propagate these exceptions directly
             } else {
                 LOGGER.error("Unexpected error during MockWebServer setup", e);
             }
@@ -347,6 +346,24 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             LOGGER.debug("No instance of {} found. This is expected with the new annotation-based approach.",
                     MockWebServerHolder.class.getName());
         }
+    }
+
+    /**
+     * Configures the dispatcher for the MockWebServer instance.
+     * This method propagates any DispatcherResolutionException to ensure that test failures
+     * are properly reported when a dispatcher cannot be resolved correctly.
+     *
+     * @param server       the MockWebServer instance to configure
+     * @param testInstance the test instance
+     * @param context      the extension context
+     * @throws DispatcherResolutionException if there is an error resolving the dispatcher
+     */
+    private void configureDispatcher(MockWebServer server, Object testInstance, ExtensionContext context) {
+        LOGGER.info("Configuring dispatcher for test class: {}", testInstance.getClass().getName());
+        Dispatcher dispatcher = dispatcherResolver.resolveDispatcher(
+                testInstance.getClass(), testInstance, context);
+        server.setDispatcher(dispatcher);
+        LOGGER.info("Configured dispatcher: {}", dispatcher.getClass().getName());
     }
 
     /**

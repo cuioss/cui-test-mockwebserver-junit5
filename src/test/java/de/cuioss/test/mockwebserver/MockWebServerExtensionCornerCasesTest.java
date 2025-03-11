@@ -15,8 +15,8 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.test.mockwebserver.mockresponse.MockResponse;
 import de.cuioss.tools.logging.CuiLogger;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -27,13 +27,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
-
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
-import mockwebserver3.MockWebServer;
-import mockwebserver3.RecordedRequest;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for unique corner cases in {@link MockWebServerExtension} that aren't covered elsewhere.
@@ -47,76 +41,52 @@ class MockWebServerExtensionCornerCasesTest {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerExtensionCornerCasesTest.class);
 
-    // Constants for assertion messages to avoid duplication
-    private static final String SERVER_SHOULD_BE_INJECTED = "Server should be injected";
-    private static final String SERVER_SHOULD_BE_STARTED = "Server should be started";
-    private static final String REQUEST_INTERRUPTED_MESSAGE = "Request was interrupted";
+    // Constants for response headers and body
+    private static final String CUSTOM_HEADER_NAME = "X-Custom-Header";
+    private static final String CUSTOM_HEADER_VALUE = "custom-value";
+    private static final String CONTENT_TYPE_HEADER = "Content-Type";
+    private static final String JSON_CONTENT_TYPE = "application/json";
+    private static final String SUCCESS_RESPONSE_BODY = "{\"status\": \"success\"}";
 
-    // tag::extension-corner-cases[]
-    /**
-     * Tests for handling of custom response headers.
-     */
     @Nested
     @DisplayName("Custom Response Headers Tests")
     @EnableMockWebServer
-    class CustomResponseHeadersTests implements MockWebServerHolder {
-
-        @Override
-        public Dispatcher getDispatcher() {
-            return new Dispatcher() {
-                @NotNull
-                @Override
-                public MockResponse dispatch(@NotNull RecordedRequest request) {
-                    return new MockResponse.Builder()
-                            .code(200)
-                            .addHeader("X-Custom-Header", "custom-value")
-                            .addHeader("Content-Type", "application/json")
-                            .body("{\"status\": \"success\"}")
-                            .build();
-                }
-            };
-        }
+    class CustomResponseHeadersTests {
 
         @Test
         @DisplayName("Should handle custom response headers")
-        void shouldHandleCustomResponseHeaders(MockWebServer server, URIBuilder uriBuilder) {
-            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
-            assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
+        @MockResponse(status = 200, textContent = SUCCESS_RESPONSE_BODY, headers = {
+                CUSTOM_HEADER_NAME + "=" + CUSTOM_HEADER_VALUE,
+                CONTENT_TYPE_HEADER + "=" + JSON_CONTENT_TYPE
+        })
+        void shouldHandleCustomResponseHeaders(URIBuilder uriBuilder) throws IOException, InterruptedException {
 
             // Create HTTP client with timeout
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(Duration.ofSeconds(2))
                     .build();
 
-            try {
-                // Make request to test custom headers
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(uriBuilder.build())
-                        .GET()
-                        .build();
+            // Make request to test custom headers
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uriBuilder.build())
+                    .GET()
+                    .build();
 
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-                // Verify response code and body
-                assertEquals(200, response.statusCode(), "Should receive success response");
-                assertEquals("{\"status\": \"success\"}", response.body(), "Should receive correct response body");
+            // Verify response code and body
+            assertEquals(200, response.statusCode(), "Should receive success response");
+            assertEquals(SUCCESS_RESPONSE_BODY, response.body(), "Should receive correct response body");
 
-                // Verify custom headers
-                assertEquals("custom-value", response.headers().firstValue("X-Custom-Header").orElse(null),
-                        "Should have custom header");
-                assertEquals("application/json", response.headers().firstValue("Content-Type").orElse(null),
-                        "Should have correct content type");
+            // Verify custom headers
+            assertEquals(CUSTOM_HEADER_VALUE, response.headers().firstValue(CUSTOM_HEADER_NAME).orElse(null),
+                    "Should have custom header");
+            assertEquals(JSON_CONTENT_TYPE, response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null),
+                    "Should have correct content type");
 
-                LOGGER.info("Successfully verified custom response headers");
+            LOGGER.info("Successfully verified custom response headers");
 
-            } catch (IOException e) {
-                fail("Request should not throw exception: " + e.getMessage());
-            } catch (InterruptedException e) {
-                // Restore the interrupted status and throw a dedicated exception
-                Thread.currentThread().interrupt();
-                throw new MockWebServerTestException(REQUEST_INTERRUPTED_MESSAGE, e);
-            }
         }
     }
-    // end::extension-corner-cases[]
+
 }

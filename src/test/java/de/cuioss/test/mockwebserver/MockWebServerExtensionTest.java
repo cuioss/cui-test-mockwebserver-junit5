@@ -16,7 +16,8 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
-import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -25,7 +26,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
 
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -35,7 +35,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * when using {@link EnableMockWebServer}.
  */
 @EnableMockWebServer
-class MockWebServerExtensionTest implements MockWebServerHolder {
+@ModuleDispatcher(provider = MockWebServerExtensionTest.class, providerMethod = "createDispatcher")
+class MockWebServerExtensionTest {
 
     @Test
     void shouldProvideStartedServer(MockWebServer mockWebServer) {
@@ -57,8 +58,12 @@ class MockWebServerExtensionTest implements MockWebServerHolder {
 
     }
 
-    @Override
-    public Dispatcher getDispatcher() {
-        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+    /**
+     * Creates the dispatcher for the test.
+     * 
+     * @return the dispatcher
+     */
+    public static ModuleDispatcherElement createDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
     }
 }

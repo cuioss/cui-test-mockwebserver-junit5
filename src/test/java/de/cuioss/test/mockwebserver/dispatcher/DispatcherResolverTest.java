@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
-import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import okhttp3.Headers;
@@ -51,7 +50,7 @@ class DispatcherResolverTest {
     // Using null for ExtensionContext since it's not used in the resolver
     private static final ExtensionContext extensionContext = null;
 
-    // tag::test-annotation-class[]
+
     @Test
     @DisplayName("Should resolve dispatcher from @ModuleDispatcher annotation with direct class reference")
     void shouldResolveFromAnnotationWithClass() {
@@ -85,7 +84,6 @@ class DispatcherResolverTest {
         }
     }
 
-    // end::test-annotation-class[]
 
     @Test
     @DisplayName("Should resolve dispatcher from getModuleDispatcher method")
@@ -115,13 +113,13 @@ class DispatcherResolverTest {
     void shouldUseLegacyDispatcher() {
         // Arrange
         var testClass = TestClassWithLegacyDispatcher.class;
-        var testInstance = new TestClassWithLegacyDispatcher();
 
         // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance, extensionContext);
+        var dispatcher = resolver.resolveDispatcher(testClass, null, extensionContext);
 
         // Assert
         assertNotNull(dispatcher);
+        // The dispatcher should be the TestDispatcher directly
         assertInstanceOf(TestDispatcher.class, dispatcher);
 
         // Verify the dispatcher works as expected
@@ -145,7 +143,7 @@ class DispatcherResolverTest {
 
         // Assert
         assertNotNull(dispatcher);
-        assertTrue(dispatcher instanceof CombinedDispatcher);
+        assertInstanceOf(CombinedDispatcher.class, dispatcher);
     }
 
     // Constants for test paths
@@ -174,16 +172,6 @@ class DispatcherResolverTest {
         }
     }
 
-    /**
-     * Custom exception for dispatch errors
-     */
-    private static class DispatchException extends RuntimeException {
-        private static final long serialVersionUID = 1L;
-
-        public DispatchException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
 
     // Test classes for the tests
 
@@ -201,15 +189,23 @@ class DispatcherResolverTest {
         }
     }
 
-    // Test class with legacy dispatcher
-    @SuppressWarnings("deprecation")
-    static class TestClassWithLegacyDispatcher implements MockWebServerHolder {
+    // Test class with legacy dispatcher - updated to use ModuleDispatcher
+    @ModuleDispatcher(providerMethod = "provideDispatcher")
+    static class TestClassWithLegacyDispatcher {
 
-        @Override
-        @SuppressWarnings({"deprecation", "removal"})
-        public Dispatcher getDispatcher() {
+        // Constructor needs to be accessible for test
+        TestClassWithLegacyDispatcher() {
+            // Package-private constructor for testing
+        }
+
+        /**
+         * Provides a test dispatcher for the mock web server
+         * @return a legacy dispatcher
+         */
+        static Dispatcher provideDispatcher() {
             return new TestDispatcher();
         }
+
     }
 
     // Test dispatcher element implementation

@@ -16,10 +16,10 @@
 package de.cuioss.test.mockwebserver.https;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
-import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.URIBuilder;
-import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -29,9 +29,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import javax.net.ssl.SSLContext;
-
-
-import mockwebserver3.Dispatcher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -46,8 +43,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @EnableMockWebServer(
         useHttps = true
 )
+@ModuleDispatcher(provider = BaseAllAcceptDispatcher.class, providerMethod = "getOptimisticAPIDispatcher")
 @DisplayName("SSLContext Parameter Resolving Test")
-class SslContextParameterResolvingTest implements MockWebServerHolder {
+class SslContextParameterResolvingTest {
+
 
     /**
      * Tests that the SSLContext can be directly injected as a parameter.
@@ -79,8 +78,5 @@ class SslContextParameterResolvingTest implements MockWebServerHolder {
         assertEquals(EndpointAnswerHandler.RESPONSE_SUCCESSFUL_BODY, response.body(), "Response body should match expected content");
     }
 
-    @Override
-    public Dispatcher getDispatcher() {
-        return CombinedDispatcher.createAPIDispatcher();
-    }
+    // Removed getDispatcher() method in favor of @ModuleDispatcher annotation
 }

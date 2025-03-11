@@ -16,6 +16,7 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
@@ -31,7 +32,6 @@ import java.time.Duration;
 import javax.net.ssl.SSLContext;
 
 
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -41,7 +41,8 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @EnableMockWebServer(useHttps = true)
 @TestProvidedCertificate(methodName = "provideHandshakeCertificates")
-class MockWebServerCustomCertificatesTest implements MockWebServerHolder {
+@ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
+class MockWebServerCustomCertificatesTest {
 
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerCustomCertificatesTest.class);
 
@@ -69,10 +70,7 @@ class MockWebServerCustomCertificatesTest implements MockWebServerHolder {
         return certificates;
     }
 
-    @Override
-    public Dispatcher getDispatcher() {
-        return CombinedDispatcher.createAPIDispatcher();
-    }
+    // The dispatcher is now provided via the @ModuleDispatcher annotation
 
     // tag::custom-certificates-test[]
     @Test

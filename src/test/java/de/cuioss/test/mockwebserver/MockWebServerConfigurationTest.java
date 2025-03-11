@@ -16,6 +16,7 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,7 +29,6 @@ import java.time.Duration;
 import javax.net.ssl.SSLContext;
 
 
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -56,12 +56,8 @@ class MockWebServerConfigurationTest {
     @Nested
     @DisplayName("Default Configuration Tests")
     @EnableMockWebServer
-    class DefaultConfigurationTests implements MockWebServerHolder {
-
-        @Override
-        public Dispatcher getDispatcher() {
-            return CombinedDispatcher.createAPIDispatcher();
-        }
+    @ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
+    class DefaultConfigurationTests {
 
         @Test
         @DisplayName("Should use default configuration")
@@ -102,12 +98,8 @@ class MockWebServerConfigurationTest {
     @Nested
     @DisplayName("HTTPS Configuration Tests")
     @EnableMockWebServer(useHttps = true)
-    class HttpsConfigurationTests implements MockWebServerHolder {
-
-        @Override
-        public Dispatcher getDispatcher() {
-            return CombinedDispatcher.createAPIDispatcher();
-        }
+    @ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
+    class HttpsConfigurationTests {
 
         @Test
         @DisplayName("Should use HTTPS with self-signed certificates")
@@ -150,12 +142,8 @@ class MockWebServerConfigurationTest {
     @Nested
     @DisplayName("Manual Control Tests")
     @EnableMockWebServer(manualStart = true)
-    class ManualControlTests implements MockWebServerHolder {
-
-        @Override
-        public Dispatcher getDispatcher() {
-            return CombinedDispatcher.createAPIDispatcher();
-        }
+    @ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
+    class ManualControlTests {
 
         @Test
         @DisplayName("Should not start server automatically")
@@ -203,12 +191,8 @@ class MockWebServerConfigurationTest {
     @Nested
     @DisplayName("Combined Configuration Tests")
     @EnableMockWebServer(useHttps = true, manualStart = true)
-    class CombinedConfigurationTests implements MockWebServerHolder {
-
-        @Override
-        public Dispatcher getDispatcher() {
-            return CombinedDispatcher.createAPIDispatcher();
-        }
+    @ModuleDispatcher(provider = CombinedDispatcher.class, providerMethod = "createAPIDispatcher")
+    class CombinedConfigurationTests {
 
         @Test
         @DisplayName("Should handle combined HTTPS and manual start")

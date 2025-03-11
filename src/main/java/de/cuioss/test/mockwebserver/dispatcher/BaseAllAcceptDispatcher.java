@@ -164,4 +164,11 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         all.removeAll(mutableSortedSet(mapper));
         setMethodToResult(mockResponse, all.toArray(new HttpMethodMapper[0]));
     }
+
+    /**
+     * @return A new instance of the BaseAllAcceptDispatcher with a default configuration providing an /api endpoint
+     */
+    public ModuleDispatcherElement getOptimisticAPIDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
+    }
 }

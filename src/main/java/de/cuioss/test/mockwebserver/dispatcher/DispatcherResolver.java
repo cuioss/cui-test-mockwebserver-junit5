@@ -19,10 +19,12 @@ import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.mockresponse.MockResponseResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
+import mockwebserver3.Dispatcher;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.support.AnnotationSupport;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -31,9 +33,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-
-import mockwebserver3.Dispatcher;
 
 @SuppressWarnings("deprecation") // Using deprecated methods for backward compatibility with MockWebServerHolder
 
@@ -77,28 +76,112 @@ public class DispatcherResolver {
      * @since 1.1
      */
     @NonNull
+    /**
+     * Resolves a dispatcher for the given test class and instance.
+     * This is the main entry point for dispatcher resolution.
+     *
+     * @param testClass the test class
+     * @param testInstance the test instance
+     * @param extensionContext the extension context
+     * @return the resolved dispatcher
+     */
     public Dispatcher resolveDispatcher(Class<?> testClass, Object testInstance, ExtensionContext extensionContext) {
-        LOGGER.debug("Resolving dispatcher for test class: %s", testClass.getName());
+        LOGGER.info("Resolving dispatcher for test class: %s", testClass.getName());
+
+        // Try to resolve from annotation first (highest priority)
+        Optional<Dispatcher> annotationDispatcher = resolveFromAnnotationSource(testClass);
+        if (annotationDispatcher.isPresent()) {
+            return annotationDispatcher.get();
+        }
 
         // Collect all dispatchers from different sources
-        List<ModuleDispatcherElement> dispatchers = new ArrayList<>();
+        List<ModuleDispatcherElement> dispatchers = collectDispatchers(testClass, testInstance);
 
-        // Check for @ModuleDispatcher annotation
+        // Check for legacy dispatcher if no other dispatchers found
+        if (dispatchers.isEmpty()) {
+            Optional<Dispatcher> legacyDispatcher = resolveLegacyDispatcher(testInstance);
+            if (legacyDispatcher.isPresent()) {
+                return legacyDispatcher.get();
+            }
+        }
+
+        // If we have dispatchers, validate and combine them
+        if (!dispatchers.isEmpty()) {
+            return createCombinedDispatcher(dispatchers);
+        }
+
+        // Fallback to default API dispatcher
+        LOGGER.debug("No dispatchers found, using default API dispatcher");
+        return CombinedDispatcher.createAPIDispatcher();
+    }
+
+    /**
+     * Attempts to resolve a dispatcher from the ModuleDispatcher annotation.
+     *
+     * @param testClass the test class
+     * @return an Optional containing the resolved dispatcher, or empty if none found
+     */
+    private Optional<Dispatcher> resolveFromAnnotationSource(Class<?> testClass) {
         Optional<ModuleDispatcher> moduleDispatcherAnnotation =
                 AnnotationSupport.findAnnotation(testClass, ModuleDispatcher.class);
 
-        if (moduleDispatcherAnnotation.isPresent()) {
-            LOGGER.debug("Found @ModuleDispatcher annotation on test class: %s", testClass.getName());
-            Optional<ModuleDispatcherElement> dispatcher =
-                    resolveFromAnnotation(moduleDispatcherAnnotation.get());
-            dispatcher.ifPresent(dispatchers::add);
+        if (!moduleDispatcherAnnotation.isPresent()) {
+            LOGGER.info("No @ModuleDispatcher annotation found on test class: %s", testClass.getName());
+            return Optional.empty();
         }
 
-        // Check for getModuleDispatcher method
-        Optional<ModuleDispatcherElement> methodDispatcher = resolveFromMethod(testInstance);
-        methodDispatcher.ifPresent(dispatchers::add);
+        LOGGER.info("Found @ModuleDispatcher annotation on test class: %s", testClass.getName());
+        ModuleDispatcher annotation = moduleDispatcherAnnotation.get();
 
-        // Check for @MockResponse annotations
+        // First try to resolve as ModuleDispatcherElement
+        Optional<ModuleDispatcherElement> dispatcher = resolveFromAnnotation(annotation);
+
+        // If a provider method is specified and no dispatcher was resolved directly,
+        // try to resolve using the provider method
+        if (dispatcher.isEmpty() && !annotation.providerMethod().isEmpty()) {
+            LOGGER.info("Attempting to resolve dispatcher from provider method: %s",
+                    annotation.providerMethod());
+            Optional<Dispatcher> directDispatcher =
+                    resolveDirectDispatcher(testClass, annotation.providerMethod());
+            if (directDispatcher.isPresent()) {
+                LOGGER.info("Successfully resolved direct dispatcher from provider method");
+                return directDispatcher;
+            }
+            LOGGER.info("Could not resolve direct dispatcher from provider method");
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Collects dispatchers from various sources.
+     *
+     * @param testClass    the test class
+     * @param testInstance the test instance
+     * @return a list of collected dispatchers
+     */
+    private List<ModuleDispatcherElement> collectDispatchers(Class<?> testClass, Object testInstance) {
+        List<ModuleDispatcherElement> dispatchers = new ArrayList<>();
+
+        // Add dispatcher from annotation if present
+        Optional<ModuleDispatcher> moduleDispatcherAnnotation =
+                AnnotationSupport.findAnnotation(testClass, ModuleDispatcher.class);
+        if (moduleDispatcherAnnotation.isPresent()) {
+            resolveFromAnnotation(moduleDispatcherAnnotation.get())
+                    .ifPresent(dispatcher -> {
+                        LOGGER.info("Successfully resolved dispatcher from annotation");
+                        dispatchers.add(dispatcher);
+                    });
+        }
+
+        // Add dispatcher from method if present
+        LOGGER.info("Checking for getModuleDispatcher method in test class: %s", testClass.getName());
+        resolveFromMethod(testInstance).ifPresent(dispatcher -> {
+            LOGGER.info("Successfully resolved dispatcher from getModuleDispatcher method");
+            dispatchers.add(dispatcher);
+        });
+
+        // Add dispatchers from MockResponse annotations
         List<ModuleDispatcherElement> mockResponseDispatchers =
                 MockResponseResolver.resolveFromAnnotations(testClass, testInstance);
         if (!mockResponseDispatchers.isEmpty()) {
@@ -107,35 +190,46 @@ public class DispatcherResolver {
             dispatchers.addAll(mockResponseDispatchers);
         }
 
-        // Legacy support: check if the test class implements MockWebServerHolder
-        if (dispatchers.isEmpty() && testInstance instanceof MockWebServerHolder holder) {
+        return dispatchers;
+    }
+
+    /**
+     * Resolves a legacy dispatcher from a MockWebServerHolder instance.
+     *
+     * @param testInstance the test instance
+     * @return an Optional containing the legacy dispatcher, or empty if none found
+     */
+    private Optional<Dispatcher> resolveLegacyDispatcher(Object testInstance) {
+        if (testInstance instanceof MockWebServerHolder holder) {
             LOGGER.debug("Test class implements MockWebServerHolder, checking for dispatcher");
             // Using deprecated method for backward compatibility
             @SuppressWarnings({"deprecation", "removal"})
             Dispatcher legacyDispatcher = holder.getDispatcher();
             if (legacyDispatcher != null) {
                 LOGGER.debug("Using legacy dispatcher from MockWebServerHolder.getDispatcher()");
-                return legacyDispatcher;
+                return Optional.of(legacyDispatcher);
             }
         }
+        return Optional.empty();
+    }
 
-        // If we have dispatchers, validate and combine them
-        if (!dispatchers.isEmpty()) {
-            // Validate uniqueness of path+method combinations
-            validateDispatchers(dispatchers);
+    /**
+     * Creates a combined dispatcher from the given list of dispatchers.
+     *
+     * @param dispatchers the list of dispatchers to combine
+     * @return the combined dispatcher
+     */
+    private Dispatcher createCombinedDispatcher(List<ModuleDispatcherElement> dispatchers) {
+        // Validate uniqueness of path+method combinations
+        validateDispatchers(dispatchers);
 
-            // Log active dispatcher elements
-            logActiveDispatchers(dispatchers);
+        // Log active dispatcher elements
+        logActiveDispatchers(dispatchers);
 
-            LOGGER.debug("Creating CombinedDispatcher with %d module dispatchers", dispatchers.size());
-            CombinedDispatcher combinedDispatcher = new CombinedDispatcher();
-            combinedDispatcher.addDispatcher(dispatchers);
-            return combinedDispatcher;
-        }
-
-        // Fallback to default API dispatcher
-        LOGGER.debug("No dispatchers found, using default API dispatcher");
-        return CombinedDispatcher.createAPIDispatcher();
+        LOGGER.debug("Creating CombinedDispatcher with %d module dispatchers", dispatchers.size());
+        CombinedDispatcher combinedDispatcher = new CombinedDispatcher();
+        combinedDispatcher.addDispatcher(dispatchers);
+        return combinedDispatcher;
     }
 
     /**
@@ -191,8 +285,14 @@ public class DispatcherResolver {
 
                 if (result instanceof ModuleDispatcherElement moduleDispatcherElement) {
                     return Optional.of(moduleDispatcherElement);
+                } else if (result instanceof Dispatcher) {
+                    // The provider method returned a Dispatcher directly
+                    // This is for backward compatibility with the refactored code
+                    LOGGER.debug("Provider method returned a Dispatcher directly, not wrapping it");
+                    // We'll handle this in the resolveDispatcher method
+                    return Optional.empty();
                 } else {
-                    LOGGER.error("Provider method did not return a ModuleDispatcherElement: %s", result);
+                    LOGGER.error("Provider method did not return a ModuleDispatcherElement or Dispatcher: %s", result);
                     return Optional.empty();
                 }
             } catch (Exception e) {
@@ -209,39 +309,101 @@ public class DispatcherResolver {
      * Resolves a dispatcher from a method in the test class.
      * <p>
      * This method looks for a {@code getModuleDispatcher()} method in the test class and invokes it
-     * to obtain a {@link ModuleDispatcherElement} instance. If the method doesn't exist or doesn't
-     * return a {@link ModuleDispatcherElement}, an empty Optional is returned.
+     * to obtain a {@link ModuleDispatcherElement} instance. If the method doesn't exist, an empty Optional is returned.
      * <p>
-     * Any exceptions during resolution are logged and result in an empty Optional being returned.
+     * If the method exists but there are issues with invocation or the return type, appropriate exceptions are thrown:
+     * <ul>
+     *   <li>If the method returns null, an IllegalStateException is thrown</li>
+     *   <li>If the method returns a non-ModuleDispatcherElement, an IllegalStateException is thrown</li>
+     *   <li>If the method throws an exception, an IllegalStateException wrapping the original exception is thrown</li>
+     *   <li>If the method cannot be accessed, an IllegalStateException is thrown</li>
+     * </ul>
      *
      * @param testInstance the test instance to invoke the method on
-     * @return an Optional containing the resolved dispatcher, or empty if resolution fails
+     * @return an Optional containing the resolved dispatcher, or empty if the method doesn't exist
+     * @throws DispatcherResolutionException if there are issues with method invocation or return type
      * @since 1.1
      */
     private Optional<ModuleDispatcherElement> resolveFromMethod(Object testInstance) {
+        LOGGER.info("Attempting to resolve dispatcher from method for class: %s",
+                testInstance.getClass().getName());
         try {
             Method method = testInstance.getClass().getDeclaredMethod(GET_MODULE_DISPATCHER_METHOD);
-            // Method accessibility needed for reflection
 
-            LOGGER.debug("Found getModuleDispatcher method in test class: %s",
+            LOGGER.info("Found getModuleDispatcher method in test class: %s",
                     testInstance.getClass().getName());
 
-            Object result = method.invoke(testInstance);
-            if (result instanceof ModuleDispatcherElement moduleDispatcherElement) {
-                return Optional.of(moduleDispatcherElement);
-            } else {
-                LOGGER.error("getModuleDispatcher method did not return a ModuleDispatcherElement: %s", result);
-                return Optional.empty();
-            }
+            ModuleDispatcherElement result = invokeModuleDispatcherMethod(testInstance, method);
+            LOGGER.info("Successfully resolved dispatcher from method");
+            return Optional.of(result);
+
         } catch (NoSuchMethodException e) {
             // Method doesn't exist, which is fine
-            LOGGER.debug("No getModuleDispatcher method found in test class: %s",
+            LOGGER.info("No getModuleDispatcher method found in test class: %s",
                     testInstance.getClass().getName());
             return Optional.empty();
-        } catch (Exception e) {
-            LOGGER.error("Failed to invoke getModuleDispatcher method: %s", e.getMessage());
-            LOGGER.debug(EXCEPTION_DETAILS, e);
-            return Optional.empty();
+        } catch (SecurityException e) {
+            LOGGER.error("Security violation accessing getModuleDispatcher method", e);
+            throw new DispatcherResolutionException("Security violation accessing getModuleDispatcher method", e);
+        }
+    }
+
+    /**
+     * Invokes the getModuleDispatcher method on the test instance.
+     * This method respects Java's access control rules - if the method is private or otherwise
+     * not accessible, an IllegalAccessException will be thrown and converted to a
+     * DispatcherResolutionException.
+     *
+     * @param testInstance the test instance to invoke the method on
+     * @param method       the method to invoke
+     * @return the ModuleDispatcherElement if successfully resolved
+     * @throws DispatcherResolutionException if there are issues with method invocation or return type
+     */
+    @SuppressWarnings("java:S3011") // owolff: Setting accessibility is ok for test methods
+    private ModuleDispatcherElement invokeModuleDispatcherMethod(Object testInstance, Method method) {
+        LOGGER.info("Invoking getModuleDispatcher method on instance of class: {}",
+                testInstance.getClass().getName());
+        try {
+            // Check if the method is public but still not accessible (due to Java module system or other reasons)
+            // We only make public methods accessible, but leave private methods inaccessible
+            // This allows tests to verify that inaccessible private methods are properly handled
+            if (Modifier.isPublic(method.getModifiers()) && !method.canAccess(testInstance)) {
+                LOGGER.info("Making public getModuleDispatcher method accessible");
+                method.setAccessible(true);
+            }
+
+            Object result = method.invoke(testInstance);
+            if (result == null) {
+                LOGGER.error("getModuleDispatcher method returned null");
+                throw new DispatcherResolutionException("getModuleDispatcher method returned null");
+            }
+
+            LOGGER.info("getModuleDispatcher method returned an object of type: {}",
+                    result.getClass().getName());
+
+            // Check if the result implements ModuleDispatcherElement interface
+            if (result instanceof ModuleDispatcherElement moduleDispatcherElement) {
+                LOGGER.info("Successfully resolved ModuleDispatcherElement with base URL: {}",
+                        moduleDispatcherElement.getBaseUrl());
+
+                // Log supported methods for debugging
+                LOGGER.info("ModuleDispatcherElement supports methods: {}",
+                        moduleDispatcherElement.supportedMethods());
+
+                return moduleDispatcherElement;
+            } else {
+                LOGGER.error("getModuleDispatcher method returned an object of type {} which is not a ModuleDispatcherElement",
+                        result.getClass().getName());
+                throw new DispatcherResolutionException(
+                        "getModuleDispatcher method did not return a ModuleDispatcherElement: " +
+                                result.getClass().getName());
+            }
+        } catch (IllegalAccessException e) {
+            LOGGER.error("Cannot access getModuleDispatcher method", e);
+            throw new DispatcherResolutionException("Cannot access getModuleDispatcher method", e);
+        } catch (InvocationTargetException e) {
+            LOGGER.error("getModuleDispatcher method threw an exception", e.getCause());
+            throw new DispatcherResolutionException("getModuleDispatcher method threw an exception", e.getCause());
         }
     }
 
@@ -278,6 +440,29 @@ public class DispatcherResolver {
             LOGGER.error(errorMessage);
             throw new IllegalStateException(errorMessage);
         }
+    }
+
+    /**
+     * Attempts to resolve a direct Dispatcher from a provider method.
+     *
+     * @param testClass  the test class containing the provider method
+     * @param methodName the name of the provider method
+     * @return an Optional containing the Dispatcher if found
+     * @since 1.1
+     */
+    private Optional<Dispatcher> resolveDirectDispatcher(Class<?> testClass, String methodName) {
+        try {
+            Method providerMethod = testClass.getDeclaredMethod(methodName);
+            Object result = providerMethod.invoke(null); // Assuming static method
+
+            if (result instanceof Dispatcher directDispatcher) {
+                LOGGER.debug("Found direct Dispatcher from provider method: %s", methodName);
+                return Optional.of(directDispatcher);
+            }
+        } catch (Exception e) {
+            LOGGER.debug("Failed to resolve direct Dispatcher: %s", e.getMessage());
+        }
+        return Optional.empty();
     }
 
     /**
