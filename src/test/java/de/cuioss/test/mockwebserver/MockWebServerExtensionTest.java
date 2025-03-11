@@ -18,6 +18,7 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -33,29 +34,48 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test class for verifying that the {@link MockWebServerExtension} works correctly
  * when using {@link EnableMockWebServer}.
+ * <p>
+ * This class tests the basic functionality of the extension, including server startup
+ * and request handling with a custom dispatcher.
  */
+@DisplayName("Basic MockWebServerExtension functionality tests")
 @EnableMockWebServer
 @ModuleDispatcher(provider = MockWebServerExtensionTest.class, providerMethod = "createDispatcher")
 class MockWebServerExtensionTest {
 
+    /**
+     * Verifies that the extension provides a started MockWebServer instance.
+     */
     @Test
+    @DisplayName("Should provide a started server instance")
     void shouldProvideStartedServer(MockWebServer mockWebServer) {
-        assertNotNull(mockWebServer);
-        assertTrue(mockWebServer.getStarted());
+        // Arrange - handled by extension
+        
+        // Act & Assert
+        assertNotNull(mockWebServer, "MockWebServer should not be null");
+        assertTrue(mockWebServer.getStarted(), "MockWebServer should be started");
     }
 
+    /**
+     * Verifies that the extension correctly handles a simple HTTP request using
+     * the configured dispatcher.
+     */
     @Test
+    @DisplayName("Should handle a simple GET request")
     void shouldHandleSimpleRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        // Arrange
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uriBuilder.setPath("api").build())
                 .GET()
                 .build();
 
+        // Act
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertNotNull(response);
-        assertEquals(200, response.statusCode());
-
+        
+        // Assert
+        assertNotNull(response, "Response should not be null");
+        assertEquals(200, response.statusCode(), "Status code should be 200 OK");
     }
 
     /**

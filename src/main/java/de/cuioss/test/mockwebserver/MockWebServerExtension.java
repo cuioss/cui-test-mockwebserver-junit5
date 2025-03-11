@@ -181,7 +181,8 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             // Configure dispatcher using the new resolver
             configureDispatcher(server, testInstance, context);
 
-            // Legacy support for MockWebServerHolder
+            // Legacy support for MockWebServerHolder (deprecated)
+            // This will be removed in version 1.2 - tests should use parameter injection instead
             setMockWebServer(testInstance, server, context);
 
             if (!config.manualStart()) {
@@ -328,6 +329,17 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * Sets the MockWebServer instance on the test class if it implements MockWebServerHolder.
      * Note: The dispatcher resolution is now handled by DispatcherResolver, but we still
      * call setMockWebServer for backward compatibility.
+     * <p>
+     * <strong>Migration Guide:</strong> Instead of implementing the MockWebServerHolder interface,
+     * use parameter injection in your test methods. For example:
+     * <pre>
+     * {@code
+     * @Test
+     * void testWithServer(MockWebServer server, URIBuilder uriBuilder) {
+     *     // Use server and uriBuilder directly
+     * }
+     * }
+     * </pre>
      *
      * @param testInstance  the test instance
      * @param mockWebServer the MockWebServer instance

@@ -38,10 +38,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test class for {@link DispatcherResolver}
+ * <p>
+ * This class tests the various ways to resolve dispatchers using the DispatcherResolver,
+ * including annotation-based resolution, method-based resolution, and fallback behavior.
  *
  * @author Oliver Wolff
  */
-@DisplayName("Tests the DispatcherResolver class")
+@DisplayName("DispatcherResolver - Resolution Strategy Tests")
 class DispatcherResolverTest {
 
     private static final CuiLogger LOGGER = new CuiLogger(DispatcherResolverTest.class);
@@ -51,6 +54,10 @@ class DispatcherResolverTest {
     private static final ExtensionContext extensionContext = null;
 
 
+    /**
+     * Tests that the resolver correctly resolves a dispatcher from a class annotated
+     * with @ModuleDispatcher that directly references a dispatcher class.
+     */
     @Test
     @DisplayName("Should resolve dispatcher from @ModuleDispatcher annotation with direct class reference")
     void shouldResolveFromAnnotationWithClass() {
@@ -62,24 +69,32 @@ class DispatcherResolverTest {
         var dispatcher = resolver.resolveDispatcher(testClass, testInstance, extensionContext);
 
         // Assert
-        assertNotNull(dispatcher);
-        assertInstanceOf(CombinedDispatcher.class, dispatcher);
+        assertNotNull(dispatcher, "Resolved dispatcher should not be null");
+        assertInstanceOf(CombinedDispatcher.class, dispatcher, "Dispatcher should be a CombinedDispatcher");
 
         // Verify the dispatcher works as expected
         var response = dispatchRequest(dispatcher, TEST_PATH);
-        LOGGER.debug("TEST_PATH Response Status: {}", response.getStatus());
-        LOGGER.debug("TEST_PATH Response Body: {}", response.getBody());
+        LOGGER.debug("TEST_PATH Response Status: %s", response.getStatus());
+        LOGGER.debug("TEST_PATH Response Body: %s", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
                 response.getStatus() + STATUS_ERROR_MESSAGE);
-        assertTrue(writeBodyToString(response).contains("Test Dispatcher"));
+        assertTrue(writeBodyToString(response).contains("Test Dispatcher"), 
+                "Response body should contain expected content");
     }
 
+    /**
+     * Helper method to convert a MockResponse body to a string for assertion.
+     *
+     * @param response the MockResponse to extract the body from
+     * @return the body as a string, or an error message if extraction fails
+     */
     private String writeBodyToString(MockResponse response) {
         Buffer buffer = new Buffer();
         try {
             response.getBody().writeTo(buffer);
             return buffer.readUtf8();
         } catch (Exception e) {
+            LOGGER.error(e, "Failed to read response body: %s", e.getMessage());
             return "Failed to read response body";
         }
     }
@@ -209,7 +224,6 @@ class DispatcherResolverTest {
     }
 
     // Test dispatcher element implementation
-    @SuppressWarnings("deprecation")
     private static final class TestDispatcherElement implements ModuleDispatcherElement {
         private final String baseUrl;
 

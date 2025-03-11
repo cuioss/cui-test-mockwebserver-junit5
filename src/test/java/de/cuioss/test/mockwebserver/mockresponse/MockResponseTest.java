@@ -33,16 +33,26 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Tests for the {@link MockResponse} annotation.
+ * <p>
+ * This class tests various configurations of the MockResponse annotation,
+ * including basic functionality, multiple annotations, custom headers,
+ * and different content types.
  *
  * @author Oliver Wolff
  */
-@DisplayName("Tests for the @MockResponse annotation")
+@DisplayName("MockResponse Annotation - Configuration Tests")
 class MockResponseTest {
 
     // Constants to avoid duplication
     private static final String API_USERS_PATH = "/api/users";
+    private static final String API_DATA_PATH = "/api/data";
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    
+    // Common assertion messages
+    private static final String STATUS_CODE_ASSERTION_MESSAGE = "Response status code should match expected value";
+    private static final String BODY_CONTENT_ASSERTION_MESSAGE = "Response body should match expected content";
+    private static final String CONTENT_TYPE_ASSERTION_MESSAGE = "Content-Type header should match expected value";
 
     /**
      * Tests basic functionality of the @MockResponse annotation.
@@ -53,7 +63,12 @@ class MockResponseTest {
     @DisplayName("Basic @MockResponse functionality")
     class BasicMockResponseTest {
 
+        /**
+         * Tests that a basic MockResponse annotation correctly configures a response
+         * with the specified status code, content, and content type.
+         */
         @Test
+        @DisplayName("Should return configured response with text content")
         void shouldReturnConfiguredResponse(URIBuilder uriBuilder) throws IOException, InterruptedException {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
@@ -69,9 +84,10 @@ class MockResponseTest {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             // Assert
-            assertEquals(200, response.statusCode());
-            assertEquals("Hello, World!", response.body());
-            assertEquals("text/plain", response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null));
+            assertEquals(200, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
+            assertEquals("Hello, World!", response.body(), BODY_CONTENT_ASSERTION_MESSAGE);
+            assertEquals("text/plain", response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null),
+                    CONTENT_TYPE_ASSERTION_MESSAGE);
         }
     }
 
@@ -86,7 +102,12 @@ class MockResponseTest {
     @DisplayName("Multiple @MockResponse annotations")
     class MultipleMockResponseTest {
 
+        /**
+         * Tests that a GET request is correctly handled with the specified
+         * JSON content and content type.
+         */
         @Test
+        @DisplayName("Should handle GET request with JSON content")
         void shouldHandleGetRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
@@ -102,12 +123,18 @@ class MockResponseTest {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             // Assert
-            assertEquals(200, response.statusCode());
-            assertEquals("{\"users\":[]}", response.body());
-            assertEquals("application/json; charset=utf-8", response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null));
+            assertEquals(200, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
+            assertEquals("{\"users\":[]}", response.body(), BODY_CONTENT_ASSERTION_MESSAGE);
+            assertEquals("application/json; charset=utf-8", response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null),
+                    CONTENT_TYPE_ASSERTION_MESSAGE);
         }
 
+        /**
+         * Tests that a POST request is correctly handled with the specified
+         * status code (201 Created).
+         */
         @Test
+        @DisplayName("Should handle POST request with 201 status code")
         void shouldHandlePostRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
@@ -123,7 +150,7 @@ class MockResponseTest {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             // Assert
-            assertEquals(201, response.statusCode());
+            assertEquals(201, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
         }
     }
 
@@ -133,7 +160,7 @@ class MockResponseTest {
     @Nested
     @EnableMockWebServer
     @MockResponse(
-            path = "/api/data",
+            path = API_DATA_PATH,
             status = 200,
             jsonContent = "key1=value1,key2=value2",
             headers = {"X-Custom-Header=Custom Value", "Cache-Control=no-cache"}
@@ -147,7 +174,7 @@ class MockResponseTest {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
                     .build();
-            URI uri = uriBuilder.addPathSegment("/api/data").build();
+            URI uri = uriBuilder.addPathSegment(API_DATA_PATH).build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
                     .GET()

@@ -44,15 +44,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * Focuses on edge cases and error handling related to SSL/TLS configuration.
  * <p>
  * This class consolidates all certificate-related tests to avoid duplication
- * across multiple test classes while ensuring comprehensive coverage.
+ * across multiple test classes while ensuring comprehensive coverage. It tests:
+ * <ul>
+ *   <li>Self-signed certificate generation and usage</li>
+ *   <li>Custom certificate handling</li>
+ *   <li>Error handling for invalid certificates</li>
+ *   <li>Certificate validation behavior</li>
+ * </ul>
+ *
+ * @author Oliver Wolff
  */
-@DisplayName("Tests for certificate handling in MockWebServerExtension")
+@DisplayName("Certificate Handling - MockWebServerExtension")
 @EnableMockWebServer(useHttps = true)
 @TestProvidedCertificate
 @ModuleDispatcher(provider = BaseAllAcceptDispatcher.class, providerMethod = "getOptimisticAPIDispatcher")
 class MockWebServerExtensionCertificateTest {
 
 
+    // Logger for test diagnostics - used in test setup and teardown
     private static final CuiLogger LOGGER = new CuiLogger(MockWebServerExtensionCertificateTest.class);
 
     // Constants for assertion messages to avoid duplication
@@ -60,15 +69,22 @@ class MockWebServerExtensionCertificateTest {
     private static final String SERVER_SHOULD_BE_STARTED = "Server should be started";
     private static final String SSL_CONTEXT_SHOULD_BE_INJECTED = "SSLContext should be injected";
     private static final String REQUEST_INTERRUPTED_MESSAGE = "Request was interrupted";
+    private static final String STATUS_CODE_ASSERTION_MESSAGE = "Response status code should match expected value";
+    
+    // Common test timeouts
+    private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(2);
 
     private SSLContext customSslContext;
 
 
-    // tag::certificate-tests[]
+    /**
+     * Tests that the extension correctly creates and uses self-signed certificates.
+     * This verifies that the basic HTTPS functionality works with the generated certificates.
+     */
     @Test
     @DisplayName("Should create and use self-signed certificates")
     void shouldCreateAndUseSelfSignedCertificates(MockWebServer server, SSLContext sslContext) {
-
+        // Arrange
         assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
         assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
         assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
@@ -77,12 +93,12 @@ class MockWebServerExtensionCertificateTest {
         assertTrue(server.url("/").url().toString().startsWith("https://"),
                 "Server URL should use HTTPS scheme");
 
-        LOGGER.info("Server started with self-signed certificates on port: {}", server.getPort());
+        LOGGER.debug("Server started with self-signed certificates on port: {}", server.getPort());
 
-        // Test a request with the provided SSL context
+        // Create HTTP client with the provided SSL context
         HttpClient client = HttpClient.newBuilder()
                 .sslContext(sslContext)
-                .connectTimeout(Duration.ofSeconds(2))
+                .connectTimeout(CONNECTION_TIMEOUT)
                 .build();
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -90,10 +106,11 @@ class MockWebServerExtensionCertificateTest {
                 .GET()
                 .build();
 
+        // Act & Assert
         assertDoesNotThrow(() -> {
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                assertEquals(200, response.statusCode(), "Request with self-signed certificates should succeed");
+                assertEquals(200, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
             } catch (InterruptedException e) {
                 // Restore the interrupted status
                 Thread.currentThread().interrupt();
@@ -102,26 +119,30 @@ class MockWebServerExtensionCertificateTest {
         });
     }
 
+    /**
+     * Tests that the extension correctly resolves and injects the SSLContext parameter.
+     * This verifies that parameter resolution works as expected for SSL-related parameters.
+     */
     @Test
     @DisplayName("Should resolve SSLContext parameter correctly")
     void shouldResolveSslContextParameter(MockWebServer server, SSLContext sslContext) {
-
+        // Arrange
         assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
         assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
         assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
 
         // Create a custom SSL context to test error handling
-        assertDoesNotThrow(() -> assertDoesNotThrow(() -> {
+        assertDoesNotThrow(() -> {
             customSslContext = SSLContext.getInstance("TLS");
             customSslContext.init(null, null, null);
-        }, "Failed to create custom SSL context: "));
+        }, "Failed to create custom SSL context");
 
         assertNotNull(customSslContext, "Custom SSL context should be created");
 
-        // Verify the server is working with the provided SSL context
+        // Create HTTP client with the provided SSL context
         HttpClient client = HttpClient.newBuilder()
                 .sslContext(sslContext) // Use the injected context, not our custom one
-                .connectTimeout(Duration.ofSeconds(2))
+                .connectTimeout(CONNECTION_TIMEOUT)
                 .build();
 
         HttpRequest request = HttpRequest.newBuilder()
@@ -129,16 +150,17 @@ class MockWebServerExtensionCertificateTest {
                 .GET()
                 .build();
 
+        // Act & Assert
         assertDoesNotThrow(() -> {
             try {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                assertEquals(200, response.statusCode(), "Request with injected SSL context should succeed");
+                assertEquals(200, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
             } catch (InterruptedException e) {
                 // Restore the interrupted status
                 Thread.currentThread().interrupt();
                 fail(REQUEST_INTERRUPTED_MESSAGE + ": " + e.getMessage());
             }
-        });
+        }, "Request with injected SSL context should not throw an exception");
     }
 
     @Test
