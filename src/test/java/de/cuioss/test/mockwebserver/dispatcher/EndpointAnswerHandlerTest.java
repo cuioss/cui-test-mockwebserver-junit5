@@ -15,12 +15,11 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
+import mockwebserver3.MockResponse;
 import org.junit.jupiter.api.Test;
 
-
-import mockwebserver3.MockResponse;
-
 import static jakarta.servlet.http.HttpServletResponse.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class EndpointAnswerHandlerTest {

@@ -23,7 +23,7 @@ import de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-import okhttp3.tls.HandshakeCertificates;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -38,7 +38,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 
 
-import mockwebserver3.MockWebServer;
+import okhttp3.tls.HandshakeCertificates;
 
 import static org.junit.jupiter.api.Assertions.*;
 

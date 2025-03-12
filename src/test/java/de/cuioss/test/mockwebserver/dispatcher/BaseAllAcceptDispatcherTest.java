@@ -15,10 +15,8 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
-import org.junit.jupiter.api.Test;
-
-
 import mockwebserver3.RecordedRequest;
+import org.junit.jupiter.api.Test;
 
 import static de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandlerTest.assertMockResponse;
 import static de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper.*;

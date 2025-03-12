@@ -70,50 +70,6 @@ class ParameterResolverTest {
 }
 ----
 
-=== Dispatching Requests
-
-The recommended approach is to set up the dispatcher directly in your test method:
-
-[source,java]
-----
-@EnableMockWebServer
-@DisplayName("Endpoint Dispatcher Example")
-class EndpointDispatcherExampleTest {
-
-    @Test
-    @DisplayName("Should handle requests using EndpointAnswerHandler")
-    void withEndpointDispatcher(MockWebServer server, URIBuilder uriBuilder) throws IOException, InterruptedException {
-        // Configure the dispatcher
-        var apiDispatcher = new BaseAllAcceptDispatcher("/api");
-        
-        // Configure the GET response handler with proper JSON and Content-Type
-        apiDispatcher.getGetResult().setResponse(new MockResponse.Builder()
-                .addHeader("Content-Type", "application/json")
-                .body("{\"data\": \"test\"}")
-                .code(HttpServletResponse.SC_OK)
-                .build());
-                
-        // Set the dispatcher on the server
-        server.setDispatcher(new CombinedDispatcher(apiDispatcher));
-
-        // Create HttpClient
-        HttpClient client = HttpClient.newHttpClient();
-
-        // Create request using the URIBuilder parameter
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(uriBuilder.addPathSegments("api", "data").build())
-                .GET()
-                .build();
-
-        // Send request and verify response
-        HttpResponse<String> response = client.send(request,
-                HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertEquals("{\"data\": \"test\"}", response.body());
-    }
-}
-----
-
 === Migration Guide: From MockWebServerHolder to Annotation-Based Dispatchers
 
 Starting with version 1.1, the `MockWebServerHolder` interface and its `getDispatcher()` method are deprecated and will be removed in a future version. The recommended approach is to use the new annotation-based dispatcher configuration.

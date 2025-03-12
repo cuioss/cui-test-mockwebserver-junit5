@@ -17,13 +17,11 @@ package de.cuioss.test.mockwebserver.dispatcher;
 
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import lombok.NonNull;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 
 import java.util.Optional;
 import java.util.Set;
-
-
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
 
 /**
  * Interface for modular HTTP request dispatching in test scenarios. Enables reusable

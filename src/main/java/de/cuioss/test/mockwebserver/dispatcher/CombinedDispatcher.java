@@ -21,15 +21,13 @@ import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
-
-
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
 
 /**
  * Combines multiple {@link ModuleDispatcherElement}s into a single dispatcher for handling HTTP requests

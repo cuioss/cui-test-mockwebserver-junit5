@@ -22,6 +22,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
+import mockwebserver3.RecordedRequest;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,9 +30,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
-
-
-import mockwebserver3.RecordedRequest;
 
 // Using fully qualified name for mockwebserver3.MockResponse to avoid naming conflict
 
@@ -222,45 +220,52 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
             return "{}";
         }
 
-        // Handle special case for empty object
-        if (jsonContent.equals("{}")) {
-            return "{}";
-        }
-
-        // Handle special case for empty array
-        if (jsonContent.equals("[]")) {
-            return "[]";
-        }
-
-        // If it's already valid JSON, return as is
-        if ((jsonContent.startsWith("{") && jsonContent.endsWith("}")) ||
-                (jsonContent.startsWith("[") && jsonContent.endsWith("]"))) {
+        if (isSpecialCase(jsonContent)) {
             return jsonContent;
         }
 
-        // Parse key-value pairs
-        String[] pairs = jsonContent.split(",");
+        if (isAlreadyValidJson(jsonContent)) {
+            return jsonContent;
+        }
+
+        return convertKeyValuePairsToJson(jsonContent);
+    }
+
+    /**
+     * Checks if the content is a special case that should be returned as-is.
+     *
+     * @param content the content to check
+     * @return true if it's a special case
+     */
+    private boolean isSpecialCase(String content) {
+        return content.equals("{}") || content.equals("[]");
+    }
+
+    /**
+     * Checks if the content is already valid JSON.
+     *
+     * @param content the content to check
+     * @return true if it's already valid JSON
+     */
+    private boolean isAlreadyValidJson(String content) {
+        return (content.startsWith("{") && content.endsWith("}")) ||
+                (content.startsWith("[") && content.endsWith("]"));
+    }
+
+    /**
+     * Converts key-value pairs to a JSON object.
+     *
+     * @param keyValueContent the content in key-value format
+     * @return a JSON string
+     */
+    private String convertKeyValuePairsToJson(String keyValueContent) {
+        String[] pairs = keyValueContent.split(",");
         StringBuilder jsonBuilder = new StringBuilder("{");
 
         for (int i = 0; i < pairs.length; i++) {
             String pair = pairs[i];
             if (pair.contains("=")) {
-                String[] keyValue = pair.split("=", 2);
-                String key = keyValue[0].trim();
-                String value = keyValue[1].trim();
-
-                // Add quotes to key
-                jsonBuilder.append("\"").append(key).append("\":");
-
-                // Add value (with quotes if it's not a number, boolean, or null)
-                if (value.equals("true") || value.equals("false") || value.equals("null") ||
-                        value.matches("-?\\d+(\\.\\d+)?") ||
-                        (value.startsWith("[") && value.endsWith("]")) ||
-                        (value.startsWith("{") && value.endsWith("}"))) {
-                    jsonBuilder.append(value);
-                } else {
-                    jsonBuilder.append("\"").append(value).append("\"");
-                }
+                appendKeyValuePair(jsonBuilder, pair);
 
                 // Add comma if not the last pair
                 if (i < pairs.length - 1) {
@@ -271,6 +276,53 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
 
         jsonBuilder.append("}");
         return jsonBuilder.toString();
+    }
+
+    /**
+     * Appends a key-value pair to the JSON builder.
+     *
+     * @param jsonBuilder the JSON builder
+     * @param pair        the key-value pair string
+     */
+    private void appendKeyValuePair(StringBuilder jsonBuilder, String pair) {
+        String[] keyValue = pair.split("=", 2);
+        String key = keyValue[0].trim();
+        String value = keyValue[1].trim();
+
+        // Add quotes to key
+        jsonBuilder.append("\"").append(key).append("\":");
+
+        // Add value with appropriate formatting
+        appendFormattedValue(jsonBuilder, value);
+    }
+
+    /**
+     * Appends a properly formatted value to the JSON builder.
+     *
+     * @param jsonBuilder the JSON builder
+     * @param value       the value to append
+     */
+    private void appendFormattedValue(StringBuilder jsonBuilder, String value) {
+        if (shouldBeUnquoted(value)) {
+            jsonBuilder.append(value);
+        } else {
+            jsonBuilder.append("\"").append(value).append("\"");
+        }
+    }
+
+    /**
+     * Determines if a value should be unquoted in JSON.
+     *
+     * @param value the value to check
+     * @return true if the value should be unquoted
+     */
+    private boolean shouldBeUnquoted(String value) {
+        return value.equals("true") ||
+                value.equals("false") ||
+                value.equals("null") ||
+                value.matches("-?\\d+(\\.\\d+)?") ||
+                (value.startsWith("[") && value.endsWith("]")) ||
+                (value.startsWith("{") && value.endsWith("}"));
     }
 
     /**

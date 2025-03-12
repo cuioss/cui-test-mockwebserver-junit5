@@ -18,14 +18,12 @@ package de.cuioss.test.mockwebserver.dispatcher;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Set;
-
-
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
 
 import static de.cuioss.tools.collect.CollectionLiterals.mutableSet;
 import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;

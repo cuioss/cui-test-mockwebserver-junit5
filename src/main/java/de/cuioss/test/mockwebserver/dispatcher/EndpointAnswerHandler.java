@@ -18,11 +18,9 @@ package de.cuioss.test.mockwebserver.dispatcher;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import lombok.Setter;
+import mockwebserver3.MockResponse;
 
 import java.util.Optional;
-
-
-import mockwebserver3.MockResponse;
 
 /**
  * Utility class for managing HTTP responses in test scenarios. Provides pre-configured responses

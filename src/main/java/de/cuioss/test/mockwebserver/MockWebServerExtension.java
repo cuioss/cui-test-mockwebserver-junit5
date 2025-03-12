@@ -19,7 +19,8 @@ import de.cuioss.test.mockwebserver.dispatcher.DispatcherResolutionException;
 import de.cuioss.test.mockwebserver.dispatcher.DispatcherResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.Joiner;
-import okhttp3.tls.HandshakeCertificates;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -38,8 +39,7 @@ import java.util.function.Function;
 import javax.net.ssl.SSLContext;
 
 
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockWebServer;
+import okhttp3.tls.HandshakeCertificates;
 
 /**
  * JUnit 5 extension that manages the lifecycle of {@link MockWebServer} instances.

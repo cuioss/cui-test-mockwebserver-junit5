@@ -15,11 +15,10 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import javax.net.ssl.SSLContext;
-
-
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
+
+import javax.net.ssl.SSLContext;
 
 /**
  * Interface for test classes that need access to a {@link MockWebServer} instance.

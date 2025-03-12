@@ -15,6 +15,7 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,9 +27,6 @@ import org.junit.jupiter.api.extension.ParameterResolutionException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-
-import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
 

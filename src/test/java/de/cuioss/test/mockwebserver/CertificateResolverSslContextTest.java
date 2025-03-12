@@ -17,8 +17,6 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-import okhttp3.tls.HandshakeCertificates;
-import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,66 +25,24 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
 
+
+import okhttp3.tls.HandshakeCertificates;
+
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.createMockContextWithStore;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the SSL context creation and storage functionality of {@link CertificateResolver}.
- * These tests verify that SSL contexts are properly created from certificates
- * and stored in the extension context.
  */
 @DisplayName("CertificateResolver - SSLContext Tests")
 class CertificateResolverSslContextTest {
-
-    private static final String SSL_CONTEXT_KEY = "ssl-context";
 
     private CertificateResolver resolver;
 
     @BeforeEach
     void setUp() {
         resolver = new CertificateResolver();
-    }
-
-    /**
-     * Creates a mock ExtensionContext with a store for testing caching functionality.
-     * 
-     * @return a mocked ExtensionContext with store support
-     */
-    private ExtensionContext createMockContextWithStore() {
-        ExtensionContext mockContext = EasyMock.createMock(ExtensionContext.class);
-        ExtensionContext.Store mockStore = EasyMock.createMock(ExtensionContext.Store.class);
-
-        // Setup parent context for getRootContext method
-        EasyMock.expect(mockContext.getParent()).andReturn(Optional.empty()).anyTimes();
-
-        // Setup test class behavior - return empty to simulate no test class
-        EasyMock.expect(mockContext.getTestClass()).andReturn(Optional.empty()).anyTimes();
-        EasyMock.expect(mockContext.getTestMethod()).andReturn(Optional.empty()).anyTimes();
-        EasyMock.expect(mockContext.getTestInstance()).andReturn(Optional.empty()).anyTimes();
-
-        // Setup store behavior
-        EasyMock.expect(mockContext.getStore(MockWebServerExtension.NAMESPACE)).andReturn(mockStore).anyTimes();
-
-        // Create a real store implementation for SSL context testing
-        final SSLContext[] storedContext = new SSLContext[1];
-
-        // Setup store get behavior for SSL context
-        EasyMock.expect(mockStore.get(SSL_CONTEXT_KEY, SSLContext.class))
-                .andAnswer(() -> storedContext[0])
-                .anyTimes();
-
-        // Setup store put behavior for SSL context
-        mockStore.put(EasyMock.eq(SSL_CONTEXT_KEY), EasyMock.anyObject(SSLContext.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-            storedContext[0] = (SSLContext) EasyMock.getCurrentArguments()[1];
-            return null;
-        }).anyTimes();
-
-        // Setup put behavior
-        mockStore.put(EasyMock.anyObject(), EasyMock.anyObject());
-        EasyMock.expectLastCall().anyTimes();
-
-        EasyMock.replay(mockContext, mockStore);
-        return mockContext;
     }
 
     @Test

@@ -17,11 +17,11 @@ package de.cuioss.test.mockwebserver.dispatcher;
 
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
-import okhttp3.Headers;
-import okio.Buffer;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.net.Socket;
 import java.util.Collections;
@@ -29,9 +29,8 @@ import java.util.Optional;
 import java.util.Set;
 
 
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
+import okio.Buffer;
+import okhttp3.Headers;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -46,8 +45,6 @@ class DispatcherResolverMethodTest {
     private static final CuiLogger LOGGER = new CuiLogger(DispatcherResolverMethodTest.class);
 
     private static final DispatcherResolver resolver = new DispatcherResolver();
-    // Using null for ExtensionContext since it's not used in the resolver
-    private static final ExtensionContext extensionContext = null;
 
     // Constants for test paths
     private static final String METHOD_PATH = "/method";
@@ -199,6 +196,7 @@ class DispatcherResolverMethodTest {
     // Test dispatcher element implementation
     private static final class TestDispatcherElement implements ModuleDispatcherElement {
         private final String baseUrl;
+
         @SuppressWarnings("unused") // implicitly called by the test framework
         public TestDispatcherElement() {
             this.baseUrl = "/"; // Default to handle all paths

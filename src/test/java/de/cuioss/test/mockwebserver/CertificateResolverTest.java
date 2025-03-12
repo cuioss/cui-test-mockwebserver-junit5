@@ -17,34 +17,27 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-import okhttp3.tls.HandshakeCertificates;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
 
+
+import okhttp3.tls.HandshakeCertificates;
+
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.*;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Comprehensive test suite for the {@link CertificateResolver} class.
- * <p>
- * This suite consolidates all certificate-related tests to avoid duplication
- * across multiple test classes while ensuring comprehensive coverage.
- * </p>
- */
 @DisplayName("CertificateResolver Test Suite")
 class CertificateResolverTest {
-
-    private static final String SELF_SIGNED_CERTIFICATES_KEY = "self-signed-certificates";
-    private static final String SSL_CONTEXT_KEY = "ssl-context";
-    private static final String CERTIFICATES_SHOULD_NOT_BE_NULL = "Certificates should not be null";
-    private static final String KEY_MANAGER_ASSERTION_MESSAGE = "Key manager should not be null";
-    private static final String TRUST_MANAGER_ASSERTION_MESSAGE = "Trust manager should not be null";
 
     private CertificateResolver resolver;
 
@@ -53,86 +46,6 @@ class CertificateResolverTest {
         resolver = new CertificateResolver();
     }
 
-    /**
-     * Creates a mock ExtensionContext for testing purposes.
-     *
-     * @param testClass the test class to be returned by the mock
-     * @return a mocked ExtensionContext
-     */
-    private ExtensionContext createMockContext(Class<?> testClass) {
-        ExtensionContext mockContext = EasyMock.createMock(ExtensionContext.class);
-
-        // Setup parent context for getRootContext method
-        EasyMock.expect(mockContext.getParent()).andReturn(Optional.empty()).anyTimes();
-
-        // Setup test class behavior
-        EasyMock.expect(mockContext.getTestClass()).andReturn(Optional.of(testClass)).anyTimes();
-        EasyMock.expect(mockContext.getTestMethod()).andReturn(Optional.empty()).anyTimes();
-        EasyMock.expect(mockContext.getTestInstance()).andReturn(Optional.empty()).anyTimes();
-
-        EasyMock.replay(mockContext);
-        return mockContext;
-    }
-
-    /**
-     * Creates a mock ExtensionContext with a store for testing caching functionality.
-     *
-     * @return a mocked ExtensionContext with store support
-     */
-    private ExtensionContext createMockContextWithStore() {
-        ExtensionContext mockContext = EasyMock.createMock(ExtensionContext.class);
-        ExtensionContext.Store mockStore = EasyMock.createMock(ExtensionContext.Store.class);
-
-        // Setup parent context for getRootContext method
-        EasyMock.expect(mockContext.getParent()).andReturn(Optional.empty()).anyTimes();
-
-        // Setup test class behavior - return empty to simulate no test class
-        EasyMock.expect(mockContext.getTestClass()).andReturn(Optional.empty()).anyTimes();
-        EasyMock.expect(mockContext.getTestMethod()).andReturn(Optional.empty()).anyTimes();
-        EasyMock.expect(mockContext.getTestInstance()).andReturn(Optional.empty()).anyTimes();
-
-        // Setup store behavior
-        EasyMock.expect(mockContext.getStore(MockWebServerExtension.NAMESPACE)).andReturn(mockStore).anyTimes();
-
-        // Create a real store implementation for certificate caching
-        final HandshakeCertificates[] storedCertificates = new HandshakeCertificates[1];
-        final SSLContext[] storedContext = new SSLContext[1];
-
-        // Setup store get behavior for certificates
-        EasyMock.expect(mockStore.get(SELF_SIGNED_CERTIFICATES_KEY, HandshakeCertificates.class))
-                .andAnswer(() -> storedCertificates[0])
-                .anyTimes();
-
-        // Setup store get behavior for SSL context
-        EasyMock.expect(mockStore.get(SSL_CONTEXT_KEY, SSLContext.class))
-                .andAnswer(() -> storedContext[0])
-                .anyTimes();
-
-        // Setup store put behavior for certificates
-        mockStore.put(EasyMock.eq(SELF_SIGNED_CERTIFICATES_KEY), EasyMock.anyObject(HandshakeCertificates.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-            storedCertificates[0] = (HandshakeCertificates) EasyMock.getCurrentArguments()[1];
-            return null;
-        }).anyTimes();
-
-        // Setup store put behavior for SSL context
-        mockStore.put(EasyMock.eq(SSL_CONTEXT_KEY), EasyMock.anyObject(SSLContext.class));
-        EasyMock.expectLastCall().andAnswer(() -> {
-            storedContext[0] = (SSLContext) EasyMock.getCurrentArguments()[1];
-            return null;
-        }).anyTimes();
-
-        // Setup put behavior for other objects
-        mockStore.put(EasyMock.anyObject(), EasyMock.anyObject());
-        EasyMock.expectLastCall().anyTimes();
-
-        EasyMock.replay(mockContext, mockStore);
-        return mockContext;
-    }
-
-    /**
-     * Tests for self-signed certificate creation and caching.
-     */
     @Nested
     @DisplayName("Self-Signed Certificate Tests")
     class SelfSignedCertificateTests {
@@ -162,41 +75,79 @@ class CertificateResolverTest {
         }
 
         @Test
-        @DisplayName("Should use custom key algorithm for self-signed certificates")
-        void shouldUseCustomKeyAlgorithm() {
+        @DisplayName("Should use default key algorithm for self-signed certificates")
+        void shouldUseDefaultKeyAlgorithm() {
             // Arrange
             ExtensionContext mockContext = createMockContextWithStore();
             MockServerConfig config = new MockServerConfig(false, false);
-            // Using RSA_2048 as the key algorithm
-            // No need to set it as it's the default
+            KeyAlgorithm algorithm = config.getKeyAlgorithm(); // Get the default algorithm
             
+            // Act
+            Optional<HandshakeCertificates> result = resolver.createAndStoreSelfSignedCertificates(mockContext, config);
+
+            // Assert
+            assertTrue(result.isPresent(), "Should create certificates with " + algorithm);
+            assertNotNull(result.get(), CERTIFICATES_SHOULD_NOT_BE_NULL);
+            assertNotNull(result.get().keyManager(), KEY_MANAGER_ASSERTION_MESSAGE);
+            assertNotNull(result.get().trustManager(), TRUST_MANAGER_ASSERTION_MESSAGE);
+        }
+
+        @Test
+        @DisplayName("Should use certificate strategy to get certificates")
+        void shouldUseCertificateStrategy() {
+            // Arrange
+            ExtensionContext mockContext = createMockContextWithStore();
+            MockServerConfig config = new MockServerConfig(false, false);
+
             // Act
             Optional<HandshakeCertificates> result = resolver.getHandshakeCertificates(mockContext, config);
 
             // Assert
-            assertTrue(result.isPresent(), "Should create self-signed certificates with custom algorithm");
+            assertTrue(result.isPresent(), "Should create certificates using strategy");
             assertNotNull(result.get(), CERTIFICATES_SHOULD_NOT_BE_NULL);
+        }
+
+        @Test
+        @DisplayName("Should handle errors when creating self-signed certificates")
+        void shouldHandleErrorsWhenCreatingSelfSignedCertificates() {
+            // Arrange
+            ExtensionContext mockContext = EasyMock.createMock(ExtensionContext.class);
+            // Use a real config but with a problematic context that will cause an exception
+            MockServerConfig config = new MockServerConfig(false, true);
+
+            // Setup context to cause an exception when trying to store certificates
+            EasyMock.expect(mockContext.getParent()).andReturn(Optional.empty()).anyTimes();
+            // Return null for the store to cause a NullPointerException
+            EasyMock.expect(mockContext.getStore(MockWebServerExtension.NAMESPACE)).andReturn(null);
+
+            EasyMock.replay(mockContext);
+
+            // Act
+            Optional<HandshakeCertificates> result = resolver.createAndStoreSelfSignedCertificates(mockContext, config);
+
+            // Assert
+            assertFalse(result.isPresent(), "Should handle errors gracefully");
+
+            EasyMock.verify(mockContext);
         }
     }
 
-    /**
-     * Tests for annotation-based certificate resolution.
-     */
     @Nested
     @DisplayName("Annotation-based Certificate Resolution Tests")
     class AnnotationBasedResolutionTests {
 
-        @Test
-        @DisplayName("Should resolve certificates from annotated class")
-        void shouldResolveCertificatesFromAnnotation() {
+        @ParameterizedTest
+        @ValueSource(classes = {AnnotatedTestClass.class, ProviderClassTestClass.class, TestClassWithMethod.class})
+        @DisplayName("Should resolve certificates from valid annotated classes")
+        void shouldResolveCertificatesFromValidAnnotatedClasses(Class<?> testClass) {
             // Arrange
-            ExtensionContext mockContext = createMockContext(AnnotatedTestClass.class);
+            ExtensionContext mockContext = createMockContext(testClass);
 
             // Act
             Optional<HandshakeCertificates> result = resolver.determineTestProvidedHandshakeCertificates(mockContext);
 
             // Assert
-            assertTrue(result.isPresent(), "Should resolve certificates from annotated class");
+            assertTrue(result.isPresent(), "Should resolve certificates from " + testClass.getSimpleName());
             assertNotNull(result.get(), CERTIFICATES_SHOULD_NOT_BE_NULL);
             assertNotNull(result.get().keyManager(), KEY_MANAGER_ASSERTION_MESSAGE);
             assertNotNull(result.get().trustManager(), TRUST_MANAGER_ASSERTION_MESSAGE);
@@ -213,22 +164,6 @@ class CertificateResolverTest {
 
             // Assert
             assertFalse(result.isPresent(), "Should not resolve certificates from non-annotated class");
-        }
-
-        @Test
-        @DisplayName("Should resolve certificates from provider class")
-        void shouldResolveCertificatesFromProviderClass() {
-            // Arrange
-            ExtensionContext mockContext = createMockContext(ProviderClassTestClass.class);
-
-            // Act
-            Optional<HandshakeCertificates> result = resolver.determineTestProvidedHandshakeCertificates(mockContext);
-
-            // Assert
-            assertTrue(result.isPresent(), "Should resolve certificates from provider class");
-            assertNotNull(result.get(), CERTIFICATES_SHOULD_NOT_BE_NULL);
-            assertNotNull(result.get().keyManager(), KEY_MANAGER_ASSERTION_MESSAGE);
-            assertNotNull(result.get().trustManager(), TRUST_MANAGER_ASSERTION_MESSAGE);
         }
 
         @Test
@@ -259,9 +194,37 @@ class CertificateResolverTest {
             assertNotNull(result.get().trustManager(), TRUST_MANAGER_ASSERTION_MESSAGE);
         }
 
-        /**
-         * Test class with TestProvidedCertificate annotation.
-         */
+
+        @ParameterizedTest
+        @ValueSource(classes = {NonAnnotatedTestClass.class, TestClassWithNonExistentMethod.class, TestClassWithNonExistentProvider.class})
+        @DisplayName("Should return empty optional for invalid configurations")
+        void shouldReturnEmptyOptionalForInvalidConfigurations(Class<?> testClass) {
+            // Arrange
+            ExtensionContext mockContext = createMockContext(testClass);
+
+            // Act
+            Optional<HandshakeCertificates> result = resolver.determineTestProvidedHandshakeCertificates(mockContext);
+
+            // Assert
+            assertFalse(result.isPresent(), "Should return empty optional for " + testClass.getSimpleName());
+        }
+
+        @Test
+        @DisplayName("Should return empty optional when test class is not available")
+        void shouldReturnEmptyOptionalWhenTestClassIsNotAvailable() {
+            // Arrange
+            ExtensionContext mockContext = EasyMock.createMock(ExtensionContext.class);
+            EasyMock.expect(mockContext.getParent()).andReturn(Optional.empty()).anyTimes();
+            EasyMock.expect(mockContext.getTestClass()).andReturn(Optional.empty()).anyTimes();
+            EasyMock.replay(mockContext);
+
+            // Act
+            Optional<HandshakeCertificates> result = resolver.determineTestProvidedHandshakeCertificates(mockContext);
+
+            // Assert
+            assertFalse(result.isPresent(), "Should return empty optional when test class is not available");
+        }
+
         @TestProvidedCertificate
         static class AnnotatedTestClass {
 
@@ -276,9 +239,6 @@ class CertificateResolverTest {
             }
         }
 
-        /**
-         * Test class without TestProvidedCertificate annotation.
-         */
         static class NonAnnotatedTestClass {
 
             /**
@@ -290,9 +250,6 @@ class CertificateResolverTest {
             }
         }
 
-        /**
-         * Test class with TestProvidedCertificate annotation that references a provider class.
-         */
         @TestProvidedCertificate(providerClass = CertificateProvider.class)
         static class ProviderClassTestClass {
 
@@ -305,10 +262,10 @@ class CertificateResolverTest {
             }
         }
 
-        /**
-         * Certificate provider class for testing.
-         */
         static class CertificateProvider {
+            private CertificateProvider() {
+                // Private constructor to hide implicit public one
+            }
 
             /**
              * Provides HandshakeCertificates for HTTPS testing.
@@ -320,11 +277,48 @@ class CertificateResolverTest {
                 return KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
             }
         }
+
+        @TestProvidedCertificate(methodName = "getCertificates")
+        static class TestClassWithMethod {
+            private TestClassWithMethod() {
+                // Private constructor to hide implicit public one
+            }
+
+            /**
+             * Provides HandshakeCertificates for HTTPS testing.
+             *
+             * @return HandshakeCertificates to be used for HTTPS testing
+             */
+            @SuppressWarnings("unused") // implicitly called by the test framework
+            public static HandshakeCertificates getCertificates() {
+                return KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
+            }
+        }
+
+        @TestProvidedCertificate(methodName = "nonExistentMethod")
+        static class TestClassWithNonExistentMethod {
+            private TestClassWithNonExistentMethod() {
+                // Private constructor to hide implicit public one
+            }
+            // This class intentionally has no methods to test error handling
+        }
+
+        @TestProvidedCertificate(providerClass = NonExistentProvider.class)
+        static class TestClassWithNonExistentProvider {
+            private TestClassWithNonExistentProvider() {
+                // Private constructor to hide implicit public one
+            }
+            // This class intentionally has no provider method to test error handling
+        }
+
+        static class NonExistentProvider {
+            private NonExistentProvider() {
+                // Private constructor to hide implicit public one
+            }
+            // This class intentionally has no provider method to test error handling
+        }
     }
 
-    /**
-     * Tests for certificate strategy selection.
-     */
     @Nested
     @DisplayName("Certificate Strategy Selection Tests")
     class CertificateStrategyTests {
@@ -400,9 +394,6 @@ class CertificateResolverTest {
         }
     }
 
-    /**
-     * Tests for SSL context creation and storage.
-     */
     @Nested
     @DisplayName("SSL Context Tests")
     class SslContextTests {

@@ -18,8 +18,6 @@ package de.cuioss.test.mockwebserver.ssl;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import lombok.experimental.UtilityClass;
-import okhttp3.tls.HandshakeCertificates;
-import okhttp3.tls.HeldCertificate;
 
 import java.security.KeyManagementException;
 import java.security.KeyStore;
@@ -32,6 +30,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
+
+
+import okhttp3.tls.HandshakeCertificates;
+import okhttp3.tls.HeldCertificate;
 
 /**
  * Utility class for handling SSL/TLS certificate operations in the context of MockWebServer.

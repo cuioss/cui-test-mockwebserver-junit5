@@ -22,24 +22,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * Tests for path segment handling functionality of {@link URIBuilder}.
- */
+@DisplayName("URIBuilder Path Segment Handling Tests")
 class URIBuilderPathSegmentTest extends URIBuilderTestBase {
 
     // tag::path-segment-handling[]
-    /**
-     * Provides test cases for path segment handling.
-     * Each test case consists of:
-     * 1. A display name for the test
-     * 2. The base URL to use
-     * 3. An array of path segments to add
-     * 4. The expected URI string result
-     */
     static Stream<Arguments> pathSegmentTestCases() {
         return Stream.of(
                 // Single path segment
@@ -125,31 +116,31 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
 
     // end::path-segment-handling[]
 
-    @Test
-    @DisplayName("Should add multiple path segments with varargs method")
-    void shouldAddMultiplePathSegmentsWithVarargs() {
-        // Use the utility method from the base class to test varargs path segment handling
-        assertUriPathBuilding(BASE_URL,
-                builder -> builder.addPathSegments(API_PATH, USERS_PATH, ID_123),
-                BASE_URL_WITH_API_USERS_123);
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("additionalPathSegmentTestCases")
+    @DisplayName("Additional path segment handling tests")
+    void additionalPathSegmentHandlingTests(String testName, String baseUrlString, UnaryOperator<URIBuilder> builderFunction, String expectedResult) {
+        // Use the utility method from the base class to test path segment handling
+        assertUriPathBuilding(baseUrlString, builderFunction, expectedResult);
     }
 
-    @Test
-    @DisplayName("Should trim leading and trailing slashes from path segments")
-    void shouldTrimSlashesFromPathSegments() {
-        // Use the utility method from the base class to test slash trimming
-        assertUriPathBuilding(BASE_URL,
-                builder -> builder.addPathSegments("/" + API_PATH + "/", "//" + USERS_PATH + "//", "/" + ID_123 + "/"),
-                BASE_URL_WITH_API_USERS_123);
-    }
+    static Stream<Arguments> additionalPathSegmentTestCases() {
+        return Stream.of(
+                Arguments.of("Should add multiple path segments with varargs method",
+                        BASE_URL,
+                        (UnaryOperator<URIBuilder>) builder -> builder.addPathSegments(API_PATH, USERS_PATH, ID_123),
+                        BASE_URL_WITH_API_USERS_123),
 
-    @Test
-    @DisplayName("Should handle empty path segments")
-    void shouldHandleEmptyPathSegments() {
-        // Use the utility method from the base class to test empty path segment handling
-        assertUriPathBuilding(BASE_URL,
-                builder -> builder.addPathSegments("", "/", API_PATH),
-                BASE_URL_NO_SLASH + "/" + API_PATH);
+                Arguments.of("Should trim leading and trailing slashes from path segments",
+                        BASE_URL,
+                        (UnaryOperator<URIBuilder>) builder -> builder.addPathSegments("/" + API_PATH + "/", "//" + USERS_PATH + "//", "/" + ID_123 + "/"),
+                        BASE_URL_WITH_API_USERS_123),
+
+                Arguments.of("Should handle empty path segments",
+                        BASE_URL,
+                        (UnaryOperator<URIBuilder>) builder -> builder.addPathSegments("", "/", API_PATH),
+                        BASE_URL_NO_SLASH + "/" + API_PATH)
+        );
     }
 
     @Test

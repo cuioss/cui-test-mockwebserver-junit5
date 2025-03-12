@@ -31,15 +31,6 @@ import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * Tests for the {@link MockResponse} annotation.
- * <p>
- * This class tests various configurations of the MockResponse annotation,
- * including basic functionality, multiple annotations, custom headers,
- * and different content types.
- *
- * @author Oliver Wolff
- */
 @DisplayName("MockResponse Annotation - Configuration Tests")
 class MockResponseTest {
 
@@ -54,19 +45,12 @@ class MockResponseTest {
     private static final String BODY_CONTENT_ASSERTION_MESSAGE = "Response body should match expected content";
     private static final String CONTENT_TYPE_ASSERTION_MESSAGE = "Content-Type header should match expected value";
 
-    /**
-     * Tests basic functionality of the @MockResponse annotation.
-     */
     @Nested
     @EnableMockWebServer
     @MockResponse(path = "/api/users", status = 200, textContent = "Hello, World!")
     @DisplayName("Basic @MockResponse functionality")
     class BasicMockResponseTest {
 
-        /**
-         * Tests that a basic MockResponse annotation correctly configures a response
-         * with the specified status code, content, and content type.
-         */
         @Test
         @DisplayName("Should return configured response with text content")
         void shouldReturnConfiguredResponse(URIBuilder uriBuilder) throws IOException, InterruptedException {
@@ -91,9 +75,6 @@ class MockResponseTest {
         }
     }
 
-    /**
-     * Tests multiple @MockResponse annotations on a class.
-     */
     @Nested
     @EnableMockWebServer
     @MockResponse(path = "/api/users", method = HttpMethodMapper.GET, status = 200,
@@ -102,10 +83,6 @@ class MockResponseTest {
     @DisplayName("Multiple @MockResponse annotations")
     class MultipleMockResponseTest {
 
-        /**
-         * Tests that a GET request is correctly handled with the specified
-         * JSON content and content type.
-         */
         @Test
         @DisplayName("Should handle GET request with JSON content")
         void shouldHandleGetRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
@@ -129,10 +106,6 @@ class MockResponseTest {
                     CONTENT_TYPE_ASSERTION_MESSAGE);
         }
 
-        /**
-         * Tests that a POST request is correctly handled with the specified
-         * status code (201 Created).
-         */
         @Test
         @DisplayName("Should handle POST request with 201 status code")
         void shouldHandlePostRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
@@ -154,9 +127,6 @@ class MockResponseTest {
         }
     }
 
-    /**
-     * Tests @MockResponse annotations with custom headers.
-     */
     @Nested
     @EnableMockWebServer
     @MockResponse(
@@ -169,6 +139,7 @@ class MockResponseTest {
     class HeadersMockResponseTest {
 
         @Test
+        @DisplayName("Should include custom headers in response")
         void shouldIncludeCustomHeaders(URIBuilder uriBuilder) throws IOException, InterruptedException {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
@@ -184,17 +155,14 @@ class MockResponseTest {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             // Assert
-            assertEquals(200, response.statusCode());
-            assertEquals("{\"key1\":\"value1\",\"key2\":\"value2\"}", response.body());
-            assertEquals("Custom Value", response.headers().firstValue("X-Custom-Header").orElse(null));
-            assertEquals("no-cache", response.headers().firstValue("Cache-Control").orElse(null));
-            assertEquals("application/json", response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null));
+            assertEquals(200, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
+            assertEquals("{\"key1\":\"value1\",\"key2\":\"value2\"}", response.body(), BODY_CONTENT_ASSERTION_MESSAGE);
+            assertEquals("Custom Value", response.headers().firstValue("X-Custom-Header").orElse(null), "Custom header should be present");
+            assertEquals("no-cache", response.headers().firstValue("Cache-Control").orElse(null), "Cache-Control header should be present");
+            assertEquals("application/json", response.headers().firstValue(CONTENT_TYPE_HEADER).orElse(null), CONTENT_TYPE_ASSERTION_MESSAGE);
         }
     }
 
-    /**
-     * Tests @MockResponse annotations on nested test classes.
-     */
     @EnableMockWebServer
     @Nested
     @DisplayName("@MockResponse on nested test classes")
@@ -206,6 +174,7 @@ class MockResponseTest {
         class NestedTest {
 
             @Test
+            @DisplayName("Should handle nested class annotations")
             void shouldHandleNestedClassAnnotation(URIBuilder uriBuilder) throws IOException, InterruptedException {
                 // Arrange
                 HttpClient client = HttpClient.newBuilder()
@@ -221,15 +190,12 @@ class MockResponseTest {
                 HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
                 // Assert
-                assertEquals(200, response.statusCode());
-                assertEquals("Nested Response", response.body());
+                assertEquals(200, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
+                assertEquals("Nested Response", response.body(), BODY_CONTENT_ASSERTION_MESSAGE);
             }
         }
     }
 
-    /**
-     * Tests @MockResponse annotations on test methods.
-     */
     @Nested
     @EnableMockWebServer
     @DisplayName("@MockResponse on test methods")
@@ -252,8 +218,8 @@ class MockResponseTest {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
             // Assert
-            assertEquals(200, response.statusCode());
-            assertEquals("Method Response", response.body());
+            assertEquals(200, response.statusCode(), STATUS_CODE_ASSERTION_MESSAGE);
+            assertEquals("Method Response", response.body(), BODY_CONTENT_ASSERTION_MESSAGE);
         }
     }
 }

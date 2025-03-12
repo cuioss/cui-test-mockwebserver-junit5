@@ -18,14 +18,12 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-
-
-import mockwebserver3.MockWebServer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
