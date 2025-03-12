@@ -17,8 +17,6 @@ package de.cuioss.test.mockwebserver.mockresponse;
 
 import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
 import mockwebserver3.RecordedRequest;
-import okhttp3.Headers;
-import okio.Buffer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,22 +29,12 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.CONTENT_TYPE_HEADER;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_JSON_CONTENT;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_PATH;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_STATUS;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_STRING_CONTENT;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_TEXT_CONTENT;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.builder;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.createMockResponse;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.createMockResponseWithContentType;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.createMockResponseWithHeaders;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.createMockResponseWithJsonContent;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.createMockResponseWithStringContent;
-import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.createMockResponseWithTextContent;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import okio.Buffer;
+import okhttp3.Headers;
+
+import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Tests for MockResponseDispatcherElement")
 class MockResponseDispatcherElementTest {
@@ -113,7 +101,7 @@ class MockResponseDispatcherElementTest {
         }
 
         @Test
-        @DisplayName("Should set application/json content type for jsonContent")
+        @DisplayName("Should set application/json content type for jsonContentKeyValue")
         void shouldSetJsonContentType() {
             // Arrange
             var annotation = createMockResponseWithJsonContent(
@@ -126,7 +114,7 @@ class MockResponseDispatcherElementTest {
 
             // Assert
             assertEquals("application/json", response.getHeaders().get(CONTENT_TYPE_HEADER),
-                    "Content-Type should be application/json for jsonContent");
+                    "Content-Type should be application/json for jsonContentKeyValue");
             assertEquals("{\"key\":\"value\"}", getBodyContent(response),
                     "Response body should be properly formatted JSON");
         }

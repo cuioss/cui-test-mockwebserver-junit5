@@ -78,7 +78,7 @@ class MockResponseTest {
     @Nested
     @EnableMockWebServer
     @MockResponse(path = "/api/users", method = HttpMethodMapper.GET, status = 200,
-            jsonContent = "users=[]", contentType = "application/json; charset=utf-8")
+            jsonContentKeyValue = "users=[]", contentType = "application/json; charset=utf-8")
     @MockResponse(path = "/api/users", method = HttpMethodMapper.POST, status = 201)
     @DisplayName("Multiple @MockResponse annotations")
     class MultipleMockResponseTest {
@@ -132,7 +132,7 @@ class MockResponseTest {
     @MockResponse(
             path = API_DATA_PATH,
             status = 200,
-            jsonContent = "key1=value1,key2=value2",
+            jsonContentKeyValue = "key1=value1,key2=value2",
             headers = {"X-Custom-Header=Custom Value", "Cache-Control=no-cache"}
     )
     @DisplayName("@MockResponse with custom headers")

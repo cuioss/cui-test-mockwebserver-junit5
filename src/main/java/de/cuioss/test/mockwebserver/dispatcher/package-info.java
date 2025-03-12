@@ -31,7 +31,7 @@
  * <pre>
  * MockResponse response = new MockResponse.Builder()
  *         .addHeader("Content-Type", "application/json")
- *         .body(jsonContent)
+ *         .body(jsonContentKeyValue)
  *         .code(HttpServletResponse.SC_OK)
  *         .build();
  * </pre>

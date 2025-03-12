@@ -24,9 +24,7 @@ import java.util.List;
 
 import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_PATH;
 import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_STATUS;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("Tests for MockResponseResolver")
 class MockResponseResolverTest {
@@ -51,9 +49,8 @@ class MockResponseResolverTest {
             // Assert
             assertEquals(1, elements.size(), "Should resolve one dispatcher element");
             ModuleDispatcherElement element = elements.get(0);
-            assertTrue(element instanceof MockResponseDispatcherElement,
-                    "Element should be a MockResponseDispatcherElement");
-            assertEquals(DEFAULT_PATH, ((MockResponseDispatcherElement) element).getBaseUrl(),
+            assertInstanceOf(MockResponseDispatcherElement.class, element, "Element should be a MockResponseDispatcherElement");
+            assertEquals(DEFAULT_PATH, element.getBaseUrl(),
                     "Element should have correct path");
         }
 
@@ -89,9 +86,8 @@ class MockResponseResolverTest {
             // Assert
             assertEquals(1, elements.size(), "Should resolve one dispatcher element");
             ModuleDispatcherElement element = elements.get(0);
-            assertTrue(element instanceof MockResponseDispatcherElement,
-                    "Element should be a MockResponseDispatcherElement");
-            assertEquals("/method", ((MockResponseDispatcherElement) element).getBaseUrl(),
+            assertInstanceOf(MockResponseDispatcherElement.class, element, "Element should be a MockResponseDispatcherElement");
+            assertEquals("/method", element.getBaseUrl(),
                     "Element should have correct path");
         }
     }
@@ -104,7 +100,7 @@ class MockResponseResolverTest {
         @DisplayName("Should resolve MockResponse annotations on nested classes")
         void shouldResolveNestedClassAnnotations() {
             // Arrange
-            Class<?> testClass = ClassWithNestedClass.class;
+            Class<?> testClass = ClassWithNestedClassTest.class;
 
             // Act
             List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
@@ -116,11 +112,11 @@ class MockResponseResolverTest {
 
             // Verify paths from both parent and nested class
             assertTrue(elements.stream()
-                            .map(e -> ((MockResponseDispatcherElement) e).getBaseUrl())
+                            .map(ModuleDispatcherElement::getBaseUrl)
                             .anyMatch(path -> path.equals(DEFAULT_PATH)),
                     "Should include element from parent class");
             assertTrue(elements.stream()
-                            .map(e -> ((MockResponseDispatcherElement) e).getBaseUrl())
+                            .map(ModuleDispatcherElement::getBaseUrl)
                             .anyMatch(path -> path.equals("/nested")),
                     "Should include element from nested class");
         }
@@ -129,7 +125,7 @@ class MockResponseResolverTest {
         @DisplayName("Should resolve MockResponse annotations on methods in nested classes")
         void shouldResolveNestedClassMethodAnnotations() {
             // Arrange
-            Class<?> testClass = ClassWithNestedClassMethod.class;
+            Class<?> testClass = ClassWithNestedClassMethodTest.class;
 
             // Act
             List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
@@ -137,7 +133,7 @@ class MockResponseResolverTest {
             // Assert
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
             assertTrue(elements.stream()
-                            .map(e -> ((MockResponseDispatcherElement) e).getBaseUrl())
+                            .map(ModuleDispatcherElement::getBaseUrl)
                             .anyMatch(path -> path.equals("/nested-method")),
                     "Should include element from method in nested class");
         }
@@ -176,13 +172,15 @@ class MockResponseResolverTest {
 
     static class ClassWithMethodAnnotation {
         @MockResponse(path = "/method", status = DEFAULT_STATUS, textContent = TEST_CONTENT)
+        @SuppressWarnings("unused")
+        // Implicitly called by reflection
         void testMethod() {
             // Empty test method
         }
     }
 
     @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
-    static class ClassWithNestedClass {
+    static class ClassWithNestedClassTest {
         @Nested
         @MockResponse(path = "/nested", status = DEFAULT_STATUS, textContent = "Nested content")
         class NestedTestClass {
@@ -191,10 +189,12 @@ class MockResponseResolverTest {
     }
 
     @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
-    static class ClassWithNestedClassMethod {
+    static class ClassWithNestedClassMethodTest {
         @Nested
         class NestedTestClass {
             @MockResponse(path = "/nested-method", status = DEFAULT_STATUS, textContent = "Nested method content")
+            @SuppressWarnings("unused")
+            // Implicitly called by reflection
             void testMethod() {
                 // Empty test method
             }
@@ -202,7 +202,7 @@ class MockResponseResolverTest {
     }
 
     @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS,
-            textContent = TEST_CONTENT, jsonContent = "key=value")
+            textContent = TEST_CONTENT, jsonContentKeyValue = "key=value")
     static class ClassWithInvalidMockResponse {
         // Empty test class
     }

@@ -39,13 +39,13 @@ import java.lang.annotation.Target;
  * The response content can be specified in one of the following ways:
  * <ul>
  *   <li>{@code textContent}: Sets the response body as plain text with Content-Type text/plain</li>
- *   <li>{@code jsonContent}: Sets the response body as JSON with Content-Type application/json.
+ *   <li>{@code jsonContentKeyValue}: Sets the response body as JSON with Content-Type application/json.
  *       Uses a simple key-value format (e.g., "key1=value1,key2=value2") that will be converted
  *       to proper JSON.</li>
  *   <li>{@code stringContent}: Sets the response body as a raw string without modifying the Content-Type</li>
  * </ul>
  * <p>
- * <strong>Note:</strong> Only one of {@code textContent}, {@code jsonContent}, or {@code stringContent}
+ * <strong>Note:</strong> Only one of {@code textContent}, {@code jsonContentKeyValue}, or {@code stringContent}
  * can be specified for a single annotation.
  * <p>
  * <h2>Examples</h2>
@@ -54,7 +54,7 @@ import java.lang.annotation.Target;
  * <pre>
  * &#64;EnableMockWebServer
  * &#64;MockResponse(path="/api/users", method=HttpMethodMapper.GET,
- *               jsonContent="users=[]", status=200)
+ *               jsonContentKeyValue="users=[]", status=200)
  * class SimpleTest {
  *     // Test methods
  * }
@@ -64,7 +64,7 @@ import java.lang.annotation.Target;
  * <pre>
  * &#64;EnableMockWebServer
  * &#64;MockResponse(path="/api/users", method=HttpMethodMapper.GET,
- *               jsonContent="users=[]", status=200)
+ *               jsonContentKeyValue="users=[]", status=200)
  * &#64;MockResponse(path="/api/users", method=HttpMethodMapper.POST,
  *               status=201)
  * class MultiResponseTest {
@@ -97,7 +97,7 @@ public @interface MockResponse {
 
     /**
      * Plain text content (sets Content-Type to text/plain).
-     * Mutually exclusive with {@link #jsonContent()} and {@link #stringContent()}.
+     * Mutually exclusive with {@link #jsonContentKeyValue()} and {@link #stringContent()}.
      *
      * @return the plain text content
      */
@@ -105,17 +105,19 @@ public @interface MockResponse {
 
     /**
      * JSON content (sets Content-Type to application/json).
+     * In the form of key-value pairs.
      * Mutually exclusive with {@link #textContent()} and {@link #stringContent()}.
      * <p>
      * Format: key1=value1,key2=value2 (will be converted to {"key1":"value1","key2":"value2"})
+     * In case you need a more complex JSON structure, use {@link #stringContent()} instead.
      *
      * @return the JSON content in key-value format
      */
-    String jsonContent() default "";
+    String jsonContentKeyValue() default "";
 
     /**
      * Raw string content for the response body.
-     * Mutually exclusive with {@link #textContent()} and {@link #jsonContent()}.
+     * Mutually exclusive with {@link #textContent()} and {@link #jsonContentKeyValue()}.
      *
      * @return the raw string content
      */

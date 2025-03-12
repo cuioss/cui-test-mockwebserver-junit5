@@ -17,13 +17,15 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
-import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.util.ReflectionUtils;
 
-import javax.net.ssl.SSLContext;
 import java.lang.reflect.Method;
 import java.util.Optional;
+import javax.net.ssl.SSLContext;
+
+
+import okhttp3.tls.HandshakeCertificates;
 
 /**
  * Package-private companion class for {@link MockWebServerExtension} that handles

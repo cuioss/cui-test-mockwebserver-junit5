@@ -29,7 +29,6 @@ import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CO
 import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CODE_TEAPOT;
 import static de.cuioss.tools.collect.CollectionLiterals.mutableList;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
-
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 

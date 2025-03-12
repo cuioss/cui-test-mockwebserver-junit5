@@ -178,14 +178,14 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
         // Count how many content types are specified
         long contentTypeCount = Stream.of(
                 annotation.textContent(),
-                annotation.jsonContent(),
+                annotation.jsonContentKeyValue(),
                 annotation.stringContent())
                 .filter(content -> !MoreStrings.isEmpty(content))
                 .count();
 
         if (contentTypeCount > 1) {
             throw new IllegalArgumentException(
-                    "Only one of textContent, jsonContent, or stringContent can be specified");
+                    "Only one of textContent, jsonContentKeyValue, or stringContent can be specified");
         }
 
         // Handle text content
@@ -195,9 +195,9 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
         }
 
         // Handle JSON content
-        if (!MoreStrings.isEmpty(annotation.jsonContent())) {
+        if (!MoreStrings.isEmpty(annotation.jsonContentKeyValue())) {
             headers.putIfAbsent(CONTENT_TYPE_HEADER, JSON_CONTENT_TYPE);
-            return parseJsonContent(annotation.jsonContent());
+            return parseJsonContent(annotation.jsonContentKeyValue());
         }
 
         // Handle raw string content
@@ -323,14 +323,5 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
                 value.matches("-?\\d+(\\.\\d+)?") ||
                 (value.startsWith("[") && value.endsWith("]")) ||
                 (value.startsWith("{") && value.endsWith("}"));
-    }
-
-    /**
-     * Returns a string representation of this dispatcher element for logging purposes.
-     *
-     * @return a string representation of this dispatcher element
-     */
-    public String getLogString() {
-        return method + " " + baseUrl + " -> @MockResponse(status=" + statusCode + ")";
     }
 }

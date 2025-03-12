@@ -29,7 +29,6 @@ import javax.net.ssl.SSLContext;
 import okhttp3.tls.HandshakeCertificates;
 
 import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.createMockContextWithStore;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**

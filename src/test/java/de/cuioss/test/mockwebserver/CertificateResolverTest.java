@@ -17,7 +17,6 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-import okhttp3.tls.HandshakeCertificates;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,20 +26,14 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import javax.net.ssl.SSLContext;
 import java.util.Optional;
+import javax.net.ssl.SSLContext;
 
-import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.CERTIFICATES_SHOULD_NOT_BE_NULL;
-import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.KEY_MANAGER_ASSERTION_MESSAGE;
-import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.SELF_SIGNED_CERTIFICATES_KEY;
-import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.TRUST_MANAGER_ASSERTION_MESSAGE;
-import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.createMockContext;
-import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.createMockContextWithStore;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import okhttp3.tls.HandshakeCertificates;
+
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("CertificateResolver Test Suite")
 class CertificateResolverTest {

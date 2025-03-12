@@ -160,7 +160,7 @@ public class MockResponseTestUtil {
             expect(annotation.method()).andReturn(method).anyTimes();
             expect(annotation.status()).andReturn(status).anyTimes();
             expect(annotation.textContent()).andReturn(textContent).anyTimes();
-            expect(annotation.jsonContent()).andReturn(jsonContent).anyTimes();
+            expect(annotation.jsonContentKeyValue()).andReturn(jsonContent).anyTimes();
             expect(annotation.stringContent()).andReturn(stringContent).anyTimes();
             expect(annotation.headers()).andReturn(headers).anyTimes();
             expect(annotation.contentType()).andReturn(contentType).anyTimes();
