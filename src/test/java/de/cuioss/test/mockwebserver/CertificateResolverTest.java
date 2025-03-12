@@ -17,6 +17,7 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
+import okhttp3.tls.HandshakeCertificates;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,15 +27,20 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import java.util.Optional;
 import javax.net.ssl.SSLContext;
+import java.util.Optional;
 
-
-import okhttp3.tls.HandshakeCertificates;
-
-import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.*;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.CERTIFICATES_SHOULD_NOT_BE_NULL;
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.KEY_MANAGER_ASSERTION_MESSAGE;
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.SELF_SIGNED_CERTIFICATES_KEY;
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.TRUST_MANAGER_ASSERTION_MESSAGE;
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.createMockContext;
+import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.createMockContextWithStore;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("CertificateResolver Test Suite")
 class CertificateResolverTest {
@@ -81,7 +87,7 @@ class CertificateResolverTest {
             ExtensionContext mockContext = createMockContextWithStore();
             MockServerConfig config = new MockServerConfig(false, false);
             KeyAlgorithm algorithm = config.getKeyAlgorithm(); // Get the default algorithm
-            
+
             // Act
             Optional<HandshakeCertificates> result = resolver.createAndStoreSelfSignedCertificates(mockContext, config);
 
@@ -118,7 +124,7 @@ class CertificateResolverTest {
             // Setup context to cause an exception when trying to store certificates
             EasyMock.expect(mockContext.getParent()).andReturn(Optional.empty()).anyTimes();
             // Return null for the store to cause a NullPointerException
-            EasyMock.expect(mockContext.getStore(MockWebServerExtension.NAMESPACE)).andReturn(null);
+            EasyMock.expect(mockContext.getStore(CertificateResolver.NAMESPACE)).andReturn(null);
 
             EasyMock.replay(mockContext);
 
@@ -360,7 +366,7 @@ class CertificateResolverTest {
             EasyMock.expect(mockContext.getTestInstance()).andReturn(Optional.empty()).anyTimes();
 
             // Setup store behavior
-            EasyMock.expect(mockContext.getStore(MockWebServerExtension.NAMESPACE)).andReturn(mockStore).anyTimes();
+            EasyMock.expect(mockContext.getStore(CertificateResolver.NAMESPACE)).andReturn(mockStore).anyTimes();
 
             // Setup store get behavior for certificates - initially return null to simulate no cached certificates
             EasyMock.expect(mockStore.get(SELF_SIGNED_CERTIFICATES_KEY, HandshakeCertificates.class)).andReturn(null).once();
@@ -371,7 +377,7 @@ class CertificateResolverTest {
 
             // Note: SSL context is not stored during getHandshakeCertificates call
             // It's only stored when createAndStoreSSLContext is explicitly called
-            
+
             // Activate all mocks
             EasyMock.replay(mockContext, mockStore);
 

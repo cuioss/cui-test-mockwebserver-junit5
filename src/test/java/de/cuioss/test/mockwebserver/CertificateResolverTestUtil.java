@@ -57,7 +57,7 @@ final class CertificateResolverTestUtil {
         EasyMock.expect(mockContext.getTestClass()).andReturn(Optional.empty()).anyTimes();
         EasyMock.expect(mockContext.getTestMethod()).andReturn(Optional.empty()).anyTimes();
         EasyMock.expect(mockContext.getTestInstance()).andReturn(Optional.empty()).anyTimes();
-        EasyMock.expect(mockContext.getStore(MockWebServerExtension.NAMESPACE)).andReturn(mockStore).anyTimes();
+        EasyMock.expect(mockContext.getStore(CertificateResolver.NAMESPACE)).andReturn(mockStore).anyTimes();
 
         final HandshakeCertificates[] storedCertificates = new HandshakeCertificates[1];
         final SSLContext[] storedContext = new SSLContext[1];

@@ -17,15 +17,13 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
+import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.util.ReflectionUtils;
 
+import javax.net.ssl.SSLContext;
 import java.lang.reflect.Method;
 import java.util.Optional;
-import javax.net.ssl.SSLContext;
-
-
-import okhttp3.tls.HandshakeCertificates;
 
 /**
  * Package-private companion class for {@link MockWebServerExtension} that handles
@@ -45,6 +43,11 @@ class CertificateResolver {
     private static final String DEFAULT_PROVIDER_METHOD_NAME = "provideHandshakeCertificates";
     private static final String SELF_SIGNED_CERTIFICATES_KEY = "self-signed-certificates";
     private static final String SSL_CONTEXT_KEY = "ssl-context";
+
+    /**
+     * Identifies the {@link ExtensionContext.Namespace} under which the Resolver stores its data.
+     */
+    static final ExtensionContext.Namespace NAMESPACE = ExtensionContext.Namespace.create(CertificateResolver.class);
 
     /**
      * Determines the HandshakeCertificates from the test class or provider based on
@@ -93,7 +96,8 @@ class CertificateResolver {
      * @param context       the extension context
      * @return Optional containing HandshakeCertificates if available
      */
-    @SuppressWarnings("java:S3655") // owolff: False positive: context.getTestClass().isPresent() is called before
+    @SuppressWarnings("java:S3655")
+    // owolff: False positive: context.getTestClass().isPresent() is called before
     Optional<HandshakeCertificates> getCertificatesFromProvider(Class<?> providerClass, String methodName, ExtensionContext context) {
         try {
             // Look for the certificate method in the provider class
@@ -214,8 +218,7 @@ class CertificateResolver {
         // Get the root context to ensure certificates are shared across all tests in the class
         ExtensionContext rootContext = getRootContext(context);
 
-        // Using the public NAMESPACE field from MockWebServerExtension
-        HandshakeCertificates certificates = rootContext.getStore(MockWebServerExtension.NAMESPACE)
+        HandshakeCertificates certificates = rootContext.getStore(NAMESPACE)
                 .get(SELF_SIGNED_CERTIFICATES_KEY, HandshakeCertificates.class);
         if (certificates != null) {
             // Since we use fixed certificate parameters, we can always reuse the cached certificates
@@ -236,8 +239,7 @@ class CertificateResolver {
         ExtensionContext rootContext = getRootContext(context);
 
         // Store the certificates directly without the wrapper
-        // Using the public NAMESPACE field from MockWebServerExtension
-        rootContext.getStore(MockWebServerExtension.NAMESPACE).put(SELF_SIGNED_CERTIFICATES_KEY, certificates);
+        rootContext.getStore(NAMESPACE).put(SELF_SIGNED_CERTIFICATES_KEY, certificates);
     }
 
     /**
@@ -253,8 +255,7 @@ class CertificateResolver {
 
             // Store the SSLContext in the context store for parameter resolution
             ExtensionContext rootContext = getRootContext(context);
-            // Using the public NAMESPACE field from MockWebServerExtension
-            rootContext.getStore(MockWebServerExtension.NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
+            rootContext.getStore(NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
 
             LOGGER.debug("Stored SSLContext for parameter resolution");
 
@@ -277,8 +278,7 @@ class CertificateResolver {
         ExtensionContext rootContext = getRootContext(context);
 
         // Try to get the SSLContext from the store
-        // Using the public NAMESPACE field from MockWebServerExtension
-        return Optional.ofNullable(rootContext.getStore(MockWebServerExtension.NAMESPACE)
+        return Optional.ofNullable(rootContext.getStore(NAMESPACE)
                 .get(SSL_CONTEXT_KEY, SSLContext.class));
     }
 
@@ -288,7 +288,8 @@ class CertificateResolver {
      * @param context the current extension context
      * @return the root context
      */
-    @SuppressWarnings("java:S3655") // This is a false positive, the check for present is in the while loop
+    @SuppressWarnings("java:S3655")
+    // This is a false positive, the check for present is in the while loop
     ExtensionContext getRootContext(ExtensionContext context) {
         ExtensionContext current = context;
         while (current.getParent().isPresent()) {
