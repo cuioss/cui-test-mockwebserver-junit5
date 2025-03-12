@@ -78,7 +78,7 @@ class DispatcherResolverTest {
         LOGGER.debug("TEST_PATH Response Body: %s", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
                 response.getStatus() + STATUS_ERROR_MESSAGE);
-        assertTrue(writeBodyToString(response).contains("Test Dispatcher"), 
+        assertTrue(writeBodyToString(response).contains("Test Dispatcher"),
                 "Response body should contain expected content");
     }
 

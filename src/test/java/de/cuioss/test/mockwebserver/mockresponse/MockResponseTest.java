@@ -48,7 +48,7 @@ class MockResponseTest {
     private static final String API_DATA_PATH = "/api/data";
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
-    
+
     // Common assertion messages
     private static final String STATUS_CODE_ASSERTION_MESSAGE = "Response status code should match expected value";
     private static final String BODY_CONTENT_ASSERTION_MESSAGE = "Response body should match expected content";

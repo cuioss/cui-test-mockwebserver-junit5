@@ -70,7 +70,7 @@ class MockWebServerExtensionCertificateTest {
     private static final String SSL_CONTEXT_SHOULD_BE_INJECTED = "SSLContext should be injected";
     private static final String REQUEST_INTERRUPTED_MESSAGE = "Request was interrupted";
     private static final String STATUS_CODE_ASSERTION_MESSAGE = "Response status code should match expected value";
-    
+
     // Common test timeouts
     private static final Duration CONNECTION_TIMEOUT = Duration.ofSeconds(2);
 

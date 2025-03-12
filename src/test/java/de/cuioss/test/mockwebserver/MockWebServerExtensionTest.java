@@ -72,7 +72,7 @@ class MockWebServerExtensionTest {
 
         // Act
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        
+
         // Assert
         assertNotNull(response, "Response should not be null");
         assertEquals(200, response.statusCode(), "Status code should be 200 OK");

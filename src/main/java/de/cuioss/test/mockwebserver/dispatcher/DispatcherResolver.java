@@ -19,7 +19,6 @@ import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.mockresponse.MockResponseResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
-import mockwebserver3.Dispatcher;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.support.AnnotationSupport;
 
@@ -33,6 +32,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
+
+import mockwebserver3.Dispatcher;
 
 @SuppressWarnings("deprecation") // Using deprecated methods for backward compatibility with MockWebServerHolder
 
@@ -116,7 +118,7 @@ public class DispatcherResolver {
         Optional<ModuleDispatcher> moduleDispatcherAnnotation =
                 AnnotationSupport.findAnnotation(testClass, ModuleDispatcher.class);
 
-        if (!moduleDispatcherAnnotation.isPresent()) {
+        if (moduleDispatcherAnnotation.isEmpty()) {
             LOGGER.info("No @ModuleDispatcher annotation found on test class: %s", testClass.getName());
             return Optional.empty();
         }

@@ -30,12 +30,17 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for the self-signed certificate creation and caching functionality of {@link CertificateResolver}.
  * These tests verify that self-signed certificates are properly created and cached
  * in the extension context.
+ * 
+ * @see CertificateResolver#createAndStoreSelfSignedCertificates(ExtensionContext, MockServerConfig)
+ * @see CertificateResolver#getSelfSignedCertificatesFromContext(ExtensionContext)
  */
 @DisplayName("CertificateResolver - Self-Signed Certificate Tests")
 class CertificateResolverSelfSignedTest {
 
     private static final String SELF_SIGNED_CERTIFICATES_KEY = "self-signed-certificates";
     private static final String CERTIFICATES_SHOULD_NOT_BE_NULL = "Certificates should not be null";
+    private static final String KEY_MANAGER_ASSERTION_MESSAGE = "Key manager should not be null";
+    private static final String TRUST_MANAGER_ASSERTION_MESSAGE = "Trust manager should not be null";
 
     private CertificateResolver resolver;
 
@@ -100,8 +105,8 @@ class CertificateResolverSelfSignedTest {
         // Assert
         assertTrue(result.isPresent(), "Should create self-signed certificates");
         assertNotNull(result.get(), CERTIFICATES_SHOULD_NOT_BE_NULL);
-        assertNotNull(result.get().keyManager(), "Key manager should not be null");
-        assertNotNull(result.get().trustManager(), "Trust manager should not be null");
+        assertNotNull(result.get().keyManager(), KEY_MANAGER_ASSERTION_MESSAGE);
+        assertNotNull(result.get().trustManager(), TRUST_MANAGER_ASSERTION_MESSAGE);
 
         // Act - Second call should retrieve from cache
         Optional<HandshakeCertificates> cachedResult = resolver.getSelfSignedCertificatesFromContext(mockContext);
