@@ -61,14 +61,14 @@ class DispatcherResolverMethodTest {
         var testInstance = new TestClassWithMethod();
 
         // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance, extensionContext);
+        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
 
         // Assert
         assertNotNull(dispatcher);
         assertInstanceOf(CombinedDispatcher.class, dispatcher);
 
         // Verify the dispatcher works as expected
-        var response = dispatchRequest(dispatcher, METHOD_PATH);
+        var response = dispatchRequest(dispatcher);
         LOGGER.debug("METHOD_PATH Response Status: {}", response.getStatus());
         LOGGER.debug("METHOD_PATH Response Body: {}", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
@@ -84,7 +84,7 @@ class DispatcherResolverMethodTest {
         var testInstance = new Object();
 
         // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance, extensionContext);
+        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
 
         // Assert
         assertNotNull(dispatcher);
@@ -101,7 +101,7 @@ class DispatcherResolverMethodTest {
 
         // Act & Assert
         var exception = assertThrows(DispatcherResolutionException.class, () ->
-                resolver.resolveDispatcher(testClass, testInstance, extensionContext));
+                resolver.resolveDispatcher(testClass, testInstance));
 
         assertTrue(exception.getMessage().contains("returned null"),
                 "Exception message should indicate null return: " + exception.getMessage());
@@ -116,7 +116,7 @@ class DispatcherResolverMethodTest {
 
         // Act & Assert
         var exception = assertThrows(DispatcherResolutionException.class, () ->
-                resolver.resolveDispatcher(testClass, testInstance, extensionContext));
+                resolver.resolveDispatcher(testClass, testInstance));
 
         assertTrue(exception.getMessage().contains("did not return a ModuleDispatcherElement"),
                 "Exception message should indicate wrong return type: " + exception.getMessage());
@@ -131,7 +131,7 @@ class DispatcherResolverMethodTest {
 
         // Act & Assert
         var exception = assertThrows(DispatcherResolutionException.class, () ->
-                resolver.resolveDispatcher(testClass, testInstance, extensionContext));
+                resolver.resolveDispatcher(testClass, testInstance));
 
         assertTrue(exception.getMessage().contains("threw an exception"),
                 "Exception message should indicate method threw exception: " + exception.getMessage());
@@ -149,7 +149,7 @@ class DispatcherResolverMethodTest {
 
         // Act & Assert
         var exception = assertThrows(DispatcherResolutionException.class, () ->
-                resolver.resolveDispatcher(testClass, testInstance, extensionContext));
+                resolver.resolveDispatcher(testClass, testInstance));
 
         assertTrue(exception.getMessage().contains("Cannot access"),
                 "Exception message should indicate access issue: " + exception.getMessage());
@@ -158,10 +158,10 @@ class DispatcherResolverMethodTest {
     /**
      * Helper method to dispatch a request to a dispatcher
      */
-    private static MockResponse dispatchRequest(Dispatcher dispatcher, String path) {
+    private static MockResponse dispatchRequest(Dispatcher dispatcher) {
         try {
             // Create a request with the path directly
-            var request = new RecordedRequest("GET " + path + " HTTP/1.1",
+            var request = new RecordedRequest("GET " + DispatcherResolverMethodTest.METHOD_PATH + " HTTP/1.1",
                     Headers.of("Host", "localhost"),
                     Collections.emptyList(),
                     0L,
@@ -178,6 +178,7 @@ class DispatcherResolverMethodTest {
     private String writeBodyToString(MockResponse response) {
         Buffer buffer = new Buffer();
         try {
+            assert response.getBody() != null;
             response.getBody().writeTo(buffer);
             return buffer.readUtf8();
         } catch (Exception e) {
@@ -189,6 +190,7 @@ class DispatcherResolverMethodTest {
 
     // Test class with getModuleDispatcher method
     static class TestClassWithMethod {
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public ModuleDispatcherElement getModuleDispatcher() {
             return new TestDispatcherElement(METHOD_PATH);
         }
@@ -197,7 +199,7 @@ class DispatcherResolverMethodTest {
     // Test dispatcher element implementation
     private static final class TestDispatcherElement implements ModuleDispatcherElement {
         private final String baseUrl;
-
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public TestDispatcherElement() {
             this.baseUrl = "/"; // Default to handle all paths
         }
@@ -237,6 +239,7 @@ class DispatcherResolverMethodTest {
 
     // Test class with getModuleDispatcher method that returns null
     static class TestClassWithNullMethod {
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public ModuleDispatcherElement getModuleDispatcher() {
             return null;
         }
@@ -244,6 +247,7 @@ class DispatcherResolverMethodTest {
 
     // Test class with getModuleDispatcher method that returns wrong type
     static class TestClassWithWrongReturnType {
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public Object getModuleDispatcher() {
             return "Not a ModuleDispatcherElement";
         }
@@ -251,6 +255,7 @@ class DispatcherResolverMethodTest {
 
     // Test class with getModuleDispatcher method that throws exception
     static class TestClassWithThrowingMethod {
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public ModuleDispatcherElement getModuleDispatcher() {
             throw new RuntimeException("Test exception");
         }

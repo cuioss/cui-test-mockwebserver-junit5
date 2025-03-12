@@ -169,6 +169,7 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     /**
      * @return A new instance of the BaseAllAcceptDispatcher with a default configuration providing an /api endpoint
      */
+    @SuppressWarnings("unused")  // Implicitly called by the test framework
     public ModuleDispatcherElement getOptimisticAPIDispatcher() {
         return new BaseAllAcceptDispatcher("/api");
     }

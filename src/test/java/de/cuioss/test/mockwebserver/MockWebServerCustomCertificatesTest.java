@@ -20,21 +20,22 @@ import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
+import mockwebserver3.MockWebServer;
 import okhttp3.tls.HandshakeCertificates;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import javax.net.ssl.SSLContext;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import javax.net.ssl.SSLContext;
 
-
-import mockwebserver3.MockWebServer;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Tests for HTTPS configuration with custom certificates provided by the test class.
@@ -63,9 +64,10 @@ class MockWebServerCustomCertificatesTest {
     /**
      * Provides custom certificates for HTTPS testing.
      * This method is called by the MockWebServerExtension via the @TestProvidedCertificate annotation.
-     * 
+     *
      * @return the HandshakeCertificates to be used for HTTPS testing
      */
+    @SuppressWarnings("unused") // implicitly called by the test frameworks
     public HandshakeCertificates provideHandshakeCertificates() {
         return certificates;
     }

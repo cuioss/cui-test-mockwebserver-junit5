@@ -179,7 +179,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             }
 
             // Configure dispatcher using the new resolver
-            configureDispatcher(server, testInstance, context);
+            configureDispatcher(server, testInstance);
 
             // Legacy support for MockWebServerHolder (deprecated)
             // This will be removed in version 1.2 - tests should use parameter injection instead
@@ -367,13 +367,12 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      *
      * @param server       the MockWebServer instance to configure
      * @param testInstance the test instance
-     * @param context      the extension context
      * @throws DispatcherResolutionException if there is an error resolving the dispatcher
      */
-    private void configureDispatcher(MockWebServer server, Object testInstance, ExtensionContext context) {
+    private void configureDispatcher(MockWebServer server, Object testInstance) {
         LOGGER.info("Configuring dispatcher for test class: {}", testInstance.getClass().getName());
         Dispatcher dispatcher = dispatcherResolver.resolveDispatcher(
-                testInstance.getClass(), testInstance, context);
+                testInstance.getClass(), testInstance);
         server.setDispatcher(dispatcher);
         LOGGER.info("Configured dispatcher: {}", dispatcher.getClass().getName());
     }

@@ -17,24 +17,23 @@ package de.cuioss.test.mockwebserver.dispatcher;
 
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 import okhttp3.Headers;
 import okio.Buffer;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.net.Socket;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-
-import mockwebserver3.Dispatcher;
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for {@link DispatcherResolver}
@@ -50,8 +49,6 @@ class DispatcherResolverTest {
     private static final CuiLogger LOGGER = new CuiLogger(DispatcherResolverTest.class);
 
     private static final DispatcherResolver resolver = new DispatcherResolver();
-    // Using null for ExtensionContext since it's not used in the resolver
-    private static final ExtensionContext extensionContext = null;
 
 
     /**
@@ -66,7 +63,7 @@ class DispatcherResolverTest {
         var testInstance = new TestClassWithDispatcherAnnotation();
 
         // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance, extensionContext);
+        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
 
         // Assert
         assertNotNull(dispatcher, "Resolved dispatcher should not be null");
@@ -91,6 +88,7 @@ class DispatcherResolverTest {
     private String writeBodyToString(MockResponse response) {
         Buffer buffer = new Buffer();
         try {
+            assert response.getBody() != null;
             response.getBody().writeTo(buffer);
             return buffer.readUtf8();
         } catch (Exception e) {
@@ -108,7 +106,7 @@ class DispatcherResolverTest {
         var testInstance = new TestClassWithMethod();
 
         // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance, extensionContext);
+        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
 
         // Assert
         assertNotNull(dispatcher);
@@ -130,7 +128,7 @@ class DispatcherResolverTest {
         var testClass = TestClassWithLegacyDispatcher.class;
 
         // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, null, extensionContext);
+        var dispatcher = resolver.resolveDispatcher(testClass, null);
 
         // Assert
         assertNotNull(dispatcher);
@@ -154,7 +152,7 @@ class DispatcherResolverTest {
         var testInstance = new Object();
 
         // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance, extensionContext);
+        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
 
         // Assert
         assertNotNull(dispatcher);
@@ -199,6 +197,7 @@ class DispatcherResolverTest {
 
     // Test class with getModuleDispatcher method
     static class TestClassWithMethod {
+        @SuppressWarnings("unused") // Implicitly called by the test framework
         public ModuleDispatcherElement getModuleDispatcher() {
             return new TestDispatcherElement(METHOD_PATH);
         }
@@ -215,8 +214,10 @@ class DispatcherResolverTest {
 
         /**
          * Provides a test dispatcher for the mock web server
+         *
          * @return a legacy dispatcher
          */
+        @SuppressWarnings("unused") // implicitly called by the test framework
         static Dispatcher provideDispatcher() {
             return new TestDispatcher();
         }
@@ -227,6 +228,7 @@ class DispatcherResolverTest {
     private static final class TestDispatcherElement implements ModuleDispatcherElement {
         private final String baseUrl;
 
+        @SuppressWarnings("unused") // Implicitly called by the test framework
         public TestDispatcherElement() {
             this.baseUrl = "/"; // Default to handle all paths
         }

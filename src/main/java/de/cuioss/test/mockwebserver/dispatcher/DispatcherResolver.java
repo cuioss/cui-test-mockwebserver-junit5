@@ -19,7 +19,7 @@ import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.mockresponse.MockResponseResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
-import org.junit.jupiter.api.extension.ExtensionContext;
+import mockwebserver3.Dispatcher;
 import org.junit.platform.commons.support.AnnotationSupport;
 
 import java.lang.reflect.Constructor;
@@ -33,10 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-
-import mockwebserver3.Dispatcher;
-
-@SuppressWarnings("deprecation") // Using deprecated methods for backward compatibility with MockWebServerHolder
 
 /**
  * Resolves dispatchers for MockWebServer tests based on annotations and test class methods.
@@ -71,14 +67,13 @@ public class DispatcherResolver {
      * If multiple dispatchers are found (e.g., from annotations and methods), they will be combined
      * using {@link CombinedDispatcher}.
      *
-     * @param testClass        the class of the test
-     * @param testInstance     the instance of the test
-     * @param extensionContext the JUnit extension context (not used currently)
+     * @param testClass    the class of the test
+     * @param testInstance the instance of the test
      * @return a non-null Dispatcher instance to be used with MockWebServer
      * @since 1.1
      */
     @NonNull
-    public Dispatcher resolveDispatcher(Class<?> testClass, Object testInstance, ExtensionContext extensionContext) {
+    public Dispatcher resolveDispatcher(Class<?> testClass, Object testInstance) {
         LOGGER.info("Resolving dispatcher for test class: %s", testClass.getName());
 
         // Try to resolve from annotation first (highest priority)
@@ -159,13 +154,10 @@ public class DispatcherResolver {
         // Add dispatcher from annotation if present
         Optional<ModuleDispatcher> moduleDispatcherAnnotation =
                 AnnotationSupport.findAnnotation(testClass, ModuleDispatcher.class);
-        if (moduleDispatcherAnnotation.isPresent()) {
-            resolveFromAnnotation(moduleDispatcherAnnotation.get())
-                    .ifPresent(dispatcher -> {
-                        LOGGER.info("Successfully resolved dispatcher from annotation");
-                        dispatchers.add(dispatcher);
-                    });
-        }
+        moduleDispatcherAnnotation.flatMap(this::resolveFromAnnotation).ifPresent(dispatcher -> {
+            LOGGER.info("Successfully resolved dispatcher from annotation");
+            dispatchers.add(dispatcher);
+        });
 
         // Add dispatcher from method if present
         LOGGER.info("Checking for getModuleDispatcher method in test class: %s", testClass.getName());
@@ -176,7 +168,7 @@ public class DispatcherResolver {
 
         // Add dispatchers from MockResponse annotations
         List<ModuleDispatcherElement> mockResponseDispatchers =
-                MockResponseResolver.resolveFromAnnotations(testClass, testInstance);
+                MockResponseResolver.resolveFromAnnotations(testClass);
         if (!mockResponseDispatchers.isEmpty()) {
             LOGGER.debug("Found %d @MockResponse annotations on test class: %s",
                     mockResponseDispatchers.size(), testClass.getName());
@@ -196,7 +188,7 @@ public class DispatcherResolver {
         if (testInstance instanceof MockWebServerHolder holder) {
             LOGGER.debug("Test class implements MockWebServerHolder, checking for dispatcher");
             // Using deprecated method for backward compatibility
-            @SuppressWarnings({"deprecation", "removal"})
+            @SuppressWarnings({"removal"})
             Dispatcher legacyDispatcher = holder.getDispatcher();
             if (legacyDispatcher != null) {
                 LOGGER.debug("Using legacy dispatcher from MockWebServerHolder.getDispatcher()");

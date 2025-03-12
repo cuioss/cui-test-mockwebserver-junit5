@@ -37,9 +37,10 @@ public class TestCertificateProvider {
     /**
      * Provides HandshakeCertificates for HTTPS testing.
      * This method will be called by the CertificateResolver when resolving certificates.
-     * 
+     *
      * @return HandshakeCertificates to be used for HTTPS testing
      */
+    @SuppressWarnings("unused") // implicitly called by the test framework
     public static HandshakeCertificates provideHandshakeCertificates() {
         if (certificates == null) {
             // Create self-signed certificates with a short validity period (1 day) for unit tests

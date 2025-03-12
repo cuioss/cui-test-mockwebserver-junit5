@@ -18,6 +18,7 @@ package de.cuioss.test.mockwebserver.dispatcher;
 import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.test.mockwebserver.URIBuilder;
 import jakarta.servlet.http.HttpServletResponse;
+import mockwebserver3.MockResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -25,9 +26,6 @@ import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-
-
-import mockwebserver3.MockResponse;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -65,6 +63,7 @@ class EndpointDispatcherExampleTest {
      *
      * @return the dispatcher element
      */
+    @SuppressWarnings("unused") // implicitly called by the test framework
     public static ModuleDispatcherElement createDispatcher() {
         // Create a dispatcher for the /api path
         var apiDispatcher = new BaseAllAcceptDispatcher("/api");

@@ -31,6 +31,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Objects;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -198,7 +199,7 @@ class MockWebServerExtensionCertificateTest {
                 cause = cause.getCause();
             }
 
-            assertTrue(foundSslHandshakeException || exception.getMessage().contains("SSL") ||
+            assertTrue(foundSslHandshakeException || Objects.requireNonNull(exception).getMessage().contains("SSL") ||
                     exception.getMessage().contains("certificate"),
                     "Exception should be related to SSL handshake: " + exception);
 
@@ -238,7 +239,7 @@ class MockWebServerExtensionCertificateTest {
          * 
          * @return the HandshakeCertificates to be used
          */
-        @TestProvidedCertificate
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public HandshakeCertificates provideCertificates() {
             return certificates;
         }
@@ -298,7 +299,7 @@ class MockWebServerExtensionCertificateTest {
          * 
          * @return null to test fallback behavior
          */
-        @TestProvidedCertificate
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public HandshakeCertificates provideCertificates() {
             // Return null to simulate an error in certificate provision
             return null;

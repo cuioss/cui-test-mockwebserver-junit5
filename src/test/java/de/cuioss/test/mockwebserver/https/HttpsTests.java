@@ -165,6 +165,7 @@ class HttpsTests {
          *
          * @return the HandshakeCertificates for the server to use
          */
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public HandshakeCertificates provideHandshakeCertificates() {
             // Create self-signed certificates with a short validity period (1 day) for unit tests
             if (null == handshakeCertificates)
@@ -298,6 +299,7 @@ class HttpsTests {
          *
          * @return the HandshakeCertificates to be used for HTTPS
          */
+        @SuppressWarnings("unused") // implicitly called by the test framework
         public static HandshakeCertificates createTestCertificates() {
             if (null == testCertificates)
                 testCertificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);

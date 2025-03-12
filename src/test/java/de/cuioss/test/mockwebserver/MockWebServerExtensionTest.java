@@ -17,7 +17,7 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
-import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
+import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -26,10 +26,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-
-import mockwebserver3.MockWebServer;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for verifying that the {@link MockWebServerExtension} works correctly
@@ -40,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 @DisplayName("Basic MockWebServerExtension functionality tests")
 @EnableMockWebServer
-@ModuleDispatcher(provider = MockWebServerExtensionTest.class, providerMethod = "createDispatcher")
+@ModuleDispatcher(provider = BaseAllAcceptDispatcher.class, providerMethod = "getOptimisticAPIDispatcher")
 class MockWebServerExtensionTest {
 
     /**
@@ -50,7 +49,7 @@ class MockWebServerExtensionTest {
     @DisplayName("Should provide a started server instance")
     void shouldProvideStartedServer(MockWebServer mockWebServer) {
         // Arrange - handled by extension
-        
+
         // Act & Assert
         assertNotNull(mockWebServer, "MockWebServer should not be null");
         assertTrue(mockWebServer.getStarted(), "MockWebServer should be started");
@@ -76,14 +75,5 @@ class MockWebServerExtensionTest {
         // Assert
         assertNotNull(response, "Response should not be null");
         assertEquals(200, response.statusCode(), "Status code should be 200 OK");
-    }
-
-    /**
-     * Creates the dispatcher for the test.
-     * 
-     * @return the dispatcher
-     */
-    public static ModuleDispatcherElement createDispatcher() {
-        return new BaseAllAcceptDispatcher("/api");
     }
 }

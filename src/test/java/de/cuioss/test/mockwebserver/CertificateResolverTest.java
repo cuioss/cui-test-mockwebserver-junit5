@@ -270,6 +270,7 @@ class CertificateResolverTest {
              *
              * @return HandshakeCertificates to be used for HTTPS testing
              */
+            @SuppressWarnings("unused") // implicitly called by the test framework
             public HandshakeCertificates provideHandshakeCertificates() {
                 return KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
             }
@@ -283,6 +284,7 @@ class CertificateResolverTest {
             /**
              * Dummy method that should not be called.
              */
+            @SuppressWarnings("unused") // implicitly called by the test framework
             public void dummyMethod() {
                 // This method should not be called
             }
@@ -297,6 +299,7 @@ class CertificateResolverTest {
             /**
              * Dummy method that should not be called.
              */
+            @SuppressWarnings("unused") // implicitly called by the test framework
             public void dummyMethod() {
                 // This method should not be called
             }
@@ -312,6 +315,7 @@ class CertificateResolverTest {
              *
              * @return HandshakeCertificates to be used for HTTPS testing
              */
+            @SuppressWarnings("unused") // implicitly called by the test framework
             public static HandshakeCertificates provideHandshakeCertificates() {
                 return KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
             }

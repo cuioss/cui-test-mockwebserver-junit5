@@ -19,6 +19,8 @@ import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import lombok.NonNull;
+import mockwebserver3.MockResponse;
+import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -28,10 +30,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Optional;
 import java.util.Set;
-
-
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -46,6 +44,7 @@ class UrlBuilderParameterResolvingTest {
      *
      * @return a dispatcher that handles API requests
      */
+    @SuppressWarnings("unused") // implicitly called by the test framework
     public ModuleDispatcherElement getModuleDispatcher() {
         // Create a direct implementation of Dispatcher that echoes back the request path
         // This is critical for the test to verify the correct path construction

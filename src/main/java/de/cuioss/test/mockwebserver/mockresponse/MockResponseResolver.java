@@ -48,13 +48,11 @@ public class MockResponseResolver {
      * Resolves all {@link MockResponse} annotations from the given test class and its methods,
      * and converts them to {@link MockResponseDispatcherElement} instances.
      *
-     * @param testClass    the test class to resolve annotations from, must not be null
-     * @param testInstance the test instance, must not be null
+     * @param testClass the test class to resolve annotations from, must not be null
      * @return a list of {@link ModuleDispatcherElement} instances created from the annotations
      */
     public List<ModuleDispatcherElement> resolveFromAnnotations(
-            @NonNull Class<?> testClass,
-            @NonNull Object testInstance) {
+            @NonNull Class<?> testClass) {
 
         List<ModuleDispatcherElement> result = new ArrayList<>();
 
