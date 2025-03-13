@@ -106,7 +106,7 @@ public class CombinedDispatcher extends Dispatcher {
     public @NotNull MockResponse dispatch(@NonNull RecordedRequest request) {
         var path = MoreStrings.nullToEmpty(request.getPath());
         var mapper = HttpMethodMapper.of(request);
-        LOGGER.info("Processing method '{}' with path '{}'", mapper, path);
+        LOGGER.info("Processing method '%s' with path '%s'", mapper, path);
 
         List<ModuleDispatcherElement> filtered = new ArrayList<>();
 
@@ -125,7 +125,7 @@ public class CombinedDispatcher extends Dispatcher {
             }
         }
         LOGGER.info(
-                "Method '{}' with path '{}' could not be processed by the configured ModuleDispatcherElements. Going to default",
+                "Method '%s' with path '%s' could not be processed by the configured ModuleDispatcherElements. Going to default",
                 mapper, path);
         var code = HTTP_CODE_TEAPOT;
         if (!endWithTeapot) {
@@ -169,6 +169,13 @@ public class CombinedDispatcher extends Dispatcher {
     public CombinedDispatcher addDispatcher(ModuleDispatcherElement... dispatcherElements) {
         singleDispatcher.addAll(CollectionLiterals.mutableList(dispatcherElements));
         return this;
+    }
+
+    /**
+     * @return A new instance of the CombinedDispatcher with a default configuration providing an /api endpoint
+     */
+    public static CombinedDispatcher createAPIDispatcher() {
+        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
     }
 
 }

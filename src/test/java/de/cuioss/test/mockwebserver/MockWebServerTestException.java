@@ -13,24 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package de.cuioss.test.mockwebserver.dispatcher;
+package de.cuioss.test.mockwebserver;
 
-import lombok.NonNull;
+import java.io.Serial;
 
-import java.util.Set;
+/**
+ * Exception thrown during MockWebServer test execution.
+ * Used across test classes to handle interruptions consistently.
+ */
+public class MockWebServerTestException extends RuntimeException {
 
-public class PassThroughDispatcher implements ModuleDispatcherElement {
+    @Serial
+    private static final long serialVersionUID = 1L;
 
-    public static final String BASE = "/pass";
-
-    @Override
-    public String getBaseUrl() {
-        return BASE;
-    }
-
-
-    @Override
-    public @NonNull Set<HttpMethodMapper> supportedMethods() {
-        return Set.of(HttpMethodMapper.values());
+    /**
+     * Constructs a new exception with the specified detail message and cause.
+     *
+     * @param message the detail message
+     * @param cause the cause
+     */
+    public MockWebServerTestException(String message, Throwable cause) {
+        super(message, cause);
     }
 }

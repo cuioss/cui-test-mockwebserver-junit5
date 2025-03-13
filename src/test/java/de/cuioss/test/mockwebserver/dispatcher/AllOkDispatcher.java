@@ -20,6 +20,7 @@ import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 
@@ -54,4 +55,9 @@ public class AllOkDispatcher implements ModuleDispatcherElement {
         return Optional.of(OK_RESPONSE);
     }
 
+
+    @Override
+    public @NonNull Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.values());
+    }
 }

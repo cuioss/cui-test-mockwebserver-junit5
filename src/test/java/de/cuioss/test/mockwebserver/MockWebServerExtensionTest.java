@@ -16,16 +16,12 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.BaseAllAcceptDispatcher;
-import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
-import lombok.Getter;
-import lombok.Setter;
-import mockwebserver3.Dispatcher;
+import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcher;
 import mockwebserver3.MockWebServer;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -35,37 +31,47 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test class for verifying that the {@link MockWebServerExtension} works correctly
  * when using {@link EnableMockWebServer}.
+ * <p>
+ * This class tests the basic functionality of the extension, including server startup
+ * and request handling with a custom dispatcher.
  */
+@DisplayName("Basic MockWebServerExtension functionality tests")
 @EnableMockWebServer
-class MockWebServerExtensionTest implements MockWebServerHolder {
+@ModuleDispatcher(provider = BaseAllAcceptDispatcher.class, providerMethod = "getOptimisticAPIDispatcher")
+class MockWebServerExtensionTest {
 
-    @Getter
-    @Setter
-    private MockWebServer mockWebServer;
-
+    /**
+     * Verifies that the extension provides a started MockWebServer instance.
+     */
     @Test
-    void shouldProvideServer() {
-        assertNotNull(mockWebServer);
-        assertTrue(mockWebServer.getStarted());
+    @DisplayName("Should provide a started server instance")
+    void shouldProvideStartedServer(MockWebServer mockWebServer) {
+        // Arrange - handled by extension
+
+        // Act & Assert
+        assertNotNull(mockWebServer, "MockWebServer should not be null");
+        assertTrue(mockWebServer.getStarted(), "MockWebServer should be started");
     }
 
+    /**
+     * Verifies that the extension correctly handles a simple HTTP request using
+     * the configured dispatcher.
+     */
     @Test
-    void shouldHandleSimpleRequest() throws URISyntaxException, IOException, InterruptedException {
-        String serverUrl = mockWebServer.url("/api").toString();
+    @DisplayName("Should handle a simple GET request")
+    void shouldHandleSimpleRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        // Arrange
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(new URI(serverUrl))
+                .uri(uriBuilder.setPath("api").build())
                 .GET()
                 .build();
 
+        // Act
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        assertNotNull(response);
-        assertEquals(200, response.statusCode());
 
-    }
-
-    @Override
-    public Dispatcher getDispatcher() {
-        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+        // Assert
+        assertNotNull(response, "Response should not be null");
+        assertEquals(200, response.statusCode(), "Status code should be 200 OK");
     }
 }

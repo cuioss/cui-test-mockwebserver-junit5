@@ -24,6 +24,20 @@
  *   <li><strong>Response Handling</strong> - Flexible response configuration</li>
  *   <li><strong>Method Support</strong> - Complete HTTP method coverage</li>
  * </ul>
+ * 
+ * <h2>Creating MockResponse Objects</h2>
+ * <p>
+ * Always use the Builder pattern for creating MockResponse objects and include appropriate Content-Type headers:
+ * <pre>
+ * MockResponse response = new MockResponse.Builder()
+ *         .addHeader("Content-Type", "application/json")
+ *         .body(jsonContentKeyValue)
+ *         .code(HttpServletResponse.SC_OK)
+ *         .build();
+ * </pre>
+ * 
+ * <p>The {@link de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler} class provides pre-configured
+ * responses like {@code RESPONSE_OK}, {@code RESPONSE_NO_CONTENT}, etc. that follow this pattern.
  * <p>
  * For detailed documentation and examples, see:
  * <ul>

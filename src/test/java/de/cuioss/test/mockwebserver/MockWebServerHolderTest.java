@@ -15,26 +15,80 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import lombok.Getter;
-import lombok.Setter;
 import mockwebserver3.MockWebServer;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
+@DisplayName("Tests for MockWebServerHolder default implementations")
 class MockWebServerHolderTest {
 
-    @Test
-    void shouldHandleDefaultMethods() {
-        var holder = new MockWebServerHolder() {
-            @Getter
-            @Setter
-            private MockWebServer mockWebServer;
-        };
+    private MockWebServerHolder holder;
 
-        assertNull(holder.getDispatcher());
-        holder.setMockWebServer(new MockWebServer());
-        assertNotNull(holder.getMockWebServer());
+    @BeforeEach
+    void setUp() {
+        // Create a minimal implementation of the interface
+        holder = new MockWebServerHolder() {
+        };
     }
+
+    @Nested
+    @DisplayName("Default implementation tests")
+    class DefaultImplementationTests {
+
+        /**
+         * Tests the default implementation of getMockWebServer() which is deprecated but still needs to be tested
+         * until it's removed in version 1.2
+         */
+        @Test
+        @DisplayName("Should return null for getMockWebServer")
+        @SuppressWarnings("deprecation") // Testing deprecated method
+        void shouldReturnNullForGetMockWebServer() {
+            // tag::test-get-mockwebserver[]
+            // Test the default implementation of getMockWebServer()
+            assertNull(holder.getMockWebServer(), "Default implementation should return null");
+            // end::test-get-mockwebserver[]
+        }
+
+        /**
+         * Tests the default implementation of setMockWebServer() which is deprecated but still needs to be tested
+         * until it's removed in version 1.2
+         */
+        @Test
+        @DisplayName("Should do nothing for setMockWebServer")
+        @SuppressWarnings("deprecation") // Testing deprecated method
+        void shouldDoNothingForSetMockWebServer() {
+            // tag::test-set-mockwebserver[]
+            // Test the default implementation of setMockWebServer()
+            try (MockWebServer server = new MockWebServer()) {
+                assertDoesNotThrow(() -> holder.setMockWebServer(server),
+                        "Default implementation should not throw an exception");
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            // end::test-set-mockwebserver[]
+        }
+
+        /**
+         * Tests the default implementation of getDispatcher() which is deprecated but still needs to be tested
+         * until it's removed in version 1.2
+         */
+        @Test
+        @DisplayName("Should return null for getDispatcher")
+        @SuppressWarnings("deprecation") // Testing deprecated method
+        void shouldReturnNullForGetDispatcher() {
+            // tag::test-get-dispatcher[]
+            // Test the default implementation of getDispatcher()
+            assertNull(holder.getDispatcher(), "Default implementation should return null");
+            // end::test-get-dispatcher[]
+        }
+    }
+
+
 }

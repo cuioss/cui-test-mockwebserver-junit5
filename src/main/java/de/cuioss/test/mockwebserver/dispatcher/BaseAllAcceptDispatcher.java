@@ -64,9 +64,9 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  * </ul>
  *
  * @author Oliver Wolff
- * @since 1.0
  * @see EndpointAnswerHandler
  * @see ModuleDispatcherElement
+ * @since 1.0
  */
 @RequiredArgsConstructor
 public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
@@ -113,6 +113,11 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     }
 
     @Override
+    public @NonNull Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.values());
+    }
+
+    @Override
     public Optional<MockResponse> handlePut(@NonNull RecordedRequest request) {
         return putResult.respond();
     }
@@ -140,21 +145,30 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
                     deleteResult.setResponse(mockResponse);
                     break;
                 default:
-                    throw new IllegalArgumentException("Unknown method: " + Arrays.toString(mapper));
+                    throw new IllegalArgumentException("Unsupported HTTP method: " + element + ". Supported methods are: " + Arrays.toString(HttpMethodMapper.values()));
             }
         }
     }
 
     /**
-     * Sets the result for all but the given
+     * Sets the given MockResponse for all HTTP methods EXCEPT the specified ones.
+     * This is useful when you want to configure a default response for most methods
+     * while handling specific methods differently.
      *
-     * @param mapper       One or more mapper to identify the corresponding
-     *                     {@link HttpMethodMapper}
-     * @param mockResponse maybe null
+     * @param mockResponse The MockResponse to set for all non-specified methods, may be null
+     * @param mapper       One or more HTTP methods to exclude from this configuration
      */
     public void setAllButGivenMethodToResult(MockResponse mockResponse, HttpMethodMapper... mapper) {
         Set<HttpMethodMapper> all = mutableSet(HttpMethodMapper.values());
         all.removeAll(mutableSortedSet(mapper));
         setMethodToResult(mockResponse, all.toArray(new HttpMethodMapper[0]));
+    }
+
+    /**
+     * @return A new instance of the BaseAllAcceptDispatcher with a default configuration providing an /api endpoint
+     */
+    @SuppressWarnings("unused")  // Implicitly called by the test framework
+    public ModuleDispatcherElement getOptimisticAPIDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
     }
 }

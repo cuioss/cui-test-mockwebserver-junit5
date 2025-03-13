@@ -18,59 +18,157 @@ package de.cuioss.test.mockwebserver;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockWebServer;
 
+import javax.net.ssl.SSLContext;
+
 /**
  * Interface for test classes that need access to a {@link MockWebServer} instance.
  * This interface serves as a bridge between the test infrastructure and test classes,
  * providing access to the server instance and optional request dispatching.
  *
- * <h2>Basic Implementation</h2>
- * <pre>
- * &#64;EnableMockWebServer
- * class BasicHttpTest implements MockWebServerHolder {
- *     &#64;Getter
- *     &#64;Setter
- *     private MockWebServer server;
+ * <h2>Recommended Approach: Parameter Injection</h2>
+ * <p>
+ * While this interface is still supported, the recommended approach is to use parameter
+ * injection instead of implementing this interface. See examples below.
  *
+ * <h2>Basic Implementation with Parameter Injection and Dispatcher</h2>
+ * <pre>
+ * {@code
+ * @EnableMockWebServer
+ * class BasicHttpTest {
+ *
+ *     @Test
+ *     void testHttpRequest(MockWebServer server, URIBuilder uriBuilder) throws Exception {
+ *         // Create a dispatcher for this test
+ *         server.setDispatcher(new Dispatcher() {
+ *             @Override
+ *             public MockResponse dispatch(RecordedRequest request) {
+ *                 if ("/api/data".equals(request.getPath())) {
+ *                     return new MockResponse.Builder()
+ *                         .addHeader("Content-Type", "text/plain")
+ *                         .body("Hello World")
+ *                         .code(HttpServletResponse.SC_OK)
+ *                         .build();
+ *                 }
+ *                 return new MockResponse.Builder()
+ *                     .code(HttpServletResponse.SC_NOT_FOUND)
+ *                     .build();
+ *             }
+ *         });
+ *
+ *         // Create HttpClient
+ *         HttpClient client = HttpClient.newHttpClient();
+ *
+ *         // Create request using the URIBuilder parameter
+ *         HttpRequest request = HttpRequest.newBuilder()
+ *             .uri(uriBuilder.addPathSegment("api").addPathSegment("data").build())
+ *             .GET()
+ *             .build();
+ *
+ *         // Send request and verify response
+ *         HttpResponse<String> response = client.send(request,
+ *             HttpResponse.BodyHandlers.ofString());
+ *         assertEquals(200, response.statusCode());
+ *         assertEquals("Hello World", response.body());
+ *     }
+ * }
  * }
  * </pre>
  *
- * <h2>Custom Request Dispatching</h2>
+ * <h2>Using EndpointAnswerHandler for Request Dispatching</h2>
  * <pre>
- * &#64;EnableMockWebServer
- * class CustomDispatchTest implements MockWebServerHolder {
- *     &#64;Getter
- *     &#64;Setter
- *     private MockWebServer server;
+ * {@code
+ * @EnableMockWebServer
+ * class EndpointDispatcherTest {
  *
- *     &#64;Override
- *     public Dispatcher getDispatcher() {
- *         return new Dispatcher() {
- *             &#64;Override
+ *     @Test
+ *     void testWithEndpointDispatcher(MockWebServer server, URIBuilder uriBuilder) throws Exception {
+ *         // Create an EndpointAnswerHandler for this test
+ *         var handler = new EndpointAnswerHandler();
+ *
+ *         // Configure endpoint responses
+ *         handler.addAnswerFor("/api/data", new MockResponse()
+ *             .setBody("{'data': 'test'}"));
+ *
+ *         // Set the dispatcher for this test
+ *         server.setDispatcher(handler);
+ *
+ *         // Create HttpClient
+ *         HttpClient client = HttpClient.newHttpClient();
+ *
+ *         // Create request using the URIBuilder parameter
+ *         HttpRequest request = HttpRequest.newBuilder()
+ *             .uri(uriBuilder.addPathSegment("api").addPathSegment("data").build())
+ *             .GET()
+ *             .build();
+ *
+ *         // Send request and verify response
+ *         HttpResponse<String> response = client.send(request,
+ *             HttpResponse.BodyHandlers.ofString());
+ *         assertEquals(200, response.statusCode());
+ *         assertEquals("{'data': 'test'}", response.body());
+ *     }
+ * }
+ * }
+ * </pre>
+ *
+ * <h2>HTTPS Support</h2>
+ * <pre>
+ * {@code
+ * @EnableMockWebServer(useHttps = true)
+ * class HttpsTest {
+ *
+ *     @Test
+ *     void testHttpsRequest(MockWebServer server, SSLContext sslContext, URIBuilder uriBuilder) throws Exception {
+ *         // Create a dispatcher for this test
+ *         server.setDispatcher(new Dispatcher() {
+ *             @Override
  *             public MockResponse dispatch(RecordedRequest request) {
- *                 if ("/api/data".equals(request.getPath())) {
- *                     return new MockResponse().setBody("{'data': 'test'}");
+ *                 if ("/secure/data".equals(request.getPath())) {
+ *                     return new MockResponse().setBody("Hello Secure World");
  *                 }
  *                 return new MockResponse().setResponseCode(404);
  *             }
- *         };
+ *         });
+ *
+ *         // Create HttpClient with the injected SSLContext
+ *         HttpClient client = HttpClient.newBuilder()
+ *             .sslContext(sslContext)
+ *             .build();
+ *
+ *         // Create request using the URIBuilder parameter
+ *         HttpRequest request = HttpRequest.newBuilder()
+ *             .uri(uriBuilder.addPathSegment("secure").addPathSegment("data").build())
+ *             .GET()
+ *             .build();
+ *
+ *         // Send request and verify response
+ *         HttpResponse<String> response = client.send(request,
+ *             HttpResponse.BodyHandlers.ofString());
+ *         assertEquals(200, response.statusCode());
+ *         assertEquals("Hello Secure World", response.body());
  *     }
+ * }
  * }
  * </pre>
  *
  * <h2>Usage Notes</h2>
  * <ul>
- *   <li>The {@link #setMockWebServer(MockWebServer)} method must be implemented to receive the server instance</li>
- *   <li>The {@link #getMockWebServer()} method must be implemented to retrieve the server instance</li>
- *   <li>Implement {@link #getDispatcher()} to provide custom request handling logic</li>
+ *   <li>Parameter injection is the recommended way to access the server instance</li>
+ *   <li>Add {@link MockWebServer} as a parameter to your test method to get the server instance</li>
+ *   <li>Add {@link SSLContext} as a parameter to your test method when using HTTPS</li>
+ *   <li>Add {@link URIBuilder} as a parameter to your test method for easier URI construction</li>
+ *   <li>Use server.setDispatcher() to configure request handling directly in test methods</li>
+ *   <li>Use {@link de.cuioss.test.mockwebserver.dispatcher.EndpointAnswerHandler} for simple endpoint configuration</li>
  *   <li>The server instance is managed by {@link MockWebServerExtension}</li>
- *   <li>Default dispatcher returns null, meaning requests are handled by the default MockWebServer behavior</li>
  * </ul>
  *
  * @author Oliver Wolff
- * @since 1.0
  * @see EnableMockWebServer
  * @see MockWebServerExtension
+ * @since 1.0
+ * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead
  */
+@Deprecated(since = "1.1")
 public interface MockWebServerHolder {
 
     /**
@@ -79,7 +177,10 @@ public interface MockWebServerHolder {
      * to provide custom access to the server instance.
      *
      * @return the server instance, may be {@code null} if not yet initialized
+     * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead by adding
+     * {@link MockWebServer} as a parameter to your test method.
      */
+    @Deprecated(since = "1.1")
     default MockWebServer getMockWebServer() {
         return null;
     }
@@ -90,7 +191,10 @@ public interface MockWebServerHolder {
      * to store the server instance for later use.
      *
      * @param mockWebServer The server instance to be used
+     * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead by adding
+     * {@link MockWebServer} as a parameter to your test method.
      */
+    @Deprecated(since = "1.1")
     default void setMockWebServer(MockWebServer mockWebServer) {
         // Default implementation does nothing
     }
@@ -101,8 +205,14 @@ public interface MockWebServerHolder {
      * Override this method to provide custom request handling logic.
      *
      * @return the dispatcher to be used, or {@code null} to use the default dispatcher
+     * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead and set the
+     * dispatcher directly on the server instance in your test method:
+     * {@code server.setDispatcher(new MyDispatcher())}
      */
+    @Deprecated(since = "1.1")
     default Dispatcher getDispatcher() {
         return null;
     }
+
+
 }
