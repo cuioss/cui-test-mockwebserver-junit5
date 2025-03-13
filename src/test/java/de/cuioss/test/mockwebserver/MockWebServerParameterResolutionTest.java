@@ -29,7 +29,6 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnableMockWebServer
 class MockWebServerParameterResolutionTest {
 
-    // tag::parameter-resolution-test[]
     @Test
     @DisplayName("Should resolve MockWebServer parameter")
     void shouldResolveMockWebServerParameter(MockWebServer server) {
@@ -60,5 +59,4 @@ class MockWebServerParameterResolutionTest {
         assertEquals("localhost", uri.getHost(), "URI host should be localhost");
         assertEquals(server.getPort(), uri.getPort(), "URI port should match server port");
     }
-    // end::parameter-resolution-test[]
 }

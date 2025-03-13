@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class URIBuilderPlaceholderTest extends URIBuilderTestBase {
 
-    // tag::uribuilder-placeholder-test[]
     @Test
     @DisplayName("Should create a placeholder URIBuilder")
     void shouldCreatePlaceholderURIBuilder() {
@@ -40,9 +39,6 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
         assertEquals(-1, placeholder.getPort());
     }
 
-    // end::uribuilder-placeholder-test[]
-    
-    // tag::uribuilder-placeholder-exception-test[]
     @Test
     @DisplayName("Should throw IllegalStateException when building URI from placeholder")
     void shouldThrowExceptionWhenBuildingUriFromPlaceholder() {
@@ -70,8 +66,6 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
                 "Cannot build URI from placeholder URIBuilder. " +
                         "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())");
     }
-
-    // end::uribuilder-placeholder-exception-test[]
 
     @Test
     @DisplayName("Should allow adding path segments to placeholder without error")

@@ -32,7 +32,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Demonstrates how to use EndpointAnswerHandler for configuring responses in tests.
  */
-// tag::dispatcher-example[]
 @EnableMockWebServer
 @DisplayName("Endpoint Dispatcher Example")
 @ModuleDispatcher(provider = EndpointDispatcherExampleTest.class, providerMethod = "createDispatcher")
@@ -78,4 +77,3 @@ class EndpointDispatcherExampleTest {
         return apiDispatcher;
     }
 }
-// end::dispatcher-example[]

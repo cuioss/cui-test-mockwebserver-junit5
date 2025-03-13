@@ -43,10 +43,6 @@ class DispatcherResolverMethodTest {
     // Constants for test paths
     private static final String METHOD_PATH = "/method";
 
-    // Note: Basic test for resolving dispatcher from getModuleDispatcher method
-    // has been moved to DispatcherResolverTest.shouldResolveFromMethod to avoid duplication.
-    // This class focuses on more specific method resolution test cases.
-
     @Test
     @DisplayName("Should return empty when getModuleDispatcher method doesn't exist")
     void shouldReturnEmptyWhenMethodDoesNotExist() {

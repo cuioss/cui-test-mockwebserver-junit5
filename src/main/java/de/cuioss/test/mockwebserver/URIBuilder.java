@@ -36,7 +36,6 @@ import java.util.stream.Collectors;
  * Example usage:
  * <pre>
  * {@code
- * // tag::uribuilder-basic-usage[]
  * URI uri = URIBuilder.from(serverURL)
  *     .addPathSegment("api")
  *     .addPathSegment("users")
@@ -44,7 +43,6 @@ import java.util.stream.Collectors;
  *     .build();
  *
  * // Creates a URI like: http://localhost:12345/api/users?filter=active
- * // end::uribuilder-basic-usage[]
  * }
  * </pre>
  */
@@ -67,13 +65,10 @@ public class URIBuilder {
      * @implNote When using a placeholder URIBuilder, you must start the server before calling
      * {@link #build()} or any other method that requires the base URL.
      */
-    // tag::uribuilder-placeholder-constructor[]
     private URIBuilder() {
         this.baseUrl = null;
         this.placeholder = true;
     }
-
-    // end::uribuilder-placeholder-constructor[]
 
     /**
      * Creates a new builder with the given base URL.
@@ -109,12 +104,9 @@ public class URIBuilder {
      * @implNote When using a placeholder URIBuilder, you must start the server before calling
      * {@link #build()} or any other method that requires the base URL.
      */
-    // tag::uribuilder-placeholder[]
     public static URIBuilder placeholder() {
         return new URIBuilder();
     }
-
-    // end::uribuilder-placeholder[]
 
     /**
      * Adds a path segment to the URI.

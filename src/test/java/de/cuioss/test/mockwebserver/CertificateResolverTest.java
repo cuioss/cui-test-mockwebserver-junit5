@@ -419,9 +419,5 @@ class CertificateResolverTest {
             SSLContext retrievedContext = retrievedContextOptional.get();
             assertSame(sslContext, retrievedContext, "Should return the same SSLContext instance from context");
         }
-
-        // Note: Test for creating SSL context from HandshakeCertificates has been moved to
-        // KeyMaterialUtilTest.SslContextCreationTests.shouldCreateSslContextFromHandshakeCertificates
-        // to avoid duplication.
     }
 }

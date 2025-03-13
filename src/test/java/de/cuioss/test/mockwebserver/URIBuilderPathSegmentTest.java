@@ -30,7 +30,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @DisplayName("URIBuilder Path Segment Handling Tests")
 class URIBuilderPathSegmentTest extends URIBuilderTestBase {
 
-    // tag::path-segment-handling[]
     static Stream<Arguments> pathSegmentTestCases() {
         return Stream.of(
                 // Single path segment
@@ -113,8 +112,6 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
             return builder;
         }, expectedResult);
     }
-
-    // end::path-segment-handling[]
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("additionalPathSegmentTestCases")

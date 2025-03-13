@@ -33,7 +33,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 @SuppressWarnings("DataFlowIssue")
 class URIBuilderQueryParameterTest extends URIBuilderTestBase {
 
-    // tag::query-parameter-handling[]
     /**
      * Provides test cases for query parameter handling.
      * Each test case consists of:
@@ -98,8 +97,6 @@ class URIBuilderQueryParameterTest extends URIBuilderTestBase {
         // This handles query parameter order differences automatically
         assertUriBuilding(baseUrlString, b -> builder, expectedResult);
     }
-
-    // end::query-parameter-handling[]
 
     @Test
     @DisplayName("Should combine path segments and query parameters")

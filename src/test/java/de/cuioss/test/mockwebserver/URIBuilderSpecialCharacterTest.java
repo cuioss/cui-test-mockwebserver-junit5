@@ -20,9 +20,6 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Tests for complex URL handling functionality of {@link URIBuilder}.
- * Note: Basic special character handling tests have been moved to 
- * {@link URIBuilderPathSegmentTest} and {@link URIBuilderQueryParameterTest}
- * to avoid duplication.
  */
 class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
 

@@ -27,7 +27,6 @@ import java.net.URISyntaxException;
 @SuppressWarnings({"ConstantValue", "DataFlowIssue"})
 class URIBuilderExceptionTest extends URIBuilderTestBase {
 
-    // tag::exception-handling[]
     @Test
     @DisplayName("Should throw NullPointerException when base URL is null")
     void shouldThrowExceptionWhenBaseUrlIsNull() {
@@ -95,8 +94,6 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
                 builder::getScheme,
                 "Cannot access scheme with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
     }
-
-    // end::exception-handling[]
 
     @Test
     @DisplayName("Should handle null baseUrl in getPort()")

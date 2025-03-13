@@ -27,7 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class URIBuilderBasicTest extends URIBuilderTestBase {
 
-    // tag::basic-uri-construction[]
     @Test
     @DisplayName("Should create a basic URI from a URI")
     void shouldCreateBasicUri() {
@@ -40,8 +39,6 @@ class URIBuilderBasicTest extends URIBuilderTestBase {
         // Then: The result should match the expected URI
         assertEquals(BASE_URL_NO_SLASH, result.toString());
     }
-
-    // end::basic-uri-construction[]
 
     @Test
     @DisplayName("Should build URI without any path segments or query parameters")
