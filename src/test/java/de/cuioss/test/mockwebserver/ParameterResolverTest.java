@@ -24,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tests the ParameterResolver functionality of {@link MockWebServerExtension}.
  */
-// tag::parameter-resolver-example[]
 @EnableMockWebServer
 class ParameterResolverTest {
 
@@ -55,4 +54,3 @@ class ParameterResolverTest {
         assertEquals(server.getPort(), uriBuilder.getPort());
     }
 }
-// end::parameter-resolver-example[]

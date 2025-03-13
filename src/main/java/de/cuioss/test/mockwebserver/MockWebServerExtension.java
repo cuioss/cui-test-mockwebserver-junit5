@@ -384,6 +384,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @param context      the extension context
      * @return an Optional containing the MockWebServerHolder
      */
+    @SuppressWarnings("deprecation")
     private Optional<MockWebServerHolder> findMockWebServerHolder(Object testInstance, ExtensionContext context) {
         if (testInstance instanceof MockWebServerHolder holder) {
             LOGGER.debug("Found MockWebServerHolder in test instance %s", holder.getClass().getName());
@@ -465,10 +466,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     private Optional<MockWebServer> get(ExtensionContext context) {
         return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(MockWebServer.class.getName()));
     }
-
-    // Certificate handling has been moved to CertificateResolver
-
-    // Certificate handling has been moved to CertificateResolver
 
     /**
      * Gets the root context to ensure certificates are shared across all tests in the class.

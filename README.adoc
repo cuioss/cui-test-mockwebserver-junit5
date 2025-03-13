@@ -1,5 +1,9 @@
 = cui-test-mockwebserver-junit5
+:toc: macro
+:toclevels: 3
+:sectnumlevels: 1
 
+[.discrete]
 == Status
 
 image:https://github.com/cuioss/cui-test-mockwebserver-junit5/actions/workflows/maven.yml/badge.svg[Java CI with Maven,link=https://github.com/cuioss/cui-test-mockwebserver-junit5/actions/workflows/maven.yml]
@@ -14,6 +18,7 @@ image:https://sonarcloud.io/api/project_badges/measure?project=cuioss_cui-test-m
 
 https://cuioss.github.io/cui-test-mockwebserver-junit5/about.html[Generated Documentation on github-pages]
 
+[.discrete]
 == What is it?
 
 A junit 5 extension for link:https://github.com/square/okhttp/tree/master/mockwebserver[MockWebServer]
@@ -30,118 +35,38 @@ compared to the original.
     </dependency>
 ----
 
+toc::[]
+
 == Using MockWebServer
 
-=== Basic usage with Parameter Injection
+The MockWebServer extension provides a simple way to test HTTP/HTTPS interactions in your application. It allows you to configure mock responses for specific endpoints and verify that your code correctly handles these responses.
 
-The recommended approach is to use parameter injection rather than implementing the MockWebServerHolder interface:
+=== Happy Path Example
 
-[source,java]
-----
-@EnableMockWebServer
-class ParameterResolverTest {
-
-    @Test
-    @DisplayName("Should inject MockWebServer instance")
-    void shouldInjectMockWebServer(MockWebServer server) {
-        assertNotNull(server);
-        assertTrue(server.getStarted());
-    }
-
-    // Tests for port parameter resolver removed as it's redundant with URIBuilder
-
-    @Test
-    @DisplayName("Should inject URIBuilder")
-    void shouldInjectUriBuilder(URIBuilder uriBuilder) {
-        assertNotNull(uriBuilder);
-        assertEquals("http", uriBuilder.build().getScheme());
-        assertEquals("/", uriBuilder.getPath());
-    }
-
-    // Test for String parameter resolver removed as it's redundant with URIBuilder
-
-    @Test
-    @DisplayName("Should inject multiple parameters")
-    void shouldInjectMultipleParameters(MockWebServer server, URIBuilder uriBuilder) {
-        assertNotNull(server);
-        assertTrue(server.getPort() > 0);
-        assertEquals(server.getPort(), uriBuilder.getPort());
-    }
-}
-----
-
-=== Migration Guide: From MockWebServerHolder to Annotation-Based Dispatchers
-
-Starting with version 1.1, the `MockWebServerHolder` interface and its `getDispatcher()` method are deprecated and will be removed in a future version. The recommended approach is to use the new annotation-based dispatcher configuration.
-
-==== Before (Deprecated)
+Here's a basic example showing how to use the MockWebServer extension with both `@MockResponse` and `@ModuleDispatcher` annotations:
 
 [source,java]
 ----
-@EnableMockWebServer
-class MyTest implements MockWebServerHolder {
+@EnableMockWebServer(useHttps = true)
+class MockWebServerTest {
 
-    @Override
-    public Dispatcher getDispatcher() {
-        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
-    }
-    
     @Test
-    void testSomething(URIBuilder uriBuilder) {
-        // Test code
-    }
-}
-----
-
-==== After (Recommended)
-
-[source,java]
-----
-@EnableMockWebServer
-@ModuleDispatcher // No parameters means look for getModuleDispatcher() method
-class MyTest {
-
-    ModuleDispatcherElement getModuleDispatcher() {
-        return new BaseAllAcceptDispatcher("/api");
-    }
-    
-    @Test
-    void testSomething(URIBuilder uriBuilder) {
-        // Test code
-    }
-}
-----
-
-==== Migration Steps
-
-1. Add the `@ModuleDispatcher` annotation to your test class
-2. Replace the `getDispatcher()` method with `getModuleDispatcher()` that returns a `ModuleDispatcherElement`
-3. If your dispatcher is not a `ModuleDispatcherElement`, wrap it in a `CombinedDispatcher`
-4. Remove the `implements MockWebServerHolder` from your class declaration
-
-=== Annotation-Based Dispatchers (New in 1.1)
-
-Starting with version 1.1, you can use the `@ModuleDispatcher` annotation to configure dispatchers for your tests. This approach is recommended over implementing the `MockWebServerHolder` interface, which is now deprecated.
-
-==== Basic Usage with Class Reference
-
-[source,java]
-----
-@EnableMockWebServer
-@ModuleDispatcher(UserApiDispatcher.class)
-class SimpleTest {
-    
-    @Test
-    void shouldHandleRequests(MockWebServer server, URIBuilder uriBuilder) throws IOException {
-        // The UserApiDispatcher is automatically configured
-        // No need to call server.setDispatcher()
+    @DisplayName("Should handle GET request with @MockResponse")
+    @MockResponse(
+        path = "/api/users",
+        method = HttpMethodMapper.GET,
+        jsonContentKeyValue = "users=[]",
+        status = 200
+    )
+    void shouldHandleGetRequest(URIBuilder uriBuilder, SSLContext sslContext) throws IOException {
+        // Create HttpClient with the injected SSL context
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build();
         
-        // Create HttpClient
-        HttpClient client = HttpClient.newHttpClient();
-        
-        // Create request
+        // Create request to the configured endpoint
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(uriBuilder.addPathSegments("api", "users").build())
+                .uri(uriBuilder.addPathSegment("api").addPathSegment("users").build())
                 .GET()
                 .build();
                 
@@ -151,7 +76,179 @@ class SimpleTest {
                 
         // Verify response
         assertEquals(200, response.statusCode());
-        assertEquals("{\"users\": []}", response.body());
+        assertEquals("{\"users\":[]}", response.body());
+    }
+    
+    @Test
+    @DisplayName("Should handle POST request with @ModuleDispatcher")
+    @ModuleDispatcher
+    void shouldHandlePostRequest(URIBuilder uriBuilder, SSLContext sslContext) throws IOException {
+        // Send POST request to the endpoint configured by getModuleDispatcher()
+        // ...
+    }
+    
+    // This method will be called by the @ModuleDispatcher annotation
+    ModuleDispatcherElement getModuleDispatcher() {
+        return new BaseAllAcceptDispatcher("/api/posts")
+                .withPostResponse(new mockwebserver3.MockResponse()
+                        .setResponseCode(201)
+                        .setHeader("Content-Type", "application/json")
+                        .setBody("{\"id\":\"123\",\"status\":\"created\"}"));
+    }
+}
+----
+
+=== Parameter Resolvers
+
+The MockWebServer extension provides several parameter resolvers that can inject useful objects into your test methods:
+
+[cols="1,3"]
+|===
+|Parameter Type |Description
+
+|`MockWebServer`
+|The actual MockWebServer instance that can be used to configure responses, check received requests, etc.
+
+|`URIBuilder`
+|A utility for building URIs that point to the MockWebServer instance. The builder is pre-configured with the server's host, port, and scheme.
+
+|`SSLContext`
+|When HTTPS is enabled, this provides access to the SSL context used by the server.
+|===
+
+Example of using multiple parameter resolvers:
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true)
+class ParameterResolverTest {
+
+    @Test
+    @DisplayName("Should inject multiple parameters")
+    void shouldInjectMultipleParameters(
+            MockWebServer server, 
+            URIBuilder uriBuilder,
+            SSLContext sslContext) {
+        
+        // All parameters are automatically injected
+        assertNotNull(server);
+        assertNotNull(uriBuilder);
+        assertNotNull(sslContext);
+        
+        // URIBuilder is configured with server details
+        assertEquals(server.getPort(), uriBuilder.getPort());
+        assertEquals("https", uriBuilder.build().getScheme());
+    }
+}
+----
+
+=== @MockResponse Annotation
+
+The `@MockResponse` annotation allows you to define mock responses for specific paths and HTTP methods. It can be applied at the class or method level and is repeatable.
+
+==== Basic Usage
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true)
+@MockResponse(
+    path = "/api/users",
+    method = HttpMethodMapper.GET,
+    status = 200,
+    jsonContentKeyValue = "users=[]"
+)
+class MockResponseTest {
+    // ...
+}
+----
+
+==== Multiple Responses
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true)
+@MockResponse(
+    path = "/api/users",
+    method = HttpMethodMapper.GET,
+    status = 200,
+    jsonContentKeyValue = "users=[]"
+)
+@MockResponse(
+    path = "/api/users",
+    method = HttpMethodMapper.POST,
+    status = 201
+)
+class MultipleResponsesTest {
+    // ...
+}
+----
+
+==== Content Types
+
+The annotation supports different types of content:
+
+[source,java]
+----
+// Text content (Content-Type: text/plain)
+@MockResponse(
+    path = "/api/text",
+    textContent = "Hello, World!"
+)
+
+// JSON content (Content-Type: application/json)
+@MockResponse(
+    path = "/api/json",
+    jsonContentKeyValue = "message=Hello,count=42"
+)
+
+// Raw string content (no Content-Type set)
+@MockResponse(
+    path = "/api/raw",
+    stringContent = "<custom>content</custom>"
+)
+----
+
+==== Custom Headers
+
+[source,java]
+----
+@MockResponse(
+    path = "/api/data",
+    status = 200,
+    jsonContentKeyValue = "key=value",
+    headers = {"X-Custom-Header=Custom Value", "Cache-Control=no-cache"},
+    contentType = "application/json; charset=utf-8"
+)
+----
+
+=== @ModuleDispatcher Annotation
+
+The `@ModuleDispatcher` annotation provides more flexibility for configuring complex request handling logic.
+
+==== Using a Dispatcher Class
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true)
+@ModuleDispatcher(UserApiDispatcher.class)
+class DispatcherClassTest {
+    // ...
+}
+
+// Custom dispatcher implementation
+class UserApiDispatcher implements ModuleDispatcherElement {
+    @Override
+    public String getBaseUrl() {
+        return "/api/users";
+    }
+    
+    @Override
+    public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
+        return Optional.of(new MockResponse.Builder()
+                .addHeader("Content-Type", "application/json")
+                .body("{\"users\":[]}")
+                .code(HttpServletResponse.SC_OK)
+                .build());
     }
 }
 ----
@@ -160,51 +257,133 @@ class SimpleTest {
 
 [source,java]
 ----
-@EnableMockWebServer
+@EnableMockWebServer(useHttps = true)
 @ModuleDispatcher(provider = DispatcherFactory.class, providerMethod = "createApiDispatcher")
-class FactoryTest {
-    
-    @Test
-    void shouldUseFactoryDispatcher(URIBuilder uriBuilder) {
-        // The dispatcher is created by calling DispatcherFactory.createApiDispatcher()
-        // ...
-    }
+class ProviderMethodTest {
+    // ...
 }
 
-// Factory class that provides dispatchers
+// Factory class
 class DispatcherFactory {
-    
-    // Static factory method
     public static ModuleDispatcherElement createApiDispatcher() {
-        return new BaseAllAcceptDispatcher("/api");
+        // Create a dispatcher for the /api path
+        var apiDispatcher = new BaseAllAcceptDispatcher("/api");
+        
+        // By default, it will return positive responses for all HTTP methods
+        // GET: 200 OK, POST: 200 OK, PUT: 201 Created, DELETE: 204 No Content
+        
+        return apiDispatcher;
     }
 }
 ----
 
-==== Using a Method in the Test Class
+==== Using a Test Class Method
 
 [source,java]
 ----
-@EnableMockWebServer
+@EnableMockWebServer(useHttps = true)
 @ModuleDispatcher // No parameters means look for getModuleDispatcher() method
-class CustomTest {
+class TestMethodDispatcherTest {
     
     // This method will be called to get the dispatcher
     ModuleDispatcherElement getModuleDispatcher() {
-        var dispatcher = new BaseAllAcceptDispatcher("/api");
-        dispatcher.getGetResult().setResponse(
-            new MockResponse.Builder()
-                .addHeader("Content-Type", "application/json")
-                .body("{\"status\": \"ok\"}")
-                .code(200)
-                .build());
-        return dispatcher;
+        return new BaseAllAcceptDispatcher("/api");
+    }
+    
+    // ...
+}
+----
+
+=== @EnableMockWebServer Options
+
+The `@EnableMockWebServer` annotation supports several configuration options:
+
+==== HTTP Mode (Default)
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = false)
+class HttpModeTest {
+    // ...
+}
+----
+
+==== Manual Server Start
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true, manualStart = true)
+class ManualStartTest {
+    
+    @Test
+    void shouldStartServerManually(MockWebServer server, URIBuilder uriBuilder) {
+        // Here we need the MockWebServer parameter to control server lifecycle
+        
+        // Server is not started automatically
+        assertFalse(server.getStarted());
+        
+        // Start the server manually
+        server.start();
+        
+        // Now the server is running
+        assertTrue(server.getStarted());
+        
+        // The URIBuilder is updated with the server's port
+        URI uri = uriBuilder.addPathSegment("api").build();
+        assertEquals(server.getPort(), uri.getPort());
+        
+        // Don't forget to shut down the server
+        server.shutdown();
+    }
+}
+----
+
+=== @TestProvidedCertificate
+
+When using HTTPS, you can provide custom certificates for testing:
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true)
+@TestProvidedCertificate(methodName = "createTestCertificates")
+class CustomCertificateTest {
+    
+    // This method provides custom certificates
+    public static HandshakeCertificates createTestCertificates() {
+        // Create and return custom certificates
+        return new HandshakeCertificates.Builder()
+                // Configure with your custom certificates
+                .build();
     }
     
     @Test
-    void shouldUseCustomDispatcher(URIBuilder uriBuilder) {
-        // The dispatcher is created by calling getModuleDispatcher()
+    void shouldUseCustomCertificates(URIBuilder uriBuilder, SSLContext sslContext) {
+        // Test with custom certificates
         // ...
+    }
+}
+----
+
+==== Using a Provider Class
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true)
+@TestProvidedCertificate(
+    providerClass = CertificateProvider.class,
+    providerMethod = "provideCertificates"
+)
+class ProviderCertificateTest {
+    // ...
+}
+
+// Certificate provider class
+class CertificateProvider {
+    public static HandshakeCertificates provideCertificates() {
+        // Create and return custom certificates
+        return new HandshakeCertificates.Builder()
+                // ...
+                .build();
     }
 }
 ----
@@ -249,7 +428,7 @@ public class JwksResolveDispatcher implements ModuleDispatcherElement {
     public String getBaseUrl() {
         return LOCAL_PATH;
     }
-    
+
     @Override
     public @NonNull Set<HttpMethodMapper> supportedMethods() {
         return Set.of(HttpMethodMapper.GET);
@@ -272,23 +451,17 @@ Implementation example:
 ----
 @EnableAutoWeld
 @EnablePortalConfiguration
-@EnableMockWebServer
+@EnableMockWebServer(useHttps = true)
+@ModuleDispatcher(UserApiDispatcher.class)
 class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer> {
 
     private final JwksResolveDispatcher jwksResolveDispatcher = new JwksResolveDispatcher();
-    private int mockserverPort;
 
     @BeforeEach
-    void setupMockServer(MockWebServer mockWebServer) {
-        // Configure the dispatcher
-        CombinedDispatcher dispatcher = new CombinedDispatcher().addDispatcher(jwksResolveDispatcher);
-        mockWebServer.setDispatcher(dispatcher);
-        
-        // Setup configuration
-        mockserverPort = mockWebServer.getPort();
+    void setupConfiguration(URIBuilder uriBuilder, SSLContext sslContext) {
         configuration.put(VERIFY_SIGNATURE_JWKS_URL,
-                "http://localhost:" + mockserverPort + jwksResolveDispatcher.getBaseUrl());
-        configuration.update(VERIFY_SIGNATURE_ISSUER, TestTokenProducer.ISSUER);
+                uriBuilder.setPath(jwksResolveDispatcher.getBaseUrl()).build());
+        configuration.update(SSLCONTEXT, sslContext);
         configuration.update(VERIFY_SIGNATURE_REFRESH_INTERVAL, "60");
         jwksResolveDispatcher.setCallCounter(0);
     }
@@ -315,69 +488,7 @@ class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer> {
 }
 ----
 
-=== Manual Server Start
-
-The extension supports manual server start with the `manualStart = true` option. This is useful when you need more control over when and how the server is started:
-
-[source,java]
-----
-@EnableMockWebServer(manualStart = true)
-class MockWebServerManualStartTest {
-
-    private static final CuiLogger LOGGER = new CuiLogger(MockWebServerManualStartTest.class);
-
-    @Test
-    @DisplayName("Server should not be started automatically when manualStart=true")
-    void shouldNotStartServerAutomatically(MockWebServer server) {
-        assertNotNull(server, "Server should be injected");
-        assertFalse(server.getStarted(), "Server should not be started automatically");
-
-        // Start the server manually
-        try {
-            // Configure the dispatcher before starting
-            server.setDispatcher(CombinedDispatcher.createAPIDispatcher());
-            
-            // Start the server
-            server.start();
-            assertTrue(server.getStarted(), "Server should be started after manual start");
-
-            // Verify server is accessible with timeout
-            HttpClient client = HttpClient.newBuilder()
-                    .connectTimeout(Duration.ofSeconds(2))
-                    .build();
-
-            // Create a proper URIBuilder now that the server is started
-            URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
-
-            // Use the proper URIBuilder to construct the URI
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(properUriBuilder.addPathSegments("api", "test").build())
-                    .timeout(Duration.ofSeconds(2))
-                    .GET()
-                    .build();
-                    
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            assertEquals(200, response.statusCode(), "Should receive OK response");
-            LOGGER.info("Successfully received response from manually started server: " + response.body());
-            
-        } catch (Exception e) {
-            LOGGER.error("Failed to start or use server", e);
-            fail("Failed to start or use server: " + e.getMessage());
-        } finally {
-            // Clean up
-            try {
-                if (server.getStarted()) {
-                    server.shutdown();
-                }
-            } catch (IOException e) {
-                // Ignore shutdown errors in tests
-            }
-        }
-    }
-}
-----
-
-==== Important URIBuilder Precautions with Manual Start
+==== Manual Server Start Considerations
 
 When using `manualStart = true`, you need to be careful with the injected `URIBuilder` parameter:
 
@@ -394,10 +505,9 @@ URI uri = uriBuilder.addPathSegment("api").build();
 server.start();
 URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
 URI uri = properUriBuilder.addPathSegment("api").build();
-
 ----
 
-=== URIBuilder Usage
+==== URIBuilder Usage Tips
 
 When building URIs with multiple path segments,
 prefer using the `addPathSegments` method instead of chaining multiple `addPathSegment` calls:
@@ -407,20 +517,9 @@ prefer using the `addPathSegments` method instead of chaining multiple `addPathS
 // RECOMMENDED - Use addPathSegments for multiple path segments
 URI uri = uriBuilder.addPathSegments("api", "users", "123").build();
 
+// Less efficient approach
 URI uri = uriBuilder.addPathSegment("api").addPathSegment("users").addPathSegment("123").build();
 ----
-
-=== Parameter Injection
-
-MockWebServerExtension implements ParameterResolver, allowing direct injection of MockWebServer and related parameters into test methods. This is the recommended approach for accessing the server and related components.
-
-See the examples above for how to use parameter injection in your tests.
-
-Supported parameter types:
-
-* `MockWebServer` - The server instance
-* `URIBuilder` - A builder for constructing request URIs
-* `SSLContext` - The SSL context for HTTPS connections (when HTTPS is enabled)
 
 === HTTPS Support
 
@@ -435,6 +534,7 @@ The simplest approach is to let the extension generate certificates for you:
 @EnableMockWebServer(
         useHttps = true
 )
+@ModuleDispatcher(provider = BaseAllAcceptDispatcher.class, providerMethod = "getOptimisticAPIDispatcher")
 @DisplayName("HttpClient HTTPS Test")
 class ExtensionProvidedHttpsTest {
 
@@ -451,9 +551,6 @@ class ExtensionProvidedHttpsTest {
         // Arrange
         assertNotNull(sslContext, "SSLContext should be injected as a parameter");
         assertNotNull(serverURIBuilder, "URL builder should be injected as a parameter");
-        
-        // Configure the dispatcher
-        server.setDispatcher(CombinedDispatcher.createAPIDispatcher());
 
         // Verify the URL builder creates HTTPS URLs
         URI uri = serverURIBuilder.build();
@@ -487,7 +584,37 @@ For more control over certificate creation, use the `@TestProvidedCertificate` a
 
 [source,java]
 ----
-include::src/test/java/de/cuioss/test/mockwebserver/https/AnnotationProvidedCertificateTest.java[tags=annotation-certificate-example]
+@EnableMockWebServer(useHttps = true)
+@TestProvidedCertificate(methodName = "createTestCertificates")
+@DisplayName("Custom Certificate Test")
+class CustomCertificateTest {
+
+    /**
+     * This method provides custom certificates for the test.
+     * It will be called by the CertificateResolver.
+     */
+    public static HandshakeCertificates createTestCertificates() {
+        // Create self-signed certificates with custom parameters
+        return KeyMaterialUtil.createSelfSignedHandshakeCertificates(
+                7, // validity in days
+                KeyAlgorithm.RSA_2048);
+    }
+    
+    @Test
+    @DisplayName("Should use custom certificates for HTTPS")
+    void shouldUseCustomCertificates(MockWebServer server, SSLContext sslContext) {
+        // Arrange
+        assertNotNull(sslContext, "SSLContext should be injected");
+        
+        // Act & Assert
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build();
+                
+        // Test HTTPS connection with the custom certificates
+        // ...
+    }
+}
 ----
 
 ==== Using a Provider Class
@@ -496,19 +623,107 @@ You can also use a separate provider class for better reuse of certificate creat
 
 [source,java]
 ----
-include::src/test/java/de/cuioss/test/mockwebserver/https/CertificateProviderTest.java[tags=provider-class-example]
+@EnableMockWebServer(useHttps = true)
+@TestProvidedCertificate(providerClass = TestCertificateProvider.class, methodName = "provideHandshakeCertificates")
+@DisplayName("Certificate Provider Test")
+class CertificateProviderTest {
+
+    @Test
+    @DisplayName("Should use certificates from provider class")
+    void shouldUseCertificatesFromProvider(SSLContext sslContext) {
+        // The SSLContext is created using certificates from TestCertificateProvider
+        assertNotNull(sslContext, "SSLContext should be injected");
+        
+        // Use the SSLContext for HTTPS connections
+        // ...
+    }
+}
 ----
 
 The certificate provider class implementation:
 
 [source,java]
 ----
-include::src/test/java/de/cuioss/test/mockwebserver/https/CertificateProviderTest.java[tags=certificate-provider]
+public class TestCertificateProvider {
+
+    private static HandshakeCertificates certificates;
+
+    private TestCertificateProvider() {
+        // Utility class should not be instantiated
+    }
+
+    /**
+     * Provides HandshakeCertificates for HTTPS testing.
+     * This method will be called by the CertificateResolver.
+     */
+    public static HandshakeCertificates provideHandshakeCertificates() {
+        if (certificates == null) {
+            // Create self-signed certificates with a short validity period for unit tests
+            certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(
+                    1, KeyAlgorithm.RSA_2048);
+        }
+        return certificates;
+    }
+}
 ----
 
 ==== HTTPS Configuration Options
 
-* `useHttps` - Enable HTTPS support (default: false)
-* `@TestProvidedCertificate` - Annotation to specify custom certificate provision
-  * `methodName` - Name of the static method that provides certificates
-  * `providerClass` - Class that contains the certificate provider method
+[cols="1,3"]
+|===
+|Option |Description
+
+|`useHttps`
+|Enable HTTPS support (default: false). When enabled, the server will use HTTPS instead of HTTP.
+
+|`@TestProvidedCertificate`
+|Annotation to specify custom certificate provision for HTTPS testing.
+
+|`methodName`
+|Name of the static method that provides certificates. The method must return `HandshakeCertificates`.
+
+|`providerClass`
+|Class that contains the certificate provider method. If not specified, the test class itself is used.
+|===
+
+== Migration Guide
+
+The `MockWebServerHolder` interface is deprecated and will be removed in the next version. Here's how to migrate your code:
+
+=== Before (Deprecated)
+
+[source,java]
+----
+@EnableMockWebServer
+class MyTest implements MockWebServerHolder {
+
+    @Override
+    public Dispatcher getDispatcher() {
+        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+    }
+    
+    @Test
+    void testSomething(URIBuilder uriBuilder) {
+        // Test code
+    }
+}
+----
+
+=== After (Recommended)
+
+[source,java]
+----
+@EnableMockWebServer
+@ModuleDispatcher // No parameters means look for getModuleDispatcher() method
+class MyTest {
+
+    ModuleDispatcherElement getModuleDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
+    }
+    
+    @Test
+    void testSomething(URIBuilder uriBuilder) {
+        // Test code
+    }
+}
+----
