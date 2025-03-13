@@ -183,15 +183,30 @@ public class URIBuilder {
         return Map.copyOf(queryParameters);
     }
 
-    public URI build() {
+    /**
+     * Validates that the URIBuilder is in a valid state for building URIs.
+     * 
+     * @param forBuildAsString whether the validation is for buildAsString() method
+     * @throws IllegalStateException if this is a placeholder URIBuilder or if baseUrl is null
+     */
+    private void validateBuilderState(boolean forBuildAsString) {
         if (placeholder) {
-            throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
-                    "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/')).url())");
+            if (forBuildAsString) {
+                throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
+                        "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())");
+            } else {
+                throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
+                        "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/')).url())");
+            }
         }
 
         if (baseUrl == null) {
             throw new IllegalStateException("Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
         }
+    }
+
+    public URI build() {
+        validateBuilderState(false);
 
         String baseUrlString = baseUrl.toString();
         StringBuilder uriBuilder = new StringBuilder();
@@ -230,14 +245,7 @@ public class URIBuilder {
      * @throws IllegalStateException if this is a placeholder URIBuilder
      */
     public String buildAsString() {
-        if (placeholder) {
-            throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
-                    "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())");
-        }
-
-        if (baseUrl == null) {
-            throw new IllegalStateException("Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
-        }
+        validateBuilderState(true);
         return build().toString();
     }
 

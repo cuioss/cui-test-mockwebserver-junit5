@@ -145,7 +145,7 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
                     deleteResult.setResponse(mockResponse);
                     break;
                 default:
-                    throw new IllegalArgumentException("Unknown method: " + Arrays.toString(mapper));
+                    throw new IllegalArgumentException("Unsupported HTTP method: " + element + ". Supported methods are: " + Arrays.toString(HttpMethodMapper.values()));
             }
         }
     }

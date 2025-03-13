@@ -155,10 +155,8 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      */
     public static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
 
-    // Certificate handling has been moved to CertificateResolver
-
     @Override
-    @SuppressWarnings({"java:S2093", "java:S2095"}) // Owolff we solve it using finally block.
+    @SuppressWarnings({"java:S2093", "java:S2095"}) // We solve it using finally block.
     // Close is linked to 'shutdown',
     // and we control it within this class
     public void beforeEach(ExtensionContext context) {
@@ -318,12 +316,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         }
     }
 
-    // Certificate handling has been moved to CertificateResolver
-
-    // Certificate handling has been moved to CertificateResolver
-
-
-    // Certificate handling has been moved to CertificateResolver
 
     /**
      * Sets the MockWebServer instance on the test class if it implements MockWebServerHolder.
@@ -467,20 +459,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(MockWebServer.class.getName()));
     }
 
-    /**
-     * Gets the root context to ensure certificates are shared across all tests in the class.
-     *
-     * @param context the current extension context
-     * @return the root context
-     */
-    @SuppressWarnings("java:S3655") // owolff: This is a false positive, the check for present is in the while loop
-    private ExtensionContext getRootContext(ExtensionContext context) {
-        ExtensionContext current = context;
-        while (current.getParent().isPresent()) {
-            current = current.getParent().get();
-        }
-        return current;
-    }
 
     /**
      * Extracts the class hierarchy for the given test instance.
