@@ -18,6 +18,7 @@ package de.cuioss.test.mockwebserver.dispatcher;
 import lombok.NonNull;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -141,7 +142,7 @@ class DispatcherResolverMethodTest {
         }
 
         @Override
-        public Optional<MockResponse> handleGet(RecordedRequest request) {
+        public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
             if (request.getPath() != null) {
                 if (request.getPath().startsWith(METHOD_PATH)) {
                     return Optional.of(new MockResponse.Builder()

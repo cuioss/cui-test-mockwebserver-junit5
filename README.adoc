@@ -82,7 +82,7 @@ class MockWebServerTest {
     @Test
     @DisplayName("Should handle POST request with @ModuleDispatcher")
     @ModuleDispatcher
-    void shouldHandlePostRequest(URIBuilder uriBuilder, SSLContext sslContext) throws IOException {
+    void shouldHandlePostRequest(URIBuilder uriBuilder, SSLContext sslContext) {
         // Send POST request to the endpoint configured by getModuleDispatcher()
         // ...
     }
@@ -140,6 +140,20 @@ class ParameterResolverTest {
         assertEquals("https", uriBuilder.build().getScheme());
     }
 }
+----
+
+==== URIBuilder Usage Tips
+
+When building URIs with multiple path segments,
+prefer using the `addPathSegments` method instead of chaining multiple `addPathSegment` calls:
+
+[source,java]
+----
+// RECOMMENDED - Use addPathSegments for multiple path segments
+URI uri = uriBuilder.addPathSegments("api", "users", "123").build();
+
+// Less efficient approach
+URI uri = uriBuilder.addPathSegment("api").addPathSegment("users").addPathSegment("123").build();
 ----
 
 === @MockResponse Annotation
@@ -338,6 +352,25 @@ class ManualStartTest {
 }
 ----
 
+==== Manual Server Start Considerations
+
+When using `manualStart = true`, you need to be careful with the injected `URIBuilder` parameter:
+
+* Before the server is started, the injected `URIBuilder` is a placeholder that cannot be used to build URIs
+* If you try to build a URI from this placeholder, it will throw an `IllegalStateException`
+* You must create a proper `URIBuilder` *after* manually starting the server
+
+[source,java]
+----
+// INCORRECT - Will throw IllegalStateException if server not started
+URI uri = uriBuilder.addPathSegment("api").build();
+
+// CORRECT - Create a proper URIBuilder after starting the server
+server.start();
+URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
+URI uri = properUriBuilder.addPathSegment("api").build();
+----
+
 === @TestProvidedCertificate
 
 When using HTTPS, you can provide custom certificates for testing:
@@ -486,39 +519,6 @@ class TokenParserProducerTest implements ShouldBeNotNull<TokenParserProducer> {
         assertTrue(jwksResolveDispatcher.getCallCounter() < 3);
     }
 }
-----
-
-==== Manual Server Start Considerations
-
-When using `manualStart = true`, you need to be careful with the injected `URIBuilder` parameter:
-
-* Before the server is started, the injected `URIBuilder` is a placeholder that cannot be used to build URIs
-* If you try to build a URI from this placeholder, it will throw an `IllegalStateException`
-* You must create a proper `URIBuilder` *after* manually starting the server
-
-[source,java]
-----
-// INCORRECT - Will throw IllegalStateException if server not started
-URI uri = uriBuilder.addPathSegment("api").build();
-
-// CORRECT - Create a proper URIBuilder after starting the server
-server.start();
-URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
-URI uri = properUriBuilder.addPathSegment("api").build();
-----
-
-==== URIBuilder Usage Tips
-
-When building URIs with multiple path segments,
-prefer using the `addPathSegments` method instead of chaining multiple `addPathSegment` calls:
-
-[source,java]
-----
-// RECOMMENDED - Use addPathSegments for multiple path segments
-URI uri = uriBuilder.addPathSegments("api", "users", "123").build();
-
-// Less efficient approach
-URI uri = uriBuilder.addPathSegment("api").addPathSegment("users").addPathSegment("123").build();
 ----
 
 === HTTPS Support

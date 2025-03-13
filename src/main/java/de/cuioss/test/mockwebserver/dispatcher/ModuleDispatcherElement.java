@@ -31,7 +31,7 @@ import java.util.Set;
  * <ul>
  *   <li>Base URL filtering for request routing</li>
  *   <li>Method-specific request handling</li>
- *   <li>Optional responses for chain-of-responsibility pattern</li>
+ *   <li>Optional responses for a chain-of-responsibility pattern</li>
  *   <li>Modular and reusable components</li>
  * </ul>
  *

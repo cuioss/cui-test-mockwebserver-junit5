@@ -243,7 +243,7 @@ class DispatcherResolverTest {
         }
 
         @Override
-        public Optional<MockResponse> handleGet(RecordedRequest request) {
+        public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
             if (request.getPath() != null) {
                 // For the TestClassWithDispatcherAnnotation, we need to handle the TEST_PATH
                 if (request.getPath().startsWith(TEST_PATH)) {
