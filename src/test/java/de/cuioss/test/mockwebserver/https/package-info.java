@@ -88,5 +88,11 @@
  *   <li>Appropriate connection timeouts</li>
  * </ul>
  * </p>
+ *
+ * @author Oliver Wolff
+ * @since 1.0
+ * @see de.cuioss.test.mockwebserver.EnableMockWebServer
+ * @see de.cuioss.test.mockwebserver.MockWebServerExtension
+ * @see javax.net.ssl.SSLContext
  */
 package de.cuioss.test.mockwebserver.https;

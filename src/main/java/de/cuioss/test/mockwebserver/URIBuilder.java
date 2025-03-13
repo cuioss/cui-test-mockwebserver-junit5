@@ -45,6 +45,11 @@ import java.util.stream.Collectors;
  * // Creates a URI like: http://localhost:12345/api/users?filter=active
  * }
  * </pre>
+ *
+ * @author Oliver Wolff
+ * @since 1.0
+ * @see java.net.URI
+ * @see mockwebserver3.MockWebServer
  */
 public class URIBuilder {
 
@@ -197,6 +202,12 @@ public class URIBuilder {
         }
     }
 
+    /**
+     * Builds the URI with all configured path segments and query parameters.
+     * 
+     * @return the constructed URI
+     * @throws IllegalStateException if this is a placeholder URIBuilder or if baseUrl is null
+     */
     public URI build() {
         validateBuilderState(false);
 
