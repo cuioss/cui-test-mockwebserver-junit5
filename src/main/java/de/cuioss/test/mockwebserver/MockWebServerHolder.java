@@ -163,7 +163,9 @@ import javax.net.ssl.SSLContext;
  * @see EnableMockWebServer
  * @see MockWebServerExtension
  * @since 1.0
+ * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead
  */
+@Deprecated(since = "1.1")
 public interface MockWebServerHolder {
 
     /**
@@ -175,7 +177,7 @@ public interface MockWebServerHolder {
      * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead by adding
      * {@link MockWebServer} as a parameter to your test method.
      */
-    @Deprecated(since = "1.1", forRemoval = true)
+    @Deprecated(since = "1.1")
     default MockWebServer getMockWebServer() {
         return null;
     }
@@ -189,7 +191,7 @@ public interface MockWebServerHolder {
      * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead by adding
      * {@link MockWebServer} as a parameter to your test method.
      */
-    @Deprecated(since = "1.1", forRemoval = true)
+    @Deprecated(since = "1.1")
     default void setMockWebServer(MockWebServer mockWebServer) {
         // Default implementation does nothing
     }
@@ -200,12 +202,11 @@ public interface MockWebServerHolder {
      * Override this method to provide custom request handling logic.
      *
      * @return the dispatcher to be used, or {@code null} to use the default dispatcher
-     * 
      * @deprecated since 1.1, will be removed in 1.2. Use parameter injection instead and set the
      * dispatcher directly on the server instance in your test method:
      * {@code server.setDispatcher(new MyDispatcher())}
      */
-    @Deprecated(since = "1.1", forRemoval = true)
+    @Deprecated(since = "1.1")
     default Dispatcher getDispatcher() {
         return null;
     }
