@@ -57,6 +57,7 @@ import okhttp3.tls.HeldCertificate;
  *
  * // Create an SSLContext for client configuration
  * SSLContext sslContext = KeyMaterialUtil.createSslContext(certificates);
+ * }
  * </pre>
  *
  *

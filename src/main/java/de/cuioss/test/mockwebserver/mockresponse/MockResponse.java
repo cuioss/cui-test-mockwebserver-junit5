@@ -33,7 +33,7 @@ import java.lang.annotation.Target;
  * <p>
  * This annotation can be used multiple times on the same element to define multiple mock responses.
  * It can also be combined with {@code @ModuleDispatcher} annotations for more complex scenarios.
- * <p>
+ *
  * <h2>Content Configuration</h2>
  * <p>
  * The response content can be specified in one of the following ways:
@@ -44,12 +44,12 @@ import java.lang.annotation.Target;
  *       to proper JSON.</li>
  *   <li>{@code stringContent}: Sets the response body as a raw string without modifying the Content-Type</li>
  * </ul>
- * <p>
+ *
  * <strong>Note:</strong> Only one of {@code textContent}, {@code jsonContentKeyValue}, or {@code stringContent}
  * can be specified for a single annotation.
- * <p>
+ *
  * <h2>Examples</h2>
- * <p>
+ *
  * Basic usage:
  * <pre>
  * &#64;EnableMockWebServer
@@ -59,7 +59,7 @@ import java.lang.annotation.Target;
  *     // Test methods
  * }
  * </pre>
- * <p>
+ *
  * Multiple responses:
  * <pre>
  * &#64;EnableMockWebServer

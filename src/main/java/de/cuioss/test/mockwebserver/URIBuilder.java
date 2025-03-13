@@ -305,7 +305,6 @@ public class URIBuilder {
      *   <li>Working with existing path strings: Allows direct use of paths from other sources</li>
      *   <li>Compatibility with APIs that return full paths: Use complete paths as-is</li>
      * </ul>
-     * </p>
      * <p>
      * Example usage:
      * <pre>
@@ -318,15 +317,13 @@ public class URIBuilder {
      * builder.setPath("/new/path").build();
      * }
      * </pre>
-     * </p>
-     * <p>
+     *
      * In contrast, {@link #addPathSegment(String)} is preferred when:
      * <ul>
      *   <li>Building paths from logical components with clear segment separation</li>
      *   <li>Adding path parts conditionally or incrementally</li>
      *   <li>Avoiding manual path string manipulation and slash handling</li>
      * </ul>
-     * </p>
      *
      * @param path the path to set
      * @return this builder for method chaining

@@ -72,6 +72,7 @@ import javax.net.ssl.SSLContext;
  *     }
  * }
  * }
+ * </pre>
  *
  * <h2>Using EndpointAnswerHandler for Request Dispatching</h2>
  * <pre>
@@ -108,6 +109,7 @@ import javax.net.ssl.SSLContext;
  *     }
  * }
  * }
+ * </pre>
  *
  * <h2>HTTPS Support</h2>
  * <pre>
@@ -147,6 +149,7 @@ import javax.net.ssl.SSLContext;
  *     }
  * }
  * }
+ * </pre>
  *
  * <h2>Usage Notes</h2>
  * <ul>
