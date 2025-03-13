@@ -420,18 +420,8 @@ class CertificateResolverTest {
             assertSame(sslContext, retrievedContext, "Should return the same SSLContext instance from context");
         }
 
-        @Test
-        @DisplayName("Should create SSL context from HandshakeCertificates")
-        void shouldCreateSSLContextFromHandshakeCertificates() {
-            // Arrange
-            HandshakeCertificates certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
-
-            // Act
-            SSLContext sslContext = KeyMaterialUtil.createSslContext(certificates);
-
-            // Assert
-            assertNotNull(sslContext, "SSLContext should be created");
-            assertEquals("TLS", sslContext.getProtocol(), "Protocol should be TLS");
-        }
+        // Note: Test for creating SSL context from HandshakeCertificates has been moved to
+        // KeyMaterialUtilTest.SslContextCreationTests.shouldCreateSslContextFromHandshakeCertificates
+        // to avoid duplication.
     }
 }

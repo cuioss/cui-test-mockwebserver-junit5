@@ -15,24 +15,20 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
-import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
-import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.net.Socket;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-
-import okio.Buffer;
-import okhttp3.Headers;
-
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test class for {@link DispatcherResolver} focusing on method resolution
@@ -42,36 +38,14 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Tests the DispatcherResolver method resolution")
 class DispatcherResolverMethodTest {
 
-    private static final CuiLogger LOGGER = new CuiLogger(DispatcherResolverMethodTest.class);
-
     private static final DispatcherResolver resolver = new DispatcherResolver();
 
     // Constants for test paths
     private static final String METHOD_PATH = "/method";
-    private static final String STATUS_ERROR_MESSAGE = " does not contain 200";
 
-    @Test
-    @DisplayName("Should resolve dispatcher from getModuleDispatcher method")
-    void shouldResolveFromMethod() {
-        // Arrange
-        var testClass = TestClassWithMethod.class;
-        var testInstance = new TestClassWithMethod();
-
-        // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
-
-        // Assert
-        assertNotNull(dispatcher);
-        assertInstanceOf(CombinedDispatcher.class, dispatcher);
-
-        // Verify the dispatcher works as expected
-        var response = dispatchRequest(dispatcher);
-        LOGGER.debug("METHOD_PATH Response Status: {}", response.getStatus());
-        LOGGER.debug("METHOD_PATH Response Body: {}", response.getBody());
-        assertTrue(response.getStatus().contains(String.valueOf(200)),
-                response.getStatus() + STATUS_ERROR_MESSAGE);
-        assertTrue(writeBodyToString(response).contains("Method Dispatcher"));
-    }
+    // Note: Basic test for resolving dispatcher from getModuleDispatcher method
+    // has been moved to DispatcherResolverTest.shouldResolveFromMethod to avoid duplication.
+    // This class focuses on more specific method resolution test cases.
 
     @Test
     @DisplayName("Should return empty when getModuleDispatcher method doesn't exist")
@@ -150,47 +124,6 @@ class DispatcherResolverMethodTest {
 
         assertTrue(exception.getMessage().contains("Cannot access"),
                 "Exception message should indicate access issue: " + exception.getMessage());
-    }
-
-    /**
-     * Helper method to dispatch a request to a dispatcher
-     */
-    private static MockResponse dispatchRequest(Dispatcher dispatcher) {
-        try {
-            // Create a request with the path directly
-            var request = new RecordedRequest("GET " + DispatcherResolverMethodTest.METHOD_PATH + " HTTP/1.1",
-                    Headers.of("Host", "localhost"),
-                    Collections.emptyList(),
-                    0L,
-                    new Buffer(),
-                    0,
-                    new Socket(),
-                    null);
-            return dispatcher.dispatch(request);
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to dispatch request", e);
-        }
-    }
-
-    private String writeBodyToString(MockResponse response) {
-        Buffer buffer = new Buffer();
-        try {
-            assert response.getBody() != null;
-            response.getBody().writeTo(buffer);
-            return buffer.readUtf8();
-        } catch (Exception e) {
-            return "Failed to read response body";
-        }
-    }
-
-    // Test classes for the tests
-
-    // Test class with getModuleDispatcher method
-    static class TestClassWithMethod {
-        @SuppressWarnings("unused") // implicitly called by the test framework
-        public ModuleDispatcherElement getModuleDispatcher() {
-            return new TestDispatcherElement(METHOD_PATH);
-        }
     }
 
     // Test dispatcher element implementation

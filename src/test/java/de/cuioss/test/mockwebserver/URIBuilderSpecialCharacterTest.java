@@ -19,32 +19,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests for special character handling functionality of {@link URIBuilder}.
+ * Tests for complex URL handling functionality of {@link URIBuilder}.
+ * Note: Basic special character handling tests have been moved to 
+ * {@link URIBuilderPathSegmentTest} and {@link URIBuilderQueryParameterTest}
+ * to avoid duplication.
  */
 class URIBuilderSpecialCharacterTest extends URIBuilderTestBase {
-
-    // tag::special-character-handling[]
-    @Test
-    @DisplayName("Should handle path segments with encoded special characters")
-    void shouldHandlePathSegmentsWithEncodedSpecialCharacters() {
-        // Use the utility method from the base class to test URI building with special characters
-        assertUriBuilding(BASE_URL,
-                builder -> builder.addPathSegment(API_PATH)
-                        .addPathSegment(ENCODED_SPACES),
-                BASE_URL_NO_SLASH + "/" + API_PATH + "/" + ENCODED_SPACES);
-    }
-
-    @Test
-    @DisplayName("Should handle query parameters with encoded special characters")
-    void shouldHandleQueryParametersWithEncodedSpecialCharacters() {
-        // Use the utility method from the base class to test URI building with special characters
-        assertUriBuilding(BASE_URL,
-                builder -> builder.addPathSegment(API_PATH)
-                        .addQueryParameter(FILTER_PARAM, ENCODED_NAME_SPACES),
-                BASE_URL_NO_SLASH + "/" + API_PATH + "?" + FILTER_PARAM + "=" + ENCODED_NAME_SPACES);
-    }
-
-    // end::special-character-handling[]
 
     @Test
     @DisplayName("Should handle complex URL with port, path and query parameters")
