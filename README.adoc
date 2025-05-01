@@ -156,6 +156,13 @@ URI uri = uriBuilder.addPathSegments("api", "users", "123").build();
 URI uri = uriBuilder.addPathSegment("api").addPathSegment("users").addPathSegment("123").build();
 ----
 
+==== Using with WeldUnit
+
+If you use unit-testing with WeldUnit,
+the parameter resolution might fail because of WeldUnit trying to resolve the corresponding Parameter,
+without knowing how to resolve it.
+In that cases, you can use `@ExplicitParamInjection` on method or class.
+
 === @MockResponse Annotation
 
 The `@MockResponse` annotation allows you to define mock responses for specific paths and HTTP methods. It can be applied at the class or method level and is repeatable.
