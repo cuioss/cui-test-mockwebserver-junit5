@@ -53,14 +53,45 @@ public class MockResponseResolver {
      */
     public List<ModuleDispatcherElement> resolveFromAnnotations(
             @NonNull Class<?> testClass) {
+        return resolveFromAnnotations(testClass, null);
+    }
+
+    /**
+     * Resolves {@link MockResponse} annotations from the given test class and test method context,
+     * and converts them to {@link MockResponseDispatcherElement} instances.
+     * <p>
+     * When a test method is provided, only annotations relevant to that method's context are included:
+     * <ul>
+     *   <li>Annotations on the test method itself</li>
+     *   <li>Annotations on the test method's containing class and its parent classes</li>
+     *   <li>For nested classes, annotations on the class hierarchy up to the test method's class</li>
+     * </ul>
+     *
+     * @param testClass  the test class to resolve annotations from, must not be null
+     * @param testMethod the current test method context, or null to include all annotations
+     * @return a list of {@link ModuleDispatcherElement} instances created from the annotations
+     */
+    public List<ModuleDispatcherElement> resolveFromAnnotations(
+            @NonNull Class<?> testClass, Method testMethod) {
 
         List<ModuleDispatcherElement> result = new ArrayList<>();
 
-        // Collect annotations from class hierarchy (including nested classes)
-        collectFromClass(testClass, result);
+        if (testMethod == null) {
+            // Legacy behavior: collect all annotations
+            // Collect annotations from class hierarchy (including nested classes)
+            collectFromClass(testClass, result);
 
-        // Collect annotations from test methods
-        collectFromMethods(testClass, result);
+            // Collect annotations from test methods
+            collectFromMethods(testClass, result);
+        } else {
+            // Context-aware behavior: only collect annotations relevant to the test method
+            // Collect annotations from the test method itself
+            collectFromMethod(testMethod, result);
+
+            // Collect annotations from the class hierarchy up to the test method's class
+            Class<?> methodClass = testMethod.getDeclaringClass();
+            collectFromClassHierarchy(methodClass, result);
+        }
 
         return result;
     }
@@ -87,6 +118,60 @@ public class MockResponseResolver {
         for (Class<?> nestedClass : clazz.getDeclaredClasses()) {
             if (nestedClass.isAnnotationPresent(Nested.class)) {
                 collectFromClass(nestedClass, result);
+            }
+        }
+    }
+
+    /**
+     * Collects {@link MockResponse} annotations from the class hierarchy up to a specific class.
+     * This includes the class itself and all its parent classes, but not sibling classes.
+     *
+     * @param clazz  the class to collect annotations from
+     * @param result the list to add the created dispatcher elements to
+     */
+    private void collectFromClassHierarchy(Class<?> clazz, List<ModuleDispatcherElement> result) {
+        // Process direct annotations on the class
+        MockResponse[] annotations = clazz.getAnnotationsByType(MockResponse.class);
+        for (MockResponse annotation : annotations) {
+            try {
+                result.add(new MockResponseDispatcherElement(annotation));
+                LOGGER.debug("Added MockResponse from class %s for path %s",
+                        clazz.getName(), annotation.path());
+            } catch (Exception e) {
+                LOGGER.error(e, "Failed to create MockResponseDispatcherElement from annotation on class %s: %s",
+                        clazz.getName(), e.getMessage());
+            }
+        }
+
+        // Process parent class if it's a nested class
+        Class<?> enclosingClass = clazz.getEnclosingClass();
+        if (enclosingClass != null) {
+            collectFromClassHierarchy(enclosingClass, result);
+        }
+
+        // Process superclass if not Object
+        Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null && !Object.class.equals(superclass)) {
+            collectFromClassHierarchy(superclass, result);
+        }
+    }
+
+    /**
+     * Collects {@link MockResponse} annotations from a specific method.
+     *
+     * @param method the method to collect annotations from
+     * @param result the list to add the created dispatcher elements to
+     */
+    private void collectFromMethod(Method method, List<ModuleDispatcherElement> result) {
+        MockResponse[] annotations = method.getAnnotationsByType(MockResponse.class);
+        for (MockResponse annotation : annotations) {
+            try {
+                result.add(new MockResponseDispatcherElement(annotation));
+                LOGGER.debug("Added MockResponse from method %s.%s for path %s",
+                        method.getDeclaringClass().getName(), method.getName(), annotation.path());
+            } catch (Exception e) {
+                LOGGER.error("Failed to create MockResponseDispatcherElement from annotation on method %s.%s: %s",
+                        method.getDeclaringClass().getName(), method.getName(), e.getMessage());
             }
         }
     }

@@ -31,6 +31,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.junit.platform.commons.support.AnnotationSupport;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -177,7 +178,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             }
 
             // Configure dispatcher using the new resolver
-            configureDispatcher(server, testInstance);
+            configureDispatcher(server, testInstance, context);
 
             // Legacy support for MockWebServerHolder (deprecated)
             // This will be removed in version 1.2 - tests should use parameter injection instead
@@ -359,12 +360,20 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      *
      * @param server       the MockWebServer instance to configure
      * @param testInstance the test instance
+     * @param context      the extension context
      * @throws DispatcherResolutionException if there is an error resolving the dispatcher
      */
-    private void configureDispatcher(MockWebServer server, Object testInstance) {
+    private void configureDispatcher(MockWebServer server, Object testInstance, ExtensionContext context) {
         LOGGER.info("Configuring dispatcher for test class: {}", testInstance.getClass().getName());
+
+        // Extract the current test method from the context
+        Method testMethod = context.getTestMethod().orElse(null);
+        if (testMethod != null) {
+            LOGGER.info("Using context-aware resolution for test method: {}", testMethod.getName());
+        }
+
         Dispatcher dispatcher = dispatcherResolver.resolveDispatcher(
-                testInstance.getClass(), testInstance);
+                testInstance.getClass(), testInstance, testMethod);
         server.setDispatcher(dispatcher);
         LOGGER.info("Configured dispatcher: {}", dispatcher.getClass().getName());
     }

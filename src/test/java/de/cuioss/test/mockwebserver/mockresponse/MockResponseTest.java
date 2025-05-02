@@ -169,7 +169,7 @@ class MockResponseTest {
     class NestedMockResponseTest {
 
         @Nested
-        @MockResponse(path = "/nested", status = 200, textContent = "Nested Response")
+        @MockResponse(path = "/api/nested", status = 200, textContent = "Nested Response")
         @DisplayName("Nested test class with @MockResponse")
         class NestedTest {
 
@@ -180,7 +180,7 @@ class MockResponseTest {
                 HttpClient client = HttpClient.newBuilder()
                         .connectTimeout(TIMEOUT)
                         .build();
-                URI uri = uriBuilder.addPathSegment("/nested").build();
+                URI uri = uriBuilder.addPathSegment("/api/nested").build();
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(uri)
                         .GET()
@@ -202,13 +202,13 @@ class MockResponseTest {
     class MethodMockResponseTest {
 
         @Test
-        @MockResponse(path = "/method", status = 200, textContent = "Method Response")
+        @MockResponse(path = "/api/method", status = 200, textContent = "Method Response")
         void shouldHandleMethodAnnotation(URIBuilder uriBuilder) throws IOException, InterruptedException {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
                     .build();
-            URI uri = uriBuilder.addPathSegment("/method").build();
+            URI uri = uriBuilder.addPathSegment("/api/method").build();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(uri)
                     .GET()
