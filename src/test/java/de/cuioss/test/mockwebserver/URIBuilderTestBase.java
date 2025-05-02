@@ -15,6 +15,8 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import org.junit.jupiter.api.function.Executable;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -169,7 +171,7 @@ abstract class URIBuilderTestBase {
      * @param expectedMessage The expected exception message
      */
     protected <T extends Throwable> void assertThrowsWithMessage(
-            Class<T> exceptionClass, org.junit.jupiter.api.function.Executable operation, String expectedMessage) {
+            Class<T> exceptionClass, Executable operation, String expectedMessage) {
         T exception = assertThrows(exceptionClass, operation, "Expected " + exceptionClass.getSimpleName() + " was not thrown");
         assertEquals(expectedMessage, exception.getMessage(), "Exception message doesn't match expected message");
     }

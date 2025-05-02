@@ -63,22 +63,22 @@ class MockWebServerTest {
         HttpClient client = HttpClient.newBuilder()
                 .sslContext(sslContext)
                 .build();
-        
+
         // Create request to the configured endpoint
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uriBuilder.addPathSegment("api").addPathSegment("users").build())
                 .GET()
                 .build();
-                
+
         // Send request
         HttpResponse<String> response = client.send(request, 
                 HttpResponse.BodyHandlers.ofString());
-                
+
         // Verify response
         assertEquals(200, response.statusCode());
         assertEquals("{\"users\":[]}", response.body());
     }
-    
+
     @Test
     @DisplayName("Should handle POST request with @ModuleDispatcher")
     @ModuleDispatcher
@@ -86,7 +86,7 @@ class MockWebServerTest {
         // Send POST request to the endpoint configured by getModuleDispatcher()
         // ...
     }
-    
+
     // This method will be called by the @ModuleDispatcher annotation
     ModuleDispatcherElement getModuleDispatcher() {
         return new BaseAllAcceptDispatcher("/api/posts")
@@ -129,12 +129,12 @@ class ParameterResolverTest {
             MockWebServer server, 
             URIBuilder uriBuilder,
             SSLContext sslContext) {
-        
+
         // All parameters are automatically injected
         assertNotNull(server);
         assertNotNull(uriBuilder);
         assertNotNull(sslContext);
-        
+
         // URIBuilder is configured with server details
         assertEquals(server.getPort(), uriBuilder.getPort());
         assertEquals("https", uriBuilder.build().getScheme());
@@ -262,7 +262,7 @@ class UserApiDispatcher implements ModuleDispatcherElement {
     public String getBaseUrl() {
         return "/api/users";
     }
-    
+
     @Override
     public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
         return Optional.of(new MockResponse.Builder()
@@ -270,6 +270,10 @@ class UserApiDispatcher implements ModuleDispatcherElement {
                 .body("{\"users\":[]}")
                 .code(HttpServletResponse.SC_OK)
                 .build());
+    }
+    @Override
+    public @NonNull Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.GET);
     }
 }
 ----
@@ -289,10 +293,10 @@ class DispatcherFactory {
     public static ModuleDispatcherElement createApiDispatcher() {
         // Create a dispatcher for the /api path
         var apiDispatcher = new BaseAllAcceptDispatcher("/api");
-        
+
         // By default, it will return positive responses for all HTTP methods
         // GET: 200 OK, POST: 200 OK, PUT: 201 Created, DELETE: 204 No Content
-        
+
         return apiDispatcher;
     }
 }
@@ -305,13 +309,112 @@ class DispatcherFactory {
 @EnableMockWebServer(useHttps = true)
 @ModuleDispatcher // No parameters means look for getModuleDispatcher() method
 class TestMethodDispatcherTest {
-    
+
     // This method will be called to get the dispatcher
     ModuleDispatcherElement getModuleDispatcher() {
         return new BaseAllAcceptDispatcher("/api");
     }
-    
+
     // ...
+}
+----
+
+==== Using a Custom Dispatcher with Path-Based Responses
+
+You can create a custom dispatcher that uses the `RecordedRequest.getPath()` method to return different responses based on the request path:
+
+[source,java]
+----
+@EnableMockWebServer(useHttps = true)
+@ModuleDispatcher // No parameters means look for getModuleDispatcher() method
+class PathBasedDispatcherTest {
+
+    // This method will be called to get the dispatcher
+    ModuleDispatcherElement getModuleDispatcher() {
+        return new ModuleDispatcherElement() {
+            @Override
+            public String getBaseUrl() {
+                return "/api/users";
+            }
+
+            @Override
+            public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
+                String path = request.getPath();
+
+                // Return different responses based on the path
+                if (path.endsWith("/api/users/active")) {
+                    return Optional.of(new MockResponse()
+                        .setResponseCode(200)
+                        .setHeader("Content-Type", "application/json")
+                        .setBody("{\"users\":[{\"id\":1,\"name\":\"John\",\"status\":\"active\"}]}"));
+                } else if (path.endsWith("/api/users/inactive")) {
+                    return Optional.of(new MockResponse()
+                        .setResponseCode(200)
+                        .setHeader("Content-Type", "application/json")
+                        .setBody("{\"users\":[{\"id\":2,\"name\":\"Jane\",\"status\":\"inactive\"}]}"));
+                } else if (path.matches(".*/api/users/\\d+")) {
+                    // Extract user ID from path using regex
+                    String userId = path.substring(path.lastIndexOf('/') + 1);
+                    return Optional.of(new MockResponse()
+                        .setResponseCode(200)
+                        .setHeader("Content-Type", "application/json")
+                        .setBody("{\"id\":" + userId + ",\"name\":\"User " + userId + "\"}"));
+                }
+
+                // Default response for /api/users
+                return Optional.of(new MockResponse()
+                    .setResponseCode(200)
+                    .setHeader("Content-Type", "application/json")
+                    .setBody("{\"users\":[]}"));
+            }
+
+            @Override
+            public @NonNull Set<HttpMethodMapper> supportedMethods() {
+                return Set.of(HttpMethodMapper.GET);
+            }
+        };
+    }
+
+    @Test
+    void shouldReturnDifferentResponsesBasedOnPath(URIBuilder uriBuilder, SSLContext sslContext) throws Exception {
+        // Create HttpClient with SSL context
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build();
+
+        // Test different paths
+
+        // 1. Get all users (empty list)
+        HttpRequest allUsersRequest = HttpRequest.newBuilder()
+                .uri(uriBuilder.addPathSegments("api", "users").build())
+                .GET()
+                .build();
+        HttpResponse<String> allUsersResponse = client.send(allUsersRequest, 
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, allUsersResponse.statusCode());
+        assertEquals("{\"users\":[]}", allUsersResponse.body());
+
+        // 2. Get active users
+        HttpRequest activeUsersRequest = HttpRequest.newBuilder()
+                .uri(uriBuilder.addPathSegments("api", "users", "active").build())
+                .GET()
+                .build();
+        HttpResponse<String> activeUsersResponse = client.send(activeUsersRequest, 
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, activeUsersResponse.statusCode());
+        assertEquals("{\"users\":[{\"id\":1,\"name\":\"John\",\"status\":\"active\"}]}", 
+                activeUsersResponse.body());
+
+        // 3. Get user by ID
+        HttpRequest userRequest = HttpRequest.newBuilder()
+                .uri(uriBuilder.addPathSegments("api", "users", "42").build())
+                .GET()
+                .build();
+        HttpResponse<String> userResponse = client.send(userRequest, 
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, userResponse.statusCode());
+        assertEquals("{\"id\":42,\"name\":\"User 42\"}", userResponse.body());
+    }
 }
 ----
 
@@ -335,24 +438,24 @@ class HttpModeTest {
 ----
 @EnableMockWebServer(useHttps = true, manualStart = true)
 class ManualStartTest {
-    
+
     @Test
     void shouldStartServerManually(MockWebServer server, URIBuilder uriBuilder) {
         // Here we need the MockWebServer parameter to control server lifecycle
-        
+
         // Server is not started automatically
         assertFalse(server.getStarted());
-        
+
         // Start the server manually
         server.start();
-        
+
         // Now the server is running
         assertTrue(server.getStarted());
-        
+
         // The URIBuilder is updated with the server's port
         URI uri = uriBuilder.addPathSegment("api").build();
         assertEquals(server.getPort(), uri.getPort());
-        
+
         // Don't forget to shut down the server
         server.shutdown();
     }
@@ -387,7 +490,7 @@ When using HTTPS, you can provide custom certificates for testing:
 @EnableMockWebServer(useHttps = true)
 @TestProvidedCertificate(methodName = "createTestCertificates")
 class CustomCertificateTest {
-    
+
     // This method provides custom certificates
     public static HandshakeCertificates createTestCertificates() {
         // Create and return custom certificates
@@ -395,7 +498,7 @@ class CustomCertificateTest {
                 // Configure with your custom certificates
                 .build();
     }
-    
+
     @Test
     void shouldUseCustomCertificates(URIBuilder uriBuilder, SSLContext sslContext) {
         // Test with custom certificates
@@ -606,18 +709,18 @@ class CustomCertificateTest {
                 7, // validity in days
                 KeyAlgorithm.RSA_2048);
     }
-    
+
     @Test
     @DisplayName("Should use custom certificates for HTTPS")
     void shouldUseCustomCertificates(MockWebServer server, SSLContext sslContext) {
         // Arrange
         assertNotNull(sslContext, "SSLContext should be injected");
-        
+
         // Act & Assert
         HttpClient client = HttpClient.newBuilder()
                 .sslContext(sslContext)
                 .build();
-                
+
         // Test HTTPS connection with the custom certificates
         // ...
     }
@@ -640,7 +743,7 @@ class CertificateProviderTest {
     void shouldUseCertificatesFromProvider(SSLContext sslContext) {
         // The SSLContext is created using certificates from TestCertificateProvider
         assertNotNull(sslContext, "SSLContext should be injected");
-        
+
         // Use the SSLContext for HTTPS connections
         // ...
     }
@@ -708,9 +811,9 @@ class MyTest implements MockWebServerHolder {
     public Dispatcher getDispatcher() {
         return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
     }
-    
+
     @Test
-    void testSomething(URIBuilder uriBuilder) {
+    void testSomething() {
         // Test code
     }
 }
@@ -727,7 +830,7 @@ class MyTest {
     ModuleDispatcherElement getModuleDispatcher() {
         return new BaseAllAcceptDispatcher("/api");
     }
-    
+
     @Test
     void testSomething(URIBuilder uriBuilder) {
         // Test code

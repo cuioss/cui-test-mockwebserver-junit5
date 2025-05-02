@@ -69,7 +69,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * @param annotation the annotation to create the dispatcher from, must not be null
      * @throws IllegalArgumentException if the annotation is invalid (e.g., multiple content types specified)
      */
-    public MockResponseDispatcherElement(@NonNull de.cuioss.test.mockwebserver.mockresponse.MockResponse annotation) {
+    public MockResponseDispatcherElement(@NonNull MockResponse annotation) {
         this.baseUrl = annotation.path();
         this.method = annotation.method();
         this.statusCode = annotation.status();
@@ -148,7 +148,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * @param annotation the annotation to parse headers from
      * @return a map of header names to values
      */
-    private Map<String, String> parseHeaders(de.cuioss.test.mockwebserver.mockresponse.MockResponse annotation) {
+    private Map<String, String> parseHeaders(MockResponse annotation) {
         Map<String, String> headerMap = new HashMap<>();
 
         // Add explicit headers
@@ -174,7 +174,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * @return the response body
      * @throws IllegalArgumentException if multiple content types are specified
      */
-    private String determineResponseBody(de.cuioss.test.mockwebserver.mockresponse.MockResponse annotation) {
+    private String determineResponseBody(MockResponse annotation) {
         // Count how many content types are specified
         long contentTypeCount = Stream.of(
                 annotation.textContent(),
@@ -238,7 +238,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * @return true if it's a special case
      */
     private boolean isSpecialCase(String content) {
-        return content.equals("{}") || content.equals("[]");
+        return "{}".equals(content) || "[]".equals(content);
     }
 
     /**
@@ -317,9 +317,9 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * @return true if the value should be unquoted
      */
     private boolean shouldBeUnquoted(String value) {
-        return value.equals("true") ||
-                value.equals("false") ||
-                value.equals("null") ||
+        return "true".equals(value) ||
+                "false".equals(value) ||
+                "null".equals(value) ||
                 value.matches("-?\\d+(\\.\\d+)?") ||
                 (value.startsWith("[") && value.endsWith("]")) ||
                 (value.startsWith("{") && value.endsWith("}"));

@@ -113,11 +113,11 @@ class MockResponseResolverTest {
             // Verify paths from both parent and nested class
             assertTrue(elements.stream()
                             .map(ModuleDispatcherElement::getBaseUrl)
-                            .anyMatch(path -> path.equals(DEFAULT_PATH)),
+                            .anyMatch(DEFAULT_PATH::equals),
                     "Should include element from parent class");
             assertTrue(elements.stream()
                             .map(ModuleDispatcherElement::getBaseUrl)
-                            .anyMatch(path -> path.equals("/nested")),
+                            .anyMatch("/nested"::equals),
                     "Should include element from nested class");
         }
 
@@ -134,7 +134,7 @@ class MockResponseResolverTest {
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
             assertTrue(elements.stream()
                             .map(ModuleDispatcherElement::getBaseUrl)
-                            .anyMatch(path -> path.equals("/nested-method")),
+                            .anyMatch("/nested-method"::equals),
                     "Should include element from method in nested class");
         }
     }

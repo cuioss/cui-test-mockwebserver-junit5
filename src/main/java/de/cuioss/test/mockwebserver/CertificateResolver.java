@@ -104,7 +104,7 @@ class CertificateResolver {
         try {
             // Look for the certificate method in the provider class
             Optional<Method> method = ReflectionUtils.findMethod(providerClass, methodName);
-            if (method.isEmpty() && !methodName.equals(DEFAULT_PROVIDER_METHOD_NAME)) {
+            if (method.isEmpty() && !DEFAULT_PROVIDER_METHOD_NAME.equals(methodName)) {
                 // Try the default provider method name as a fallback
                 method = ReflectionUtils.findMethod(providerClass, DEFAULT_PROVIDER_METHOD_NAME);
             }

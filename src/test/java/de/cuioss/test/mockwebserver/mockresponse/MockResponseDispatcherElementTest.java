@@ -16,6 +16,7 @@
 package de.cuioss.test.mockwebserver.mockresponse;
 
 import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
+import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -290,7 +291,7 @@ class MockResponseDispatcherElementTest {
      * @param response the MockResponse to extract the body from
      * @return the body as a string, or an error message if extraction fails
      */
-    private String getBodyContent(mockwebserver3.MockResponse response) {
+    private String getBodyContent(MockResponse response) {
         Buffer buffer = new Buffer();
         try {
             if (response.getBody() != null) {

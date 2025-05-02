@@ -15,6 +15,7 @@
  */
 package de.cuioss.test.mockwebserver;
 
+import de.cuioss.test.mockwebserver.mockresponse.MockResponse;
 import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -75,7 +76,7 @@ public class MockWebServerErrorHandlingTest {
      */
     @Nested
     @EnableMockWebServer
-    @de.cuioss.test.mockwebserver.mockresponse.MockResponse(status = 500, textContent = ERROR_RESPONSE_MESSAGE)
+    @MockResponse(status = 500, textContent = ERROR_RESPONSE_MESSAGE)
     class DispatcherTest {
 
         @Test
