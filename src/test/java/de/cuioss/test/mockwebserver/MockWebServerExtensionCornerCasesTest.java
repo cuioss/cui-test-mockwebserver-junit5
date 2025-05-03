@@ -15,7 +15,7 @@
  */
 package de.cuioss.test.mockwebserver;
 
-import de.cuioss.test.mockwebserver.mockresponse.MockResponse;
+import de.cuioss.test.mockwebserver.mockresponse.MockResponseConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -55,7 +55,7 @@ class MockWebServerExtensionCornerCasesTest {
 
         @Test
         @DisplayName("Should handle custom response headers")
-        @MockResponse(status = 200, textContent = SUCCESS_RESPONSE_BODY, headers = {
+        @MockResponseConfig(status = 200, textContent = SUCCESS_RESPONSE_BODY, headers = {
                 CUSTOM_HEADER_NAME + "=" + CUSTOM_HEADER_VALUE,
                 CONTENT_TYPE_HEADER + "=" + JSON_CONTENT_TYPE
         })

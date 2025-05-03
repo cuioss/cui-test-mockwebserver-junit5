@@ -16,8 +16,8 @@
 package de.cuioss.test.mockwebserver.dispatcher;
 
 import de.cuioss.test.mockwebserver.MockWebServerHolder;
-import de.cuioss.test.mockwebserver.mockresponse.MockResponse;
-import de.cuioss.test.mockwebserver.mockresponse.MockResponseResolver;
+import de.cuioss.test.mockwebserver.mockresponse.MockResponseConfig;
+import de.cuioss.test.mockwebserver.mockresponse.MockResponseConfigResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import mockwebserver3.Dispatcher;
@@ -82,7 +82,7 @@ public class DispatcherResolver {
      * Resolves the dispatcher for a test class with context awareness for the current test method.
      * <p>
      * This method implements the same resolution strategy as {@link #resolveDispatcher(Class, Object)},
-     * but with additional context awareness for {@link MockResponse} annotations:
+     * but with additional context awareness for {@link MockResponseConfig} annotations:
      * <ul>
      *   <li>When a test method is provided, only annotations relevant to that method's context are included</li>
      *   <li>This includes annotations on the test method itself and its containing classes</li>
@@ -193,11 +193,11 @@ public class DispatcherResolver {
             dispatchers.add(dispatcher);
         });
 
-        // Add dispatchers from MockResponse annotations
+        // Add dispatchers from MockResponseConfig annotations
         List<ModuleDispatcherElement> mockResponseDispatchers =
-                MockResponseResolver.resolveFromAnnotations(testClass, testMethod);
+                MockResponseConfigResolver.resolveFromAnnotations(testClass, testMethod);
         if (!mockResponseDispatchers.isEmpty()) {
-            LOGGER.debug("Found %d @MockResponse annotations for context: %s",
+            LOGGER.debug("Found %d @MockResponseConfig annotations for context: %s",
                     mockResponseDispatchers.size(), testMethod != null ? testMethod.getName() : "all");
             dispatchers.addAll(mockResponseDispatchers);
         }

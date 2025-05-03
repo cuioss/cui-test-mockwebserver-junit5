@@ -43,7 +43,7 @@ The MockWebServer extension provides a simple way to test HTTP/HTTPS interaction
 
 === Happy Path Example
 
-Here's a basic example showing how to use the MockWebServer extension with both `@MockResponse` and `@ModuleDispatcher` annotations:
+Here's a basic example showing how to use the MockWebServer extension with both `@MockResponseConfig` and `@ModuleDispatcher` annotations:
 
 [source,java]
 ----
@@ -51,8 +51,8 @@ Here's a basic example showing how to use the MockWebServer extension with both 
 class MockWebServerTest {
 
     @Test
-    @DisplayName("Should handle GET request with @MockResponse")
-    @MockResponse(
+    @DisplayName("Should handle GET request with @MockResponseConfig")
+    @MockResponseConfig(
         path = "/api/users",
         method = HttpMethodMapper.GET,
         jsonContentKeyValue = "users=[]",
@@ -164,11 +164,11 @@ the parameter resolution might fail because of WeldUnit trying to resolve the co
 without knowing how to resolve it.
 In that cases, you can use `@ExplicitParamInjection` on method or class.
 
-=== @MockResponse Annotation
+=== @MockResponseConfig Annotation
 
-The `@MockResponse` annotation allows you to define mock responses for specific paths and HTTP methods. It can be applied at the class or method level and is repeatable.
+The `@MockResponseConfig` annotation allows you to define mock responses for specific paths and HTTP methods. It can be applied at the class or method level and is repeatable.
 
-For detailed information about using `@MockResponse`, including the new context-aware behavior, see link:doc/MockResponse.adoc[Working with @MockResponse].
+For detailed information about using `@MockResponseConfig`, including the new context-aware behavior, see link:doc/MockResponse.adoc[Working with @MockResponse].
 
 === @ModuleDispatcher Annotation
 

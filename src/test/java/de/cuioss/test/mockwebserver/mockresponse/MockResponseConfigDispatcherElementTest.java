@@ -37,8 +37,8 @@ import okhttp3.Headers;
 import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Tests for MockResponseDispatcherElement")
-class MockResponseDispatcherElementTest {
+@DisplayName("Tests for MockResponseConfigDispatcherElement")
+class MockResponseConfigDispatcherElementTest {
 
     // Using constants from MockResponseTestUtil
 
@@ -53,7 +53,7 @@ class MockResponseDispatcherElementTest {
             var annotation = createMockResponse(DEFAULT_PATH, HttpMethodMapper.GET, DEFAULT_STATUS);
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
 
             // Assert
             assertEquals(DEFAULT_PATH, element.getBaseUrl(), "Base URL should match the path from annotation");
@@ -73,7 +73,7 @@ class MockResponseDispatcherElementTest {
                     .build();
 
             // Act & Assert
-            assertThrows(IllegalArgumentException.class, () -> new MockResponseDispatcherElement(annotation),
+            assertThrows(IllegalArgumentException.class, () -> new MockResponseConfigDispatcherElement(annotation),
                     "Should throw exception when multiple content types are specified");
         }
     }
@@ -90,7 +90,7 @@ class MockResponseDispatcherElementTest {
                     DEFAULT_TEXT_CONTENT);
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             RecordedRequest request = createTestRequest();
             var response = element.handleGet(request).orElseThrow();
 
@@ -109,7 +109,7 @@ class MockResponseDispatcherElementTest {
                     DEFAULT_PATH, HttpMethodMapper.GET, DEFAULT_STATUS, DEFAULT_JSON_CONTENT);
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             RecordedRequest request = createTestRequest();
             var response = element.handleGet(request).orElseThrow();
 
@@ -128,7 +128,7 @@ class MockResponseDispatcherElementTest {
                     DEFAULT_PATH, HttpMethodMapper.GET, DEFAULT_STATUS, DEFAULT_STRING_CONTENT);
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             RecordedRequest request = createTestRequest();
             var response = element.handleGet(request).orElseThrow();
 
@@ -147,7 +147,7 @@ class MockResponseDispatcherElementTest {
                     DEFAULT_PATH, HttpMethodMapper.GET, DEFAULT_STATUS, DEFAULT_TEXT_CONTENT, "text/html");
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             RecordedRequest request = createTestRequest();
             var response = element.handleGet(request).orElseThrow();
 
@@ -175,7 +175,7 @@ class MockResponseDispatcherElementTest {
                     DEFAULT_PATH, method, DEFAULT_STATUS, "Test content");
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             var getResponse = element.handleGet(request);
             var postResponse = element.handlePost(request);
             var putResponse = element.handlePut(request);
@@ -212,7 +212,7 @@ class MockResponseDispatcherElementTest {
                     new String[]{"X-Custom=Value", "Cache-Control=no-cache"});
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             RecordedRequest request = createTestRequest();
             var response = element.handleGet(request).orElseThrow();
 
@@ -232,7 +232,7 @@ class MockResponseDispatcherElementTest {
                     new String[]{"InvalidHeader", "X-Valid=Value"});
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             RecordedRequest request = createTestRequest();
             var response = element.handleGet(request).orElseThrow();
 
@@ -257,7 +257,7 @@ class MockResponseDispatcherElementTest {
                     DEFAULT_PATH, HttpMethodMapper.GET, DEFAULT_STATUS, jsonContent);
 
             // Act
-            var element = new MockResponseDispatcherElement(annotation);
+            var element = new MockResponseConfigDispatcherElement(annotation);
             RecordedRequest request = createTestRequest();
             var response = element.handleGet(request).orElseThrow();
 

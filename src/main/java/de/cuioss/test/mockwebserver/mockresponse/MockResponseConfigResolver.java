@@ -26,8 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Utility class for resolving {@link MockResponse} annotations from test classes
- * and converting them to {@link MockResponseDispatcherElement} instances.
+ * Utility class for resolving {@link MockResponseConfig} annotations from test classes
+ * and converting them to {@link MockResponseConfigDispatcherElement} instances.
  * <p>
  * This class collects annotations from:
  * <ul>
@@ -40,13 +40,13 @@ import java.util.List;
  * @since 1.1
  */
 @UtilityClass
-public class MockResponseResolver {
+public class MockResponseConfigResolver {
 
-    private static final CuiLogger LOGGER = new CuiLogger(MockResponseResolver.class);
+    private static final CuiLogger LOGGER = new CuiLogger(MockResponseConfigResolver.class);
 
     /**
-     * Resolves all {@link MockResponse} annotations from the given test class and its methods,
-     * and converts them to {@link MockResponseDispatcherElement} instances.
+     * Resolves all {@link MockResponseConfig} annotations from the given test class and its methods,
+     * and converts them to {@link MockResponseConfigDispatcherElement} instances.
      *
      * @param testClass the test class to resolve annotations from, must not be null
      * @return a list of {@link ModuleDispatcherElement} instances created from the annotations
@@ -57,8 +57,8 @@ public class MockResponseResolver {
     }
 
     /**
-     * Resolves {@link MockResponse} annotations from the given test class and test method context,
-     * and converts them to {@link MockResponseDispatcherElement} instances.
+     * Resolves {@link MockResponseConfig} annotations from the given test class and test method context,
+     * and converts them to {@link MockResponseConfigDispatcherElement} instances.
      * <p>
      * When a test method is provided, only annotations relevant to that method's context are included:
      * <ul>
@@ -97,19 +97,19 @@ public class MockResponseResolver {
     }
 
     /**
-     * Collects {@link MockResponse} annotations from the given class and its nested classes.
+     * Collects {@link MockResponseConfig} annotations from the given class and its nested classes.
      *
      * @param clazz  the class to collect annotations from
      * @param result the list to add the created dispatcher elements to
      */
     private void collectFromClass(Class<?> clazz, List<ModuleDispatcherElement> result) {
         // Process direct annotations on the class
-        MockResponse[] annotations = clazz.getAnnotationsByType(MockResponse.class);
-        for (MockResponse annotation : annotations) {
+        MockResponseConfig[] annotations = clazz.getAnnotationsByType(MockResponseConfig.class);
+        for (MockResponseConfig annotation : annotations) {
             try {
-                result.add(new MockResponseDispatcherElement(annotation));
+                result.add(new MockResponseConfigDispatcherElement(annotation));
             } catch (Exception e) {
-                LOGGER.error(e, "Failed to create MockResponseDispatcherElement from annotation on class %s: %s",
+                LOGGER.error(e, "Failed to create MockResponseConfigDispatcherElement from annotation on class %s: %s",
                         clazz.getName(), e.getMessage());
             }
         }
@@ -123,7 +123,7 @@ public class MockResponseResolver {
     }
 
     /**
-     * Collects {@link MockResponse} annotations from the class hierarchy up to a specific class.
+     * Collects {@link MockResponseConfig} annotations from the class hierarchy up to a specific class.
      * This includes the class itself and all its parent classes, but not sibling classes.
      *
      * @param clazz  the class to collect annotations from
@@ -131,14 +131,14 @@ public class MockResponseResolver {
      */
     private void collectFromClassHierarchy(Class<?> clazz, List<ModuleDispatcherElement> result) {
         // Process direct annotations on the class
-        MockResponse[] annotations = clazz.getAnnotationsByType(MockResponse.class);
-        for (MockResponse annotation : annotations) {
+        MockResponseConfig[] annotations = clazz.getAnnotationsByType(MockResponseConfig.class);
+        for (MockResponseConfig annotation : annotations) {
             try {
-                result.add(new MockResponseDispatcherElement(annotation));
-                LOGGER.debug("Added MockResponse from class %s for path %s",
+                result.add(new MockResponseConfigDispatcherElement(annotation));
+                LOGGER.debug("Added MockResponseConfig from class %s for path %s",
                         clazz.getName(), annotation.path());
             } catch (Exception e) {
-                LOGGER.error(e, "Failed to create MockResponseDispatcherElement from annotation on class %s: %s",
+                LOGGER.error(e, "Failed to create MockResponseConfigDispatcherElement from annotation on class %s: %s",
                         clazz.getName(), e.getMessage());
             }
         }
@@ -157,39 +157,39 @@ public class MockResponseResolver {
     }
 
     /**
-     * Collects {@link MockResponse} annotations from a specific method.
+     * Collects {@link MockResponseConfig} annotations from a specific method.
      *
      * @param method the method to collect annotations from
      * @param result the list to add the created dispatcher elements to
      */
     private void collectFromMethod(Method method, List<ModuleDispatcherElement> result) {
-        MockResponse[] annotations = method.getAnnotationsByType(MockResponse.class);
-        for (MockResponse annotation : annotations) {
+        MockResponseConfig[] annotations = method.getAnnotationsByType(MockResponseConfig.class);
+        for (MockResponseConfig annotation : annotations) {
             try {
-                result.add(new MockResponseDispatcherElement(annotation));
-                LOGGER.debug("Added MockResponse from method %s.%s for path %s",
+                result.add(new MockResponseConfigDispatcherElement(annotation));
+                LOGGER.debug("Added MockResponseConfig from method %s.%s for path %s",
                         method.getDeclaringClass().getName(), method.getName(), annotation.path());
             } catch (Exception e) {
-                LOGGER.error("Failed to create MockResponseDispatcherElement from annotation on method %s.%s: %s",
+                LOGGER.error("Failed to create MockResponseConfigDispatcherElement from annotation on method %s.%s: %s",
                         method.getDeclaringClass().getName(), method.getName(), e.getMessage());
             }
         }
     }
 
     /**
-     * Collects {@link MockResponse} annotations from the methods of the given class.
+     * Collects {@link MockResponseConfig} annotations from the methods of the given class.
      *
      * @param clazz  the class to collect method annotations from
      * @param result the list to add the created dispatcher elements to
      */
     private void collectFromMethods(Class<?> clazz, List<ModuleDispatcherElement> result) {
         for (Method method : clazz.getDeclaredMethods()) {
-            MockResponse[] annotations = method.getAnnotationsByType(MockResponse.class);
-            for (MockResponse annotation : annotations) {
+            MockResponseConfig[] annotations = method.getAnnotationsByType(MockResponseConfig.class);
+            for (MockResponseConfig annotation : annotations) {
                 try {
-                    result.add(new MockResponseDispatcherElement(annotation));
+                    result.add(new MockResponseConfigDispatcherElement(annotation));
                 } catch (Exception e) {
-                    LOGGER.error("Failed to create MockResponseDispatcherElement from annotation on method %s.%s: %s",
+                    LOGGER.error("Failed to create MockResponseConfigDispatcherElement from annotation on method %s.%s: %s",
                             clazz.getName(), method.getName(), e.getMessage());
                 }
             }

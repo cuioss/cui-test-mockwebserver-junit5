@@ -31,10 +31,10 @@ import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Test case to verify that deeply nested classes properly handle @MockResponse annotations.
+ * Test case to verify that deeply nested classes properly handle @MockResponseConfig annotations.
  */
 @EnableMockWebServer
-@MockResponse(path = "/api/outer-class", status = 200, textContent = "Outer Class Response")
+@MockResponseConfig(path = "/api/outer-class", status = 200, textContent = "Outer Class Response")
 class DeeplyNestedClassesTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
@@ -43,7 +43,7 @@ class DeeplyNestedClassesTest {
 
     @Test
     @DisplayName("Outer class should only access its own annotations")
-    @MockResponse(path = "/api/outer-method", status = 200, textContent = "Outer Method Response")
+    @MockResponseConfig(path = "/api/outer-method", status = 200, textContent = "Outer Method Response")
     void outerClassTest(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
@@ -81,12 +81,12 @@ class DeeplyNestedClassesTest {
 
     @Nested
     @DisplayName("Level 1 nested class")
-    @MockResponse(path = "/api/level1-class", status = 200, textContent = "Level 1 Class Response")
+    @MockResponseConfig(path = "/api/level1-class", status = 200, textContent = "Level 1 Class Response")
     class Level1NestedTest {
 
         @Test
         @DisplayName("Level 1 nested class should access its own annotations and outer class annotations")
-        @MockResponse(path = "/api/level1-method", status = 200, textContent = "Level 1 Method Response")
+        @MockResponseConfig(path = "/api/level1-method", status = 200, textContent = "Level 1 Method Response")
         void level1Test(URIBuilder uriBuilder) throws IOException, InterruptedException {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
@@ -143,12 +143,12 @@ class DeeplyNestedClassesTest {
 
         @Nested
         @DisplayName("Level 2 nested class")
-        @MockResponse(path = "/api/level2-class", status = 200, textContent = "Level 2 Class Response")
+        @MockResponseConfig(path = "/api/level2-class", status = 200, textContent = "Level 2 Class Response")
         class Level2NestedTest {
 
             @Test
             @DisplayName("Level 2 nested class should access its own annotations and all ancestor class annotations")
-            @MockResponse(path = "/api/level2-method", status = 200, textContent = "Level 2 Method Response")
+            @MockResponseConfig(path = "/api/level2-method", status = 200, textContent = "Level 2 Method Response")
             void level2Test(URIBuilder uriBuilder) throws IOException, InterruptedException {
                 HttpClient client = HttpClient.newBuilder()
                         .connectTimeout(TIMEOUT)
@@ -223,12 +223,12 @@ class DeeplyNestedClassesTest {
 
             @Nested
             @DisplayName("Level 3 nested class (deepest level)")
-            @MockResponse(path = "/api/level3-class", status = 200, textContent = "Level 3 Class Response")
+            @MockResponseConfig(path = "/api/level3-class", status = 200, textContent = "Level 3 Class Response")
             class Level3NestedTest {
 
                 @Test
                 @DisplayName("Level 3 nested class should access its own annotations and all ancestor class annotations")
-                @MockResponse(path = "/api/level3-method", status = 200, textContent = "Level 3 Method Response")
+                @MockResponseConfig(path = "/api/level3-method", status = 200, textContent = "Level 3 Method Response")
                 void level3Test(URIBuilder uriBuilder) throws IOException, InterruptedException {
                     HttpClient client = HttpClient.newBuilder()
                             .connectTimeout(TIMEOUT)

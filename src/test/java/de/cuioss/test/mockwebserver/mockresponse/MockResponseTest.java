@@ -31,7 +31,7 @@ import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@DisplayName("MockResponse Annotation - Configuration Tests")
+@DisplayName("MockResponseConfig Annotation - Configuration Tests")
 class MockResponseTest {
 
     // Constants to avoid duplication
@@ -47,9 +47,9 @@ class MockResponseTest {
 
     @Nested
     @EnableMockWebServer
-    @MockResponse(path = "/api/users", status = 200, textContent = "Hello, World!")
-    @DisplayName("Basic @MockResponse functionality")
-    class BasicMockResponseTest {
+    @MockResponseConfig(path = "/api/users", status = 200, textContent = "Hello, World!")
+    @DisplayName("Basic @MockResponseConfig functionality")
+    class BasicMockResponseConfigTest {
 
         @Test
         @DisplayName("Should return configured response with text content")
@@ -77,10 +77,10 @@ class MockResponseTest {
 
     @Nested
     @EnableMockWebServer
-    @MockResponse(path = "/api/users", method = HttpMethodMapper.GET, status = 200,
+    @MockResponseConfig(path = "/api/users", method = HttpMethodMapper.GET, status = 200,
             jsonContentKeyValue = "users=[]", contentType = "application/json; charset=utf-8")
-    @MockResponse(path = "/api/users", method = HttpMethodMapper.POST, status = 201)
-    @DisplayName("Multiple @MockResponse annotations")
+    @MockResponseConfig(path = "/api/users", method = HttpMethodMapper.POST, status = 201)
+    @DisplayName("Multiple @MockResponseConfig annotations")
     class MultipleMockResponseTest {
 
         @Test
@@ -129,13 +129,13 @@ class MockResponseTest {
 
     @Nested
     @EnableMockWebServer
-    @MockResponse(
+    @MockResponseConfig(
             path = API_DATA_PATH,
             status = 200,
             jsonContentKeyValue = "key1=value1,key2=value2",
             headers = {"X-Custom-Header=Custom Value", "Cache-Control=no-cache"}
     )
-    @DisplayName("@MockResponse with custom headers")
+    @DisplayName("@MockResponseConfig with custom headers")
     class HeadersMockResponseTest {
 
         @Test
@@ -165,12 +165,12 @@ class MockResponseTest {
 
     @EnableMockWebServer
     @Nested
-    @DisplayName("@MockResponse on nested test classes")
+    @DisplayName("@MockResponseConfig on nested test classes")
     class NestedMockResponseTest {
 
         @Nested
-        @MockResponse(path = "/api/nested", status = 200, textContent = "Nested Response")
-        @DisplayName("Nested test class with @MockResponse")
+        @MockResponseConfig(path = "/api/nested", status = 200, textContent = "Nested Response")
+        @DisplayName("Nested test class with @MockResponseConfig")
         class NestedTest {
 
             @Test
@@ -198,11 +198,11 @@ class MockResponseTest {
 
     @Nested
     @EnableMockWebServer
-    @DisplayName("@MockResponse on test methods")
+    @DisplayName("@MockResponseConfig on test methods")
     class MethodMockResponseTest {
 
         @Test
-        @MockResponse(path = "/api/method", status = 200, textContent = "Method Response")
+        @MockResponseConfig(path = "/api/method", status = 200, textContent = "Method Response")
         void shouldHandleMethodAnnotation(URIBuilder uriBuilder) throws IOException, InterruptedException {
             // Arrange
             HttpClient client = HttpClient.newBuilder()

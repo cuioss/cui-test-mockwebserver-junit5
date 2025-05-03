@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * Annotation for defining mock responses in tests. This annotation can be applied to test classes
  * or methods to define mock responses for specific paths and HTTP methods.
  * <p>
- * For each {@code @MockResponse} annotation, a single {@code ModuleDispatcherElement} is created
+ * For each {@code @MockResponseConfig} annotation, a single {@code ModuleDispatcherElement} is created
  * that handles requests matching the specified path and HTTP method.
  * <p>
  * This annotation can be used multiple times on the same element to define multiple mock responses.
@@ -53,7 +53,7 @@ import java.lang.annotation.Target;
  * Basic usage:
  * <pre>
  * &#64;EnableMockWebServer
- * &#64;MockResponse(path="/api/users", method=HttpMethodMapper.GET,
+ * &#64;MockResponseConfig(path="/api/users", method=HttpMethodMapper.GET,
  *               jsonContentKeyValue="users=[]", status=200)
  * class SimpleTest {
  *     // Test methods
@@ -63,9 +63,9 @@ import java.lang.annotation.Target;
  * Multiple responses:
  * <pre>
  * &#64;EnableMockWebServer
- * &#64;MockResponse(path="/api/users", method=HttpMethodMapper.GET,
+ * &#64;MockResponseConfig(path="/api/users", method=HttpMethodMapper.GET,
  *               jsonContentKeyValue="users=[]", status=200)
- * &#64;MockResponse(path="/api/users", method=HttpMethodMapper.POST,
+ * &#64;MockResponseConfig(path="/api/users", method=HttpMethodMapper.POST,
  *               status=201)
  * class MultiResponseTest {
  *     // Test methods
@@ -78,8 +78,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Documented
-@Repeatable(MockResponses.class)
-public @interface MockResponse {
+@Repeatable(MockResponseConfigs.class)
+public @interface MockResponseConfig {
 
     /**
      * The path this response will handle.

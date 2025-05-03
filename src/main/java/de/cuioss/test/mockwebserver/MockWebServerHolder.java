@@ -86,7 +86,7 @@ import javax.net.ssl.SSLContext;
  *         var handler = new EndpointAnswerHandler();
  *
  *         // Configure endpoint responses
- *         handler.addAnswerFor("/api/data", new MockResponse()
+ *         handler.addAnswerFor("/api/data", new MockResponseConfig()
  *             .setBody("{'data': 'test'}"));
  *
  *         // Set the dispatcher for this test

@@ -31,12 +31,12 @@ import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Test case to demonstrate context-aware MockResponse annotation processing.
+ * Test case to demonstrate context-aware MockResponseConfig annotation processing.
  * Each test method should only have access to its own annotations and the class-level ones.
  */
 @EnableMockWebServer
-@MockResponse(path = "/api/class-level", status = 200, textContent = "Class Level Response")
-class ContextAwareMockResponseTest {
+@MockResponseConfig(path = "/api/class-level", status = 200, textContent = "Class Level Response")
+class ContextAwareMockResponseConfigTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private static final String STATUS_CODE_ASSERTION_MESSAGE = "Response status code should match";
@@ -44,7 +44,7 @@ class ContextAwareMockResponseTest {
 
     @Test
     @DisplayName("Should only access method A and class-level responses")
-    @MockResponse(path = "/api/method-a", status = 200, textContent = "Method A Response")
+    @MockResponseConfig(path = "/api/method-a", status = 200, textContent = "Method A Response")
     void shouldOnlyAccessMethodAAndClassLevelResponses(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
@@ -82,7 +82,7 @@ class ContextAwareMockResponseTest {
 
     @Test
     @DisplayName("Should only access method B and class-level responses")
-    @MockResponse(path = "/api/method-b", status = 200, textContent = "Method B Response")
+    @MockResponseConfig(path = "/api/method-b", status = 200, textContent = "Method B Response")
     void shouldOnlyAccessMethodBAndClassLevelResponses(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
@@ -119,12 +119,12 @@ class ContextAwareMockResponseTest {
     }
 
     @Nested
-    @DisplayName("Nested test class with @MockResponse")
-    @MockResponse(path = "/api/nested-class", status = 200, textContent = "Nested Class Response")
+    @DisplayName("Nested test class with @MockResponseConfig")
+    @MockResponseConfig(path = "/api/nested-class", status = 200, textContent = "Nested Class Response")
     class NestedTest {
         @Test
         @DisplayName("Should only access nested method and parent responses")
-        @MockResponse(path = "/api/nested-method", status = 200, textContent = "Nested Method Response")
+        @MockResponseConfig(path = "/api/nested-method", status = 200, textContent = "Nested Method Response")
         void shouldOnlyAccessNestedMethodAndParentResponses(URIBuilder uriBuilder) throws IOException, InterruptedException {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)

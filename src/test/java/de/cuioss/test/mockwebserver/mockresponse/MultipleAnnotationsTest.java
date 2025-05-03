@@ -30,10 +30,10 @@ import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Test case to verify that multiple @MockResponse annotations on the same method work correctly.
+ * Test case to verify that multiple @MockResponseConfig annotations on the same method work correctly.
  */
 @EnableMockWebServer
-@MockResponse(path = "/api/class-level", status = 200, textContent = "Class Level Response")
+@MockResponseConfig(path = "/api/class-level", status = 200, textContent = "Class Level Response")
 class MultipleAnnotationsTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
@@ -41,10 +41,10 @@ class MultipleAnnotationsTest {
     private static final String BODY_CONTENT_ASSERTION_MESSAGE = "Response body content should match";
 
     @Test
-    @DisplayName("Should handle multiple @MockResponse annotations on the same method")
-    @MockResponse(path = "/api/method-1", status = 200, textContent = "Method 1 Response")
-    @MockResponse(path = "/api/method-2", status = 201, textContent = "Method 2 Response")
-    @MockResponse(path = "/api/method-3", status = 202, textContent = "Method 3 Response")
+    @DisplayName("Should handle multiple @MockResponseConfig annotations on the same method")
+    @MockResponseConfig(path = "/api/method-1", status = 200, textContent = "Method 1 Response")
+    @MockResponseConfig(path = "/api/method-2", status = 201, textContent = "Method 2 Response")
+    @MockResponseConfig(path = "/api/method-3", status = 202, textContent = "Method 3 Response")
     void shouldHandleMultipleAnnotations(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
@@ -93,7 +93,7 @@ class MultipleAnnotationsTest {
 
     @Test
     @DisplayName("Should not have access to annotations from other methods")
-    @MockResponse(path = "/api/other-method", status = 200, textContent = "Other Method Response")
+    @MockResponseConfig(path = "/api/other-method", status = 200, textContent = "Other Method Response")
     void shouldNotHaveAccessToOtherMethodAnnotations(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
