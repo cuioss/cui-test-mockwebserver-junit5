@@ -22,6 +22,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.ToString;
+import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 
 import java.util.HashMap;
@@ -31,11 +32,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-// Using fully qualified name for mockwebserver3.MockResponse to avoid naming conflict
-
 /**
  * Implementation of {@link ModuleDispatcherElement} that handles requests based on
- * the configuration from a {@link MockResponse} annotation.
+ * the configuration from a {@link MockResponseConfig} annotation.
  * <p>
  * This class is responsible for:
  * <ul>
@@ -49,7 +48,7 @@ import java.util.stream.Stream;
  */
 @ToString
 @EqualsAndHashCode
-public class MockResponseDispatcherElement implements ModuleDispatcherElement {
+public class MockResponseConfigDispatcherElement implements ModuleDispatcherElement {
 
     private static final String CONTENT_TYPE_HEADER = "Content-Type";
     private static final String TEXT_PLAIN_CONTENT_TYPE = "text/plain";
@@ -64,12 +63,12 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
     private final Map<String, String> headers;
 
     /**
-     * Creates a new instance based on the given {@link MockResponse} annotation.
+     * Creates a new instance based on the given {@link MockResponseConfig} annotation.
      *
      * @param annotation the annotation to create the dispatcher from, must not be null
      * @throws IllegalArgumentException if the annotation is invalid (e.g., multiple content types specified)
      */
-    public MockResponseDispatcherElement(@NonNull MockResponse annotation) {
+    public MockResponseConfigDispatcherElement(@NonNull MockResponseConfig annotation) {
         this.baseUrl = annotation.path();
         this.method = annotation.method();
         this.statusCode = annotation.status();
@@ -78,7 +77,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
     }
 
     @Override
-    public Optional<mockwebserver3.MockResponse> handleGet(@NonNull RecordedRequest request) {
+    public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
         if (method == HttpMethodMapper.GET) {
             return createResponse();
         }
@@ -86,7 +85,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
     }
 
     @Override
-    public Optional<mockwebserver3.MockResponse> handlePost(@NonNull RecordedRequest request) {
+    public Optional<MockResponse> handlePost(@NonNull RecordedRequest request) {
         if (method == HttpMethodMapper.POST) {
             return createResponse();
         }
@@ -94,7 +93,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
     }
 
     @Override
-    public Optional<mockwebserver3.MockResponse> handlePut(@NonNull RecordedRequest request) {
+    public Optional<MockResponse> handlePut(@NonNull RecordedRequest request) {
         if (method == HttpMethodMapper.PUT) {
             return createResponse();
         }
@@ -102,7 +101,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
     }
 
     @Override
-    public Optional<mockwebserver3.MockResponse> handleDelete(@NonNull RecordedRequest request) {
+    public Optional<MockResponse> handleDelete(@NonNull RecordedRequest request) {
         if (method == HttpMethodMapper.DELETE) {
             return createResponse();
         }
@@ -113,7 +112,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * {@inheritDoc}
      * <p>
      * This implementation returns a set containing only the HTTP method specified in the
-     * {@link MockResponse} annotation used to create this dispatcher element.
+     * {@link MockResponseConfig} annotation used to create this dispatcher element.
      */
     @Override
     public @NonNull Set<HttpMethodMapper> supportedMethods() {
@@ -127,8 +126,8 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      *
      * @return an Optional containing the response
      */
-    private Optional<mockwebserver3.MockResponse> createResponse() {
-        var responseBuilder = new mockwebserver3.MockResponse.Builder()
+    private Optional<MockResponse> createResponse() {
+        var responseBuilder = new MockResponse.Builder()
                 .code(statusCode);
 
         // Add all headers
@@ -148,7 +147,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * @param annotation the annotation to parse headers from
      * @return a map of header names to values
      */
-    private Map<String, String> parseHeaders(MockResponse annotation) {
+    private Map<String, String> parseHeaders(MockResponseConfig annotation) {
         Map<String, String> headerMap = new HashMap<>();
 
         // Add explicit headers
@@ -174,7 +173,7 @@ public class MockResponseDispatcherElement implements ModuleDispatcherElement {
      * @return the response body
      * @throws IllegalArgumentException if multiple content types are specified
      */
-    private String determineResponseBody(MockResponse annotation) {
+    private String determineResponseBody(MockResponseConfig annotation) {
         // Count how many content types are specified
         long contentTypeCount = Stream.of(
                 annotation.textContent(),

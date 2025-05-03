@@ -30,10 +30,10 @@ import java.time.Duration;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Base class for testing inheritance hierarchy with @MockResponse annotations.
+ * Base class for testing inheritance hierarchy with @MockResponseConfig annotations.
  */
 @EnableMockWebServer
-@MockResponse(path = "/api/base-class", status = 200, textContent = "Base Class Response")
+@MockResponseConfig(path = "/api/base-class", status = 200, textContent = "Base Class Response")
 class InheritanceHierarchyTest {
 
     protected static final Duration TIMEOUT = Duration.ofSeconds(5);
@@ -42,7 +42,7 @@ class InheritanceHierarchyTest {
 
     @Test
     @DisplayName("Base class should only access its own annotations")
-    @MockResponse(path = "/api/base-method", status = 200, textContent = "Base Method Response")
+    @MockResponseConfig(path = "/api/base-method", status = 200, textContent = "Base Method Response")
     void baseClassTest(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)

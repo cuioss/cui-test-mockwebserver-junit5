@@ -21,7 +21,7 @@ import lombok.experimental.UtilityClass;
 import static org.easymock.EasyMock.*;
 
 /**
- * Utility class for creating mock instances of {@link MockResponse} annotation
+ * Utility class for creating mock instances of {@link MockResponseConfig} annotation
  * for testing purposes.
  * 
  * @author Oliver Wolff
@@ -48,7 +48,7 @@ public class MockResponseTestUtil {
     public static final String CONTENT_TYPE_HEADER = "Content-Type";
 
     /**
-     * Builder class for creating mock {@link MockResponse} annotations.
+     * Builder class for creating mock {@link MockResponseConfig} annotations.
      * This helps reduce the number of parameters in method calls.
      */
     public static class MockResponseBuilder {
@@ -154,8 +154,8 @@ public class MockResponseTestUtil {
          * 
          * @return the mock response annotation
          */
-        public MockResponse build() {
-            MockResponse annotation = createMock(MockResponse.class);
+        public MockResponseConfig build() {
+            MockResponseConfig annotation = createMock(MockResponseConfig.class);
             expect(annotation.path()).andReturn(path).anyTimes();
             expect(annotation.method()).andReturn(method).anyTimes();
             expect(annotation.status()).andReturn(status).anyTimes();
@@ -171,7 +171,7 @@ public class MockResponseTestUtil {
     }
 
     /**
-     * Creates a new builder for mock {@link MockResponse} annotations.
+     * Creates a new builder for mock {@link MockResponseConfig} annotations.
      * 
      * @return a new builder
      */
@@ -180,14 +180,14 @@ public class MockResponseTestUtil {
     }
 
     /**
-     * Creates a mock {@link MockResponse} annotation with default empty values.
+     * Creates a mock {@link MockResponseConfig} annotation with default empty values.
      * 
      * @param path the path this response will handle
      * @param method the HTTP method this response will handle
      * @param status the HTTP status code for the response
-     * @return a mocked {@link MockResponse} annotation
+     * @return a mocked {@link MockResponseConfig} annotation
      */
-    public static MockResponse createMockResponse(String path, HttpMethodMapper method, int status) {
+    public static MockResponseConfig createMockResponse(String path, HttpMethodMapper method, int status) {
         return builder()
                 .withPath(path)
                 .withMethod(method)
@@ -196,15 +196,15 @@ public class MockResponseTestUtil {
     }
 
     /**
-     * Creates a mock {@link MockResponse} annotation with text content.
+     * Creates a mock {@link MockResponseConfig} annotation with text content.
      * 
      * @param path the path this response will handle
      * @param method the HTTP method this response will handle
      * @param status the HTTP status code for the response
      * @param textContent the text content
-     * @return a mocked {@link MockResponse} annotation
+     * @return a mocked {@link MockResponseConfig} annotation
      */
-    public static MockResponse createMockResponseWithTextContent(
+    public static MockResponseConfig createMockResponseWithTextContent(
             String path, HttpMethodMapper method, int status, String textContent) {
         return builder()
                 .withPath(path)
@@ -215,15 +215,15 @@ public class MockResponseTestUtil {
     }
 
     /**
-     * Creates a mock {@link MockResponse} annotation with JSON content.
+     * Creates a mock {@link MockResponseConfig} annotation with JSON content.
      * 
      * @param path the path this response will handle
      * @param method the HTTP method this response will handle
      * @param status the HTTP status code for the response
      * @param jsonContent the JSON content
-     * @return a mocked {@link MockResponse} annotation
+     * @return a mocked {@link MockResponseConfig} annotation
      */
-    public static MockResponse createMockResponseWithJsonContent(
+    public static MockResponseConfig createMockResponseWithJsonContent(
             String path, HttpMethodMapper method, int status, String jsonContent) {
         return builder()
                 .withPath(path)
@@ -234,15 +234,15 @@ public class MockResponseTestUtil {
     }
 
     /**
-     * Creates a mock {@link MockResponse} annotation with string content.
+     * Creates a mock {@link MockResponseConfig} annotation with string content.
      * 
      * @param path the path this response will handle
      * @param method the HTTP method this response will handle
      * @param status the HTTP status code for the response
      * @param stringContent the string content
-     * @return a mocked {@link MockResponse} annotation
+     * @return a mocked {@link MockResponseConfig} annotation
      */
-    public static MockResponse createMockResponseWithStringContent(
+    public static MockResponseConfig createMockResponseWithStringContent(
             String path, HttpMethodMapper method, int status, String stringContent) {
         return builder()
                 .withPath(path)
@@ -253,15 +253,15 @@ public class MockResponseTestUtil {
     }
 
     /**
-     * Creates a mock {@link MockResponse} annotation with custom headers.
+     * Creates a mock {@link MockResponseConfig} annotation with custom headers.
      * 
      * @param path the path this response will handle
      * @param method the HTTP method this response will handle
      * @param status the HTTP status code for the response
      * @param headers the HTTP headers
-     * @return a mocked {@link MockResponse} annotation
+     * @return a mocked {@link MockResponseConfig} annotation
      */
-    public static MockResponse createMockResponseWithHeaders(
+    public static MockResponseConfig createMockResponseWithHeaders(
             String path, HttpMethodMapper method, int status, String[] headers) {
         return builder()
                 .withPath(path)
@@ -272,16 +272,16 @@ public class MockResponseTestUtil {
     }
 
     /**
-     * Creates a mock {@link MockResponse} annotation with a custom content type.
+     * Creates a mock {@link MockResponseConfig} annotation with a custom content type.
      * 
      * @param path the path this response will handle
      * @param method the HTTP method this response will handle
      * @param status the HTTP status code for the response
      * @param textContent the text content
      * @param contentType the content type
-     * @return a mocked {@link MockResponse} annotation
+     * @return a mocked {@link MockResponseConfig} annotation
      */
-    public static MockResponse createMockResponseWithContentType(
+    public static MockResponseConfig createMockResponseWithContentType(
             String path, HttpMethodMapper method, int status, String textContent, String contentType) {
         return builder()
                 .withPath(path)

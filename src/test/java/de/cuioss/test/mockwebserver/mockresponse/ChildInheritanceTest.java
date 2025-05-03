@@ -29,15 +29,15 @@ import java.net.http.HttpResponse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * Child class that extends the base class to test inheritance of @MockResponse annotations.
+ * Child class that extends the base class to test inheritance of @MockResponseConfig annotations.
  */
 @EnableMockWebServer
-@MockResponse(path = "/api/child-class", status = 200, textContent = "Child Class Response")
+@MockResponseConfig(path = "/api/child-class", status = 200, textContent = "Child Class Response")
 class ChildInheritanceTest extends InheritanceHierarchyTest {
 
     @Test
     @DisplayName("Child class should access its own annotations and parent class annotations")
-    @MockResponse(path = "/api/child-method", status = 200, textContent = "Child Method Response")
+    @MockResponseConfig(path = "/api/child-method", status = 200, textContent = "Child Method Response")
     void childClassTest(URIBuilder uriBuilder) throws IOException, InterruptedException {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)

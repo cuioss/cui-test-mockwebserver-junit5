@@ -48,7 +48,7 @@ Remove the `implements MockWebServerHolder` from the class declaration.
 
 ==== 4. Replace Dispatcher with MockResponse Annotations
 
-For each path in your `getDispatcher()` method, add a corresponding `@MockResponse` annotation to your test class or test method.
+For each path in your `getDispatcher()` method, add a corresponding `@MockResponseConfig` annotation to your test class or test method.
 
 Example:
 
@@ -75,7 +75,7 @@ public Dispatcher getDispatcher() {
 }
 
 // After
-@MockResponse(
+@MockResponseConfig(
     path = "/success/test", 
     status = HttpServletResponse.SC_OK, 
     headers = "Content-Type=application/json",
@@ -207,7 +207,7 @@ class ProgrammaticTest implements MockWebServerHolder {
 
 // After: Annotation-based configuration
 @EnableMockWebServer
-@MockResponse(path = "/api/users", status = 200, jsonContentKeyValue = "users=[]")
+@MockResponseConfig(path = "/api/users", status = 200, jsonContentKeyValue = "users=[]")
 class AnnotationTest {
     // No need to implement any interface
 }
@@ -219,7 +219,7 @@ class AnnotationTest {
 
 [source,java]
 ----
-@MockResponse(
+@MockResponseConfig(
     path = "/api/resource", 
     status = HttpServletResponse.SC_OK, 
     textContent = "Response content"
@@ -235,8 +235,8 @@ void testBasicRequest(URIBuilder uriBuilder) {
 
 [source,java]
 ----
-@MockResponse(path = "/api/resource1", status = HttpServletResponse.SC_OK, textContent = "Response 1")
-@MockResponse(path = "/api/resource2", status = HttpServletResponse.SC_OK, textContent = "Response 2")
+@MockResponseConfig(path = "/api/resource1", status = HttpServletResponse.SC_OK, textContent = "Response 1")
+@MockResponseConfig(path = "/api/resource2", status = HttpServletResponse.SC_OK, textContent = "Response 2")
 @Test
 void testMultipleResponses(URIBuilder uriBuilder) {
     // Test code here
@@ -247,7 +247,7 @@ void testMultipleResponses(URIBuilder uriBuilder) {
 
 [source,java]
 ----
-@MockResponse(
+@MockResponseConfig(
     path = "/api/resource", 
     method = HttpMethodMapper.POST,
     status = HttpServletResponse.SC_CREATED
@@ -262,7 +262,7 @@ void testPostMethod(URIBuilder uriBuilder) {
 
 [source,java]
 ----
-@MockResponse(
+@MockResponseConfig(
     path = "/api/resource", 
     status = HttpServletResponse.SC_OK, 
     headers = "Content-Type=application/json;ETag=W/123"
@@ -279,10 +279,10 @@ Version 1.1 introduces several new features that make testing with MockWebServer
 
 === Context-Aware MockResponse Annotations
 
-In version 1.1, `@MockResponse` annotations are context-aware. This means that each test method only has access to:
+In version 1.1, `@MockResponseConfig` annotations are context-aware. This means that each test method only has access to:
 
-1. Its own method-level `@MockResponse` annotations
-2. Class-level `@MockResponse` annotations from its containing class and parent classes
+1. Its own method-level `@MockResponseConfig` annotations
+2. Class-level `@MockResponseConfig` annotations from its containing class and parent classes
 3. For nested test classes, only annotations from the class hierarchy up to the test method's class
 
 This prevents unintended interactions between test methods. See link:MockResponse.adoc[Working with @MockResponse] for more details.

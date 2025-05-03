@@ -22,24 +22,24 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Container annotation for {@link MockResponse} to support repeatable annotations.
+ * Container annotation for {@link MockResponseConfig} to support repeatable annotations.
  * <p>
- * This annotation is automatically used by the Java compiler when multiple {@link MockResponse}
+ * This annotation is automatically used by the Java compiler when multiple {@link MockResponseConfig}
  * annotations are applied to the same element.
  *
  * @author Oliver Wolff
  * @since 1.1
- * @see MockResponse
+ * @see MockResponseConfig
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Documented
-public @interface MockResponses {
+public @interface MockResponseConfigs {
 
     /**
-     * The contained {@link MockResponse} annotations.
+     * The contained {@link MockResponseConfig} annotations.
      *
-     * @return an array of {@link MockResponse} annotations
+     * @return an array of {@link MockResponseConfig} annotations
      */
-    MockResponse[] value();
+    MockResponseConfig[] value();
 }

@@ -3,18 +3,18 @@
 :toclevels: 3
 :sectnumlevels: 1
 
-The `@MockResponse` annotation allows you to define mock responses for specific paths and HTTP methods in your tests. It can be applied at the class or method level and is repeatable.
+The `@MockResponseConfig` annotation allows you to define mock responses for specific paths and HTTP methods in your tests. It can be applied at the class or method level and is repeatable.
 
 toc::[]
 
 == Basic Usage
 
-The `@MockResponse` annotation provides a simple way to configure mock responses without writing custom dispatcher code:
+The `@MockResponseConfig` annotation provides a simple way to configure mock responses without writing custom dispatcher code:
 
 [source,java]
 ----
 @EnableMockWebServer(useHttps = true)
-@MockResponse(
+@MockResponseConfig(
     path = "/api/users",
     method = HttpMethodMapper.GET,
     status = 200,
@@ -32,13 +32,13 @@ You can define multiple responses by using the annotation multiple times:
 [source,java]
 ----
 @EnableMockWebServer(useHttps = true)
-@MockResponse(
+@MockResponseConfig(
     path = "/api/users",
     method = HttpMethodMapper.GET,
     status = 200,
     jsonContentKeyValue = "users=[]"
 )
-@MockResponse(
+@MockResponseConfig(
     path = "/api/users",
     method = HttpMethodMapper.POST,
     status = 201
@@ -55,19 +55,19 @@ The annotation supports different types of content:
 [source,java]
 ----
 // Text content (Content-Type: text/plain)
-@MockResponse(
+@MockResponseConfig(
     path = "/api/text",
     textContent = "Hello, World!"
 )
 
 // JSON content (Content-Type: application/json)
-@MockResponse(
+@MockResponseConfig(
     path = "/api/json",
     jsonContentKeyValue = "message=Hello,count=42"
 )
 
 // Raw string content (no Content-Type set)
-@MockResponse(
+@MockResponseConfig(
     path = "/api/raw",
     stringContent = "<custom>content</custom>"
 )
@@ -79,7 +79,7 @@ You can add custom headers to your responses:
 
 [source,java]
 ----
-@MockResponse(
+@MockResponseConfig(
     path = "/api/data",
     status = 200,
     jsonContentKeyValue = "key=value",
@@ -90,10 +90,10 @@ You can add custom headers to your responses:
 
 == Context-Aware Behavior
 
-Starting with version 1.2, `@MockResponse` annotations are context-aware. This means that each test method only has access to:
+Starting with version 1.2, `@MockResponseConfig` annotations are context-aware. This means that each test method only has access to:
 
-1. Its own method-level `@MockResponse` annotations
-2. Class-level `@MockResponse` annotations from its containing class and parent classes
+1. Its own method-level `@MockResponseConfig` annotations
+2. Class-level `@MockResponseConfig` annotations from its containing class and parent classes
 3. For nested test classes, only annotations from the class hierarchy up to the test method's class
 
 === Example
@@ -101,11 +101,11 @@ Starting with version 1.2, `@MockResponse` annotations are context-aware. This m
 [source,java]
 ----
 @EnableMockWebServer
-@MockResponse(path = "/class-level", status = 200, textContent = "Class Level Response")
+@MockResponseConfig(path = "/class-level", status = 200, textContent = "Class Level Response")
 class ContextAwareMockResponseTest {
 
     @Test
-    @MockResponse(path = "/method-a", status = 200, textContent = "Method A Response")
+    @MockResponseConfig(path = "/method-a", status = 200, textContent = "Method A Response")
     void shouldOnlyAccessMethodAAndClassLevelResponses(URIBuilder uriBuilder) {
         // This test can access:
         // - /class-level (from class annotation)
@@ -114,7 +114,7 @@ class ContextAwareMockResponseTest {
     }
 
     @Test
-    @MockResponse(path = "/method-b", status = 200, textContent = "Method B Response")
+    @MockResponseConfig(path = "/method-b", status = 200, textContent = "Method B Response")
     void shouldOnlyAccessMethodBAndClassLevelResponses(URIBuilder uriBuilder) {
         // This test can access:
         // - /class-level (from class annotation)
@@ -131,21 +131,21 @@ For nested test classes, the context-aware behavior ensures that only annotation
 [source,java]
 ----
 @EnableMockWebServer
-@MockResponse(path = "/outer-class", status = 200)
+@MockResponseConfig(path = "/outer-class", status = 200)
 class OuterTest {
 
     @Test
-    @MockResponse(path = "/outer-method", status = 200)
+    @MockResponseConfig(path = "/outer-method", status = 200)
     void outerTestMethod(URIBuilder uriBuilder) {
         // Can access /outer-class and /outer-method
     }
 
     @Nested
-    @MockResponse(path = "/nested-class", status = 200)
+    @MockResponseConfig(path = "/nested-class", status = 200)
     class NestedTest {
         
         @Test
-        @MockResponse(path = "/nested-method", status = 200)
+        @MockResponseConfig(path = "/nested-method", status = 200)
         void nestedTestMethod(URIBuilder uriBuilder) {
             // Can access:
             // - /outer-class (from parent class)

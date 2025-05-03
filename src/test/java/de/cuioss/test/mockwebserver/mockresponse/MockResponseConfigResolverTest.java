@@ -26,8 +26,8 @@ import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEF
 import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_STATUS;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Tests for MockResponseResolver")
-class MockResponseResolverTest {
+@DisplayName("Tests for MockResponseConfigResolver")
+class MockResponseConfigResolverTest {
 
     // Using constants from MockResponseTestUtil where possible
     private static final String TEST_CONTENT = "Test content";
@@ -38,34 +38,34 @@ class MockResponseResolverTest {
     class ClassAnnotationTests {
 
         @Test
-        @DisplayName("Should resolve MockResponse annotation on class")
+        @DisplayName("Should resolve MockResponseConfig annotation on class")
         void shouldResolveClassAnnotation() {
             // Arrange
             Class<?> testClass = ClassWithMockResponse.class;
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
 
             // Assert
             assertEquals(1, elements.size(), "Should resolve one dispatcher element");
             ModuleDispatcherElement element = elements.get(0);
-            assertInstanceOf(MockResponseDispatcherElement.class, element, "Element should be a MockResponseDispatcherElement");
+            assertInstanceOf(MockResponseConfigDispatcherElement.class, element, "Element should be a MockResponseConfigDispatcherElement");
             assertEquals(DEFAULT_PATH, element.getBaseUrl(),
                     "Element should have correct path");
         }
 
         @Test
-        @DisplayName("Should resolve multiple MockResponse annotations on class")
+        @DisplayName("Should resolve multiple MockResponseConfig annotations on class")
         void shouldResolveMultipleMockResponseAnnotations() {
             // Arrange
             Class<?> testClass = ClassWithMultipleMockResponses.class;
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
 
             // Assert
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
-            assertTrue(elements.stream().allMatch(MockResponseDispatcherElement.class::isInstance),
+            assertTrue(elements.stream().allMatch(MockResponseConfigDispatcherElement.class::isInstance),
                     "All elements should be MockResponseDispatcherElements");
         }
     }
@@ -75,18 +75,18 @@ class MockResponseResolverTest {
     class MethodAnnotationTests {
 
         @Test
-        @DisplayName("Should resolve MockResponse annotation on method")
+        @DisplayName("Should resolve MockResponseConfig annotation on method")
         void shouldResolveMethodAnnotation() {
             // Arrange
             Class<?> testClass = ClassWithMethodAnnotation.class;
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
 
             // Assert
             assertEquals(1, elements.size(), "Should resolve one dispatcher element");
             ModuleDispatcherElement element = elements.get(0);
-            assertInstanceOf(MockResponseDispatcherElement.class, element, "Element should be a MockResponseDispatcherElement");
+            assertInstanceOf(MockResponseConfigDispatcherElement.class, element, "Element should be a MockResponseConfigDispatcherElement");
             assertEquals("/api/method", element.getBaseUrl(),
                     "Element should have correct path");
         }
@@ -97,17 +97,17 @@ class MockResponseResolverTest {
     class NestedClassTests {
 
         @Test
-        @DisplayName("Should resolve MockResponse annotations on nested classes")
+        @DisplayName("Should resolve MockResponseConfig annotations on nested classes")
         void shouldResolveNestedClassAnnotations() {
             // Arrange
             Class<?> testClass = ClassWithNestedClassTest.class;
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
 
             // Assert
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
-            assertTrue(elements.stream().allMatch(MockResponseDispatcherElement.class::isInstance),
+            assertTrue(elements.stream().allMatch(MockResponseConfigDispatcherElement.class::isInstance),
                     "All elements should be MockResponseDispatcherElements");
 
             // Verify paths from both parent and nested class
@@ -122,13 +122,13 @@ class MockResponseResolverTest {
         }
 
         @Test
-        @DisplayName("Should resolve MockResponse annotations on methods in nested classes")
+        @DisplayName("Should resolve MockResponseConfig annotations on methods in nested classes")
         void shouldResolveNestedClassMethodAnnotations() {
             // Arrange
             Class<?> testClass = ClassWithNestedClassMethodTest.class;
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
 
             // Assert
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
@@ -144,34 +144,34 @@ class MockResponseResolverTest {
     class ErrorHandlingTests {
 
         @Test
-        @DisplayName("Should handle invalid MockResponse annotations gracefully")
+        @DisplayName("Should handle invalid MockResponseConfig annotations gracefully")
         void shouldHandleInvalidAnnotations() {
             // Arrange
             Class<?> testClass = ClassWithInvalidMockResponse.class;
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
 
             // Assert
             assertEquals(0, elements.size(), "Should not create elements for invalid annotations");
         }
     }
 
-    // Test classes with various MockResponse annotations
+    // Test classes with various MockResponseConfig annotations
 
-    @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
+    @MockResponseConfig(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
     static class ClassWithMockResponse {
         // Empty test class
     }
 
-    @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
-    @MockResponse(path = "/api/second", status = 201, textContent = "Second response")
+    @MockResponseConfig(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
+    @MockResponseConfig(path = "/api/second", status = 201, textContent = "Second response")
     static class ClassWithMultipleMockResponses {
         // Empty test class
     }
 
     static class ClassWithMethodAnnotation {
-        @MockResponse(path = "/api/method", status = DEFAULT_STATUS, textContent = TEST_CONTENT)
+        @MockResponseConfig(path = "/api/method", status = DEFAULT_STATUS, textContent = TEST_CONTENT)
         @SuppressWarnings("unused")
         // Implicitly called by reflection
         void testMethod() {
@@ -179,20 +179,20 @@ class MockResponseResolverTest {
         }
     }
 
-    @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
+    @MockResponseConfig(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
     static class ClassWithNestedClassTest {
         @Nested
-        @MockResponse(path = "/api/nested", status = DEFAULT_STATUS, textContent = "Nested content")
+        @MockResponseConfig(path = "/api/nested", status = DEFAULT_STATUS, textContent = "Nested content")
         class NestedTestClass {
             // Empty nested test class
         }
     }
 
-    @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
+    @MockResponseConfig(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
     static class ClassWithNestedClassMethodTest {
         @Nested
         class NestedTestClass {
-            @MockResponse(path = "/api/nested-method", status = DEFAULT_STATUS, textContent = "Nested method content")
+            @MockResponseConfig(path = "/api/nested-method", status = DEFAULT_STATUS, textContent = "Nested method content")
             @SuppressWarnings("unused")
             // Implicitly called by reflection
             void testMethod() {
@@ -201,7 +201,7 @@ class MockResponseResolverTest {
         }
     }
 
-    @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS,
+    @MockResponseConfig(path = DEFAULT_PATH, status = DEFAULT_STATUS,
             textContent = TEST_CONTENT, jsonContentKeyValue = "key=value")
     static class ClassWithInvalidMockResponse {
         // Empty test class
