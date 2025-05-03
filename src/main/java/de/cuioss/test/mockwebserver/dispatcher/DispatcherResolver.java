@@ -16,6 +16,7 @@
 package de.cuioss.test.mockwebserver.dispatcher;
 
 import de.cuioss.test.mockwebserver.MockWebServerHolder;
+import de.cuioss.test.mockwebserver.mockresponse.MockResponse;
 import de.cuioss.test.mockwebserver.mockresponse.MockResponseResolver;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
@@ -74,7 +75,32 @@ public class DispatcherResolver {
      */
     @NonNull
     public Dispatcher resolveDispatcher(Class<?> testClass, Object testInstance) {
+        return resolveDispatcher(testClass, testInstance, null);
+    }
+
+    /**
+     * Resolves the dispatcher for a test class with context awareness for the current test method.
+     * <p>
+     * This method implements the same resolution strategy as {@link #resolveDispatcher(Class, Object)},
+     * but with additional context awareness for {@link MockResponse} annotations:
+     * <ul>
+     *   <li>When a test method is provided, only annotations relevant to that method's context are included</li>
+     *   <li>This includes annotations on the test method itself and its containing classes</li>
+     *   <li>For nested classes, only annotations in the direct hierarchy are included</li>
+     * </ul>
+     *
+     * @param testClass    the class of the test
+     * @param testInstance the instance of the test
+     * @param testMethod   the current test method, or null to include all annotations
+     * @return a non-null Dispatcher instance to be used with MockWebServer
+     * @since 1.1
+     */
+    @NonNull
+    public Dispatcher resolveDispatcher(Class<?> testClass, Object testInstance, Method testMethod) {
         LOGGER.info("Resolving dispatcher for test class: %s", testClass.getName());
+        if (testMethod != null) {
+            LOGGER.info("Using context-aware resolution for test method: %s", testMethod.getName());
+        }
 
         // Try to resolve from annotation first (highest priority)
         Optional<Dispatcher> annotationDispatcher = resolveFromAnnotationSource(testClass);
@@ -83,7 +109,7 @@ public class DispatcherResolver {
         }
 
         // Collect all dispatchers from different sources
-        List<ModuleDispatcherElement> dispatchers = collectDispatchers(testClass, testInstance);
+        List<ModuleDispatcherElement> dispatchers = collectDispatchers(testClass, testInstance, testMethod);
 
         // Check for legacy dispatcher if no other dispatchers found
         if (dispatchers.isEmpty()) {
@@ -142,13 +168,14 @@ public class DispatcherResolver {
     }
 
     /**
-     * Collects dispatchers from various sources.
+     * Collects dispatchers from various sources with context awareness for the current test method.
      *
      * @param testClass    the test class
      * @param testInstance the test instance
+     * @param testMethod   the current test method, or null to include all annotations
      * @return a list of collected dispatchers
      */
-    private List<ModuleDispatcherElement> collectDispatchers(Class<?> testClass, Object testInstance) {
+    private List<ModuleDispatcherElement> collectDispatchers(Class<?> testClass, Object testInstance, Method testMethod) {
         List<ModuleDispatcherElement> dispatchers = new ArrayList<>();
 
         // Add dispatcher from annotation if present
@@ -168,10 +195,10 @@ public class DispatcherResolver {
 
         // Add dispatchers from MockResponse annotations
         List<ModuleDispatcherElement> mockResponseDispatchers =
-                MockResponseResolver.resolveFromAnnotations(testClass);
+                MockResponseResolver.resolveFromAnnotations(testClass, testMethod);
         if (!mockResponseDispatchers.isEmpty()) {
-            LOGGER.debug("Found %d @MockResponse annotations on test class: %s",
-                    mockResponseDispatchers.size(), testClass.getName());
+            LOGGER.debug("Found %d @MockResponse annotations for context: %s",
+                    mockResponseDispatchers.size(), testMethod != null ? testMethod.getName() : "all");
             dispatchers.addAll(mockResponseDispatchers);
         }
 

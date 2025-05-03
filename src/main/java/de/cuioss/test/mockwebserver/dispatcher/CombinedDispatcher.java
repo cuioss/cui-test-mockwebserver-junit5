@@ -111,9 +111,13 @@ public class CombinedDispatcher extends Dispatcher {
         List<ModuleDispatcherElement> filtered = new ArrayList<>();
 
         for (ModuleDispatcherElement dispatcher : singleDispatcher) {
+            // Use prefix matching for all dispatchers
             if (path.startsWith(dispatcher.getBaseUrl())) {
                 filtered.add(dispatcher);
-            } else {
+                LOGGER.debug("Prefix match for path '%s' with dispatcher '%s'", path, dispatcher.getClass().getSimpleName());
+            }
+
+            if (!filtered.contains(dispatcher)) {
                 LOGGER.info(dispatcher.getBaseUrl());
             }
         }
@@ -127,6 +131,7 @@ public class CombinedDispatcher extends Dispatcher {
         LOGGER.info(
                 "Method '%s' with path '%s' could not be processed by the configured ModuleDispatcherElements. Going to default",
                 mapper, path);
+
         var code = HTTP_CODE_TEAPOT;
         if (!endWithTeapot) {
             code = HTTP_CODE_NOT_FOUND;

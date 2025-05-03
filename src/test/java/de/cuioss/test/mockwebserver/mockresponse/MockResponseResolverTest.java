@@ -87,7 +87,7 @@ class MockResponseResolverTest {
             assertEquals(1, elements.size(), "Should resolve one dispatcher element");
             ModuleDispatcherElement element = elements.get(0);
             assertInstanceOf(MockResponseDispatcherElement.class, element, "Element should be a MockResponseDispatcherElement");
-            assertEquals("/method", element.getBaseUrl(),
+            assertEquals("/api/method", element.getBaseUrl(),
                     "Element should have correct path");
         }
     }
@@ -117,7 +117,7 @@ class MockResponseResolverTest {
                     "Should include element from parent class");
             assertTrue(elements.stream()
                             .map(ModuleDispatcherElement::getBaseUrl)
-                            .anyMatch("/nested"::equals),
+                            .anyMatch("/api/nested"::equals),
                     "Should include element from nested class");
         }
 
@@ -134,7 +134,7 @@ class MockResponseResolverTest {
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
             assertTrue(elements.stream()
                             .map(ModuleDispatcherElement::getBaseUrl)
-                            .anyMatch("/nested-method"::equals),
+                            .anyMatch("/api/nested-method"::equals),
                     "Should include element from method in nested class");
         }
     }
@@ -165,13 +165,13 @@ class MockResponseResolverTest {
     }
 
     @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
-    @MockResponse(path = "/second", status = 201, textContent = "Second response")
+    @MockResponse(path = "/api/second", status = 201, textContent = "Second response")
     static class ClassWithMultipleMockResponses {
         // Empty test class
     }
 
     static class ClassWithMethodAnnotation {
-        @MockResponse(path = "/method", status = DEFAULT_STATUS, textContent = TEST_CONTENT)
+        @MockResponse(path = "/api/method", status = DEFAULT_STATUS, textContent = TEST_CONTENT)
         @SuppressWarnings("unused")
         // Implicitly called by reflection
         void testMethod() {
@@ -182,7 +182,7 @@ class MockResponseResolverTest {
     @MockResponse(path = DEFAULT_PATH, status = DEFAULT_STATUS, textContent = TEST_CONTENT)
     static class ClassWithNestedClassTest {
         @Nested
-        @MockResponse(path = "/nested", status = DEFAULT_STATUS, textContent = "Nested content")
+        @MockResponse(path = "/api/nested", status = DEFAULT_STATUS, textContent = "Nested content")
         class NestedTestClass {
             // Empty nested test class
         }
@@ -192,7 +192,7 @@ class MockResponseResolverTest {
     static class ClassWithNestedClassMethodTest {
         @Nested
         class NestedTestClass {
-            @MockResponse(path = "/nested-method", status = DEFAULT_STATUS, textContent = "Nested method content")
+            @MockResponse(path = "/api/nested-method", status = DEFAULT_STATUS, textContent = "Nested method content")
             @SuppressWarnings("unused")
             // Implicitly called by reflection
             void testMethod() {
