@@ -197,6 +197,144 @@ The interface requires implementing the following methods:
 2. `Set<HttpMethodMapper> supportedMethods()` - Returns the set of HTTP methods supported by this dispatcher element
 3. HTTP method handlers like `handleGet()`, `handlePost()`, etc. (only for methods returned by `supportedMethods()`)
 
+== EndpointAnswerHandler for Adapting Existing Dispatchers
+
+The `EndpointAnswerHandler` class provides a flexible way to manage HTTP responses in test scenarios. It's particularly useful when adapting existing dispatchers to customize their behavior for specific test cases.
+
+=== Purpose and Features
+
+* Pre-configured responses for common HTTP status codes (200 OK, 204 No Content, 401 Unauthorized, etc.)
+* Factory methods for creating handlers for different HTTP methods
+* Methods for dynamically changing responses during tests
+* Support for resetting to default responses
+
+=== Usage with BaseAllAcceptDispatcher
+
+The `BaseAllAcceptDispatcher` class uses `EndpointAnswerHandler` internally to manage responses for different HTTP methods:
+
+[source,java]
+----
+// Create a dispatcher for /api endpoints
+var dispatcher = new BaseAllAcceptDispatcher("/api");
+
+// Customize GET response
+dispatcher.getGetResult().setResponse(
+    new MockResponse.Builder()
+        .code(200)
+        .addHeader("Content-Type", "application/json")
+        .body("{\"data\":\"custom response\"}")
+        .build()
+);
+
+// Set response to a predefined status
+dispatcher.getPostResult().respondCreated();
+
+// Reset to default responses
+dispatcher.reset();
+----
+
+=== Creating Custom Handlers
+
+You can create custom handlers for specific HTTP methods:
+
+[source,java]
+----
+// Create a handler for GET requests
+var getHandler = EndpointAnswerHandler.forPositiveGetRequest();
+
+// Create a handler for POST requests
+var postHandler = EndpointAnswerHandler.forPositivePostRequest();
+
+// Create a handler for PUT requests
+var putHandler = EndpointAnswerHandler.forPositivePutRequest();
+
+// Create a handler for DELETE requests
+var deleteHandler = EndpointAnswerHandler.forPositiveDeleteRequest();
+----
+
+=== Customizing Responses
+
+`EndpointAnswerHandler` provides methods for setting specific responses:
+
+[source,java]
+----
+// Set a custom response
+handler.setResponse(new MockResponse.Builder()
+    .code(200)
+    .addHeader("Content-Type", "application/json")
+    .body("{\"status\":\"success\"}")
+    .build());
+
+// Use predefined responses
+handler.respondOk();           // 200 OK
+handler.respondNoContent();    // 204 No Content
+handler.respondCreated();      // 201 Created
+handler.respondForbidden();    // 403 Forbidden
+handler.respondUnauthorized(); // 401 Unauthorized
+handler.respondNotFound();     // 404 Not Found
+
+// Reset to the default response
+handler.resetToDefaultResponse();
+----
+
+=== Integration with Custom Dispatchers
+
+When implementing a custom `ModuleDispatcherElement`, you can use `EndpointAnswerHandler` to manage responses:
+
+[source,java]
+----
+public class CustomApiDispatcher implements ModuleDispatcherElement {
+
+    private final String baseUrl;
+    private final EndpointAnswerHandler getHandler = EndpointAnswerHandler.forPositiveGetRequest();
+    private final EndpointAnswerHandler postHandler = EndpointAnswerHandler.forPositivePostRequest();
+
+    public CustomApiDispatcher(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    @Override
+    public String getBaseUrl() {
+        return baseUrl;
+    }
+
+    @Override
+    public Set<HttpMethodMapper> supportedMethods() {
+        return Set.of(HttpMethodMapper.GET, HttpMethodMapper.POST);
+    }
+
+    @Override
+    public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
+        // You can add custom logic here based on the request
+        if (request.getPath().endsWith("/special")) {
+            return Optional.of(new MockResponse.Builder()
+                .code(200)
+                .body("{\"special\":true}")
+                .build());
+        }
+
+        // Default to the handler's response
+        return getHandler.respond();
+    }
+
+    @Override
+    public Optional<MockResponse> handlePost(@NonNull RecordedRequest request) {
+        return postHandler.respond();
+    }
+
+    // Method to configure the dispatcher for specific test scenarios
+    public void configureForErrorScenario() {
+        getHandler.respondNotFound();
+        postHandler.respondForbidden();
+    }
+
+    // Method to reset to default behavior
+    public void reset() {
+        getHandler.resetToDefaultResponse();
+        postHandler.resetToDefaultResponse();
+    }
+}
+----
 Example JWKS endpoint dispatcher:
 
 [source,java]
