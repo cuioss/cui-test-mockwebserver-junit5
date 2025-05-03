@@ -90,7 +90,7 @@ You can add custom headers to your responses:
 
 == Context-Aware Behavior
 
-Starting with version 1.1, `@MockResponse` annotations are context-aware. This means that each test method only has access to:
+Starting with version 1.2, `@MockResponse` annotations are context-aware. This means that each test method only has access to:
 
 1. Its own method-level `@MockResponse` annotations
 2. Class-level `@MockResponse` annotations from its containing class and parent classes

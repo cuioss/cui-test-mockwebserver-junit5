@@ -1,0 +1,293 @@
+= Migration Guide
+:toc: macro
+:toclevels: 3
+:sectnumlevels: 1
+
+This document provides guidance on migrating from older versions of the MockWebServer extension to the current version, with a focus on migrating from version 1.0.
+
+toc::[]
+
+== Migrating from Version 1.0
+
+Version 1.0 of the MockWebServer extension used the `MockWebServerHolder` interface as the primary way to configure mock responses. In version 1.1 and later, this interface is deprecated in favor of more flexible approaches using parameter injection and annotations.
+
+=== Background
+
+The `MockWebServerHolder` interface has been deprecated in favor of a more flexible approach using parameter injection and annotations. This guide will help you migrate your tests to the new approach.
+
+=== Step-by-Step Migration Guide
+
+==== 1. Identify Classes Implementing MockWebServerHolder
+
+Look for classes that:
+
+* Implement the `MockWebServerHolder` interface
+* Have a `@Setter private MockWebServer mockWebServer` field
+* Override the `getDispatcher()` method
+
+==== 2. Add Required Annotations and Imports
+
+If you're using WeldUnit for CDI testing, add the following annotation to your test class:
+
+[source,java]
+----
+@ExplicitParamInjection
+----
+
+Add the following imports:
+
+[source,java]
+----
+import org.jboss.weld.junit5.ExplicitParamInjection;
+import de.cuioss.test.mockwebserver.URIBuilder;
+----
+
+==== 3. Remove MockWebServerHolder Implementation
+
+Remove the `implements MockWebServerHolder` from the class declaration.
+
+==== 4. Replace Dispatcher with MockResponse Annotations
+
+For each path in your `getDispatcher()` method, add a corresponding `@MockResponse` annotation to your test class or test method.
+
+Example:
+
+[source,java]
+----
+// Before
+@Override
+public Dispatcher getDispatcher() {
+    return new Dispatcher() {
+        @Override
+        public MockResponse dispatch(RecordedRequest request) {
+            if ("/success/test".equals(request.getPath())) {
+                return new MockResponse.Builder()
+                    .addHeader("Content-Type", "application/json")
+                    .body("{ \"result\": \"success\" }")
+                    .code(HttpServletResponse.SC_OK)
+                    .build();
+            }
+            return new MockResponse.Builder()
+                .code(HttpServletResponse.SC_NOT_FOUND)
+                .build();
+        }
+    };
+}
+
+// After
+@MockResponse(
+    path = "/success/test", 
+    status = HttpServletResponse.SC_OK, 
+    headers = "Content-Type=application/json",
+    textContent = "{ \"result\": \"success\" }"
+)
+----
+
+For more complex scenarios, you can use the `@ModuleDispatcher` annotation and implement a `ModuleDispatcherElement`:
+
+[source,java]
+----
+@ModuleDispatcher
+ModuleDispatcherElement getModuleDispatcher() {
+    return new ModuleDispatcherElement() {
+        @Override
+        public String getBaseUrl() {
+            return "/api";
+        }
+
+        @Override
+        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
+            // Your custom dispatch logic here
+            return Optional.of(new MockResponse.Builder()
+                .addHeader("Content-Type", "application/json")
+                .body("{\"status\": \"success\"}")
+                .code(HttpServletResponse.SC_OK)
+                .build());
+        }
+
+        @Override
+        public @NonNull Set<HttpMethodMapper> supportedMethods() {
+            return Set.of(HttpMethodMapper.GET);
+        }
+    };
+}
+----
+
+==== 5. Update Test Methods to Use Parameter Injection
+
+Update your test methods to accept `MockWebServer` or `URIBuilder` as parameters:
+
+[source,java]
+----
+@Test
+void testExample(MockWebServer mockWebServer) {
+    // Use the injected mockWebServer
+}
+
+// Or
+
+@Test
+void testExample(URIBuilder uriBuilder) {
+    // Use the injected uriBuilder
+    String url = uriBuilder.addPathSegment("success").build().toString();
+}
+----
+
+==== 6. Remove mockWebServer Field
+
+Remove the `@Setter private MockWebServer mockWebServer` field from your class.
+
+
+==== 7. Update References to mockWebServer
+
+Update all references to the `mockWebServer` field in your test methods to use the injected parameter instead.
+
+=== Migration Examples
+
+==== Before and After Example
+
+[source,java]
+----
+// Before: Using MockWebServerHolder interface
+@EnableMockWebServer
+class MyTest implements MockWebServerHolder {
+
+    @Setter
+    private MockWebServer mockWebServer;
+
+    @Override
+    public Dispatcher getDispatcher() {
+        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+    }
+
+    @Test
+    void testSomething() {
+        // Using field reference
+        String url = mockWebServer.url("/api/test").toString();
+        // Test code
+    }
+}
+
+// After: Using parameter injection and annotations
+@EnableMockWebServer
+@ModuleDispatcher // No parameters means look for getModuleDispatcher() method
+class MyTest {
+
+    ModuleDispatcherElement getModuleDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
+    }
+
+    @Test
+    void testSomething(URIBuilder uriBuilder) {
+        // Using injected parameter
+        String url = uriBuilder.addPathSegments("api", "test").build().toString();
+        // Test code
+    }
+}
+----
+
+
+==== Annotation-Based Configuration
+
+Instead of programmatically configuring dispatchers, consider using annotations:
+
+[source,java]
+----
+// Before: Programmatic configuration
+@EnableMockWebServer
+class ProgrammaticTest implements MockWebServerHolder {
+    @Override
+    public Dispatcher getDispatcher() {
+        return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
+    }
+}
+
+// After: Annotation-based configuration
+@EnableMockWebServer
+@MockResponse(path = "/api/users", status = 200, jsonContentKeyValue = "users=[]")
+class AnnotationTest {
+    // No need to implement any interface
+}
+----
+
+=== Common Patterns
+
+==== Basic Request/Response
+
+[source,java]
+----
+@MockResponse(
+    path = "/api/resource", 
+    status = HttpServletResponse.SC_OK, 
+    textContent = "Response content"
+)
+@Test
+void testBasicRequest(URIBuilder uriBuilder) {
+    String url = uriBuilder.addPathSegment("api").addPathSegment("resource").build().toString();
+    // Use the URL in your test
+}
+----
+
+==== Multiple Responses for Different Paths
+
+[source,java]
+----
+@MockResponse(path = "/api/resource1", status = HttpServletResponse.SC_OK, textContent = "Response 1")
+@MockResponse(path = "/api/resource2", status = HttpServletResponse.SC_OK, textContent = "Response 2")
+@Test
+void testMultipleResponses(URIBuilder uriBuilder) {
+    // Test code here
+}
+----
+
+==== Different HTTP Methods
+
+[source,java]
+----
+@MockResponse(
+    path = "/api/resource", 
+    method = HttpMethodMapper.POST,
+    status = HttpServletResponse.SC_CREATED
+)
+@Test
+void testPostMethod(URIBuilder uriBuilder) {
+    // Test code here
+}
+----
+
+==== Headers in Response
+
+[source,java]
+----
+@MockResponse(
+    path = "/api/resource", 
+    status = HttpServletResponse.SC_OK, 
+    headers = "Content-Type=application/json;ETag=W/123"
+)
+@Test
+void testResponseWithHeaders(URIBuilder uriBuilder) {
+    // Test code here
+}
+----
+
+== New Features in Version 1.1
+
+Version 1.1 introduces several new features that make testing with MockWebServer easier:
+
+=== Context-Aware MockResponse Annotations
+
+In version 1.1, `@MockResponse` annotations are context-aware. This means that each test method only has access to:
+
+1. Its own method-level `@MockResponse` annotations
+2. Class-level `@MockResponse` annotations from its containing class and parent classes
+3. For nested test classes, only annotations from the class hierarchy up to the test method's class
+
+This prevents unintended interactions between test methods. See link:MockResponse.adoc[Working with @MockResponse] for more details.
+
+=== Improved HTTPS Support
+
+Version 1.1 includes improved HTTPS support with easier certificate handling. See link:HttpsSupport.adoc[HTTPS Support and Certificates] for more details.
+
+=== Enhanced ModuleDispatcher
+
+The `@ModuleDispatcher` annotation and `ModuleDispatcherElement` interface have been enhanced for more flexible request handling. See link:ModuleDispatcher.adoc[Working with @ModuleDispatcher and ModuleDispatcherElement] for more details.
