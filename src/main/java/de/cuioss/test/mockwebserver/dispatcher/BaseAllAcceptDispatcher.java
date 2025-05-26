@@ -86,6 +86,9 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     @Getter
     private final EndpointAnswerHandler deleteResult = EndpointAnswerHandler.forPositiveDeleteRequest();
 
+    @Getter
+    private final EndpointAnswerHandler headResult = EndpointAnswerHandler.forPositiveGetRequest();
+
     /**
      * Resets all contained {@link EndpointAnswerHandler}s to their default responses.
      * This is useful when you need to clear any custom responses between tests.
@@ -95,6 +98,7 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         postResult.resetToDefaultResponse();
         putResult.resetToDefaultResponse();
         deleteResult.resetToDefaultResponse();
+        headResult.resetToDefaultResponse();
     }
 
     @Override
@@ -122,6 +126,11 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         return putResult.respond();
     }
 
+    @Override
+    public Optional<MockResponse> handleHead(@NonNull RecordedRequest request) {
+        return headResult.respond();
+    }
+
     /**
      * Sets the result for a certain method
      *
@@ -143,6 +152,9 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
                     break;
                 case DELETE:
                     deleteResult.setResponse(mockResponse);
+                    break;
+                case HEAD:
+                    headResult.setResponse(mockResponse);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported HTTP method: " + element + ". Supported methods are: " + Arrays.toString(HttpMethodMapper.values()));

@@ -87,6 +87,15 @@ public enum HttpMethodMapper {
         public Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement, RecordedRequest request) {
             return dispatcherElement.handleDelete(request);
         }
+    },
+    /**
+     * Handles HTTP HEAD requests by delegating to {@link ModuleDispatcherElement#handleHead}.
+     */
+    HEAD {
+        @Override
+        public Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement, RecordedRequest request) {
+            return dispatcherElement.handleHead(request);
+        }
     };
 
     /**
