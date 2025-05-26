@@ -61,6 +61,7 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  *   <li>POST: 201 Created</li>
  *   <li>PUT: 204 No Content</li>
  *   <li>DELETE: 204 No Content</li>
+ *   <li>HEAD: 200 OK</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -86,6 +87,9 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     @Getter
     private final EndpointAnswerHandler deleteResult = EndpointAnswerHandler.forPositiveDeleteRequest();
 
+    /**
+     * Handles HEAD requests, defaulting to a 200 OK response.
+     */
     @Getter
     private final EndpointAnswerHandler headResult = EndpointAnswerHandler.forPositiveGetRequest();
 
