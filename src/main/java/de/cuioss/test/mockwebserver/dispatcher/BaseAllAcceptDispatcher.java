@@ -61,6 +61,7 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  *   <li>POST: 201 Created</li>
  *   <li>PUT: 204 No Content</li>
  *   <li>DELETE: 204 No Content</li>
+ *   <li>HEAD: 200 OK</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -87,6 +88,12 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     private final EndpointAnswerHandler deleteResult = EndpointAnswerHandler.forPositiveDeleteRequest();
 
     /**
+     * Handles HEAD requests, defaulting to a 200 OK response.
+     */
+    @Getter
+    private final EndpointAnswerHandler headResult = EndpointAnswerHandler.forPositiveGetRequest();
+
+    /**
      * Resets all contained {@link EndpointAnswerHandler}s to their default responses.
      * This is useful when you need to clear any custom responses between tests.
      */
@@ -95,6 +102,7 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         postResult.resetToDefaultResponse();
         putResult.resetToDefaultResponse();
         deleteResult.resetToDefaultResponse();
+        headResult.resetToDefaultResponse();
     }
 
     @Override
@@ -122,6 +130,11 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         return putResult.respond();
     }
 
+    @Override
+    public Optional<MockResponse> handleHead(@NonNull RecordedRequest request) {
+        return headResult.respond();
+    }
+
     /**
      * Sets the result for a certain method
      *
@@ -143,6 +156,9 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
                     break;
                 case DELETE:
                     deleteResult.setResponse(mockResponse);
+                    break;
+                case HEAD:
+                    headResult.setResponse(mockResponse);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported HTTP method: " + element + ". Supported methods are: " + Arrays.toString(HttpMethodMapper.values()));

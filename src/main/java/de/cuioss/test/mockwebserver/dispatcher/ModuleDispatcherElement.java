@@ -136,6 +136,17 @@ public interface ModuleDispatcherElement {
     }
 
     /**
+     * Handles HTTP HEAD requests.
+     *
+     * @param request the incoming request with path, headers, and body
+     * @return {@link Optional} containing the response if this dispatcher can handle the request,
+     *         or {@link Optional#empty()} to let other dispatchers handle it
+     */
+    default Optional<MockResponse> handleHead(@NonNull RecordedRequest request) {
+        return Optional.empty();
+    }
+
+    /**
      * Returns the set of HTTP methods supported by this dispatcher element.
      * This is used for validation and to prevent null pointer exceptions in the dispatcher resolution process.
      *

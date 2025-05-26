@@ -55,6 +55,10 @@ public class AllOkDispatcher implements ModuleDispatcherElement {
         return Optional.of(OK_RESPONSE);
     }
 
+    @Override
+    public Optional<MockResponse> handleHead(@NonNull RecordedRequest request) {
+        return Optional.of(OK_RESPONSE);
+    }
 
     @Override
     public @NonNull Set<HttpMethodMapper> supportedMethods() {
