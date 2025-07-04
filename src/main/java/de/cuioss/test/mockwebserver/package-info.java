@@ -28,7 +28,6 @@
  *   <li>Request Handling
  *     <ul>
  *       <li>{@link de.cuioss.test.mockwebserver.dispatcher} - Custom request dispatchers</li>
- *       <li>{@link de.cuioss.test.mockwebserver.MockWebServerHolder} - Custom dispatcher configuration</li>
  *     </ul>
  *   </li>
  *   <li>HTTPS Support
@@ -46,10 +45,10 @@
  *   <li><strong>HTTPS Support</strong> - Self-signed and custom certificate handling</li>
  *   <li><strong>Test Integration</strong> - JUnit 5 extension support</li>
  * </ul>
- * 
+ *
  * <h2>Best Practices</h2>
  * <ul>
- *   <li><strong>Parameter Injection</strong> - Use parameter injection instead of implementing MockWebServerHolder</li>
+ *   <li><strong>Parameter Injection</strong> - Use parameter injection for accessing server instances</li>
  *   <li><strong>MockResponse Creation</strong> - Always use the Builder pattern for creating MockResponse objects:
  *     <pre>
  *     MockResponse response = new MockResponse.Builder()
@@ -71,7 +70,7 @@
  *   <li>{@link de.cuioss.test.mockwebserver.URIBuilder} - A builder for constructing request URLs</li>
  *   <li>{@link javax.net.ssl.SSLContext} - When HTTPS is enabled</li>
  * </ul>
- * 
+ *
  * <h2>Documentation and Examples</h2>
  * <p>
  * For detailed documentation and examples, see:

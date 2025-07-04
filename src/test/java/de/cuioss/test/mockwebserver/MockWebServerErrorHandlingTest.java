@@ -80,7 +80,7 @@ public class MockWebServerErrorHandlingTest {
     class DispatcherTest {
 
         @Test
-        @DisplayName("Should use dispatcher from MockWebServerHolder")
+        @DisplayName("Should use dispatcher from MockResponseConfig annotation")
         void shouldUseDispatcherFromHolder(MockWebServer server, URIBuilder uriBuilder) throws Exception {
             assertNotNull(server, "Server should be injected");
 

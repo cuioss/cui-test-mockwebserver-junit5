@@ -50,10 +50,11 @@ import java.util.List;
  *     .setEndWithTeapot(false); // Use 404 for unhandled requests
  *
  * &#64;EnableMockWebServer
- * class ApiTest implements MockWebServerHolder {
- *     &#64;Override
- *     public Dispatcher getDispatcher() {
- *         return dispatcher;
+ * class ApiTest {
+ *     &#64;Test
+ *     void testApi(MockWebServer server) {
+ *         server.setDispatcher(dispatcher);
+ *         // Use the server for testing
  *     }
  * }
  * </pre>

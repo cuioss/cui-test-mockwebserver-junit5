@@ -58,12 +58,13 @@ import java.util.Set;
  * <h2>Integration with MockWebServer</h2>
  * <pre>
  * &#64;EnableMockWebServer
- * class ApiTest implements MockWebServerHolder {
+ * class ApiTest {
  *     private final ModuleDispatcherElement dispatcher = new UserApiDispatcher();
  *
- *     &#64;Override
- *     public Dispatcher getDispatcher() {
- *         return new CombinedDispatcher(dispatcher);
+ *     &#64;Test
+ *     void testApi(MockWebServer server) {
+ *         server.setDispatcher(new CombinedDispatcher(dispatcher));
+ *         // Use the server for testing
  *     }
  * }
  * </pre>

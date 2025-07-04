@@ -122,8 +122,8 @@ class DispatcherResolverTest {
     }
 
     @Test
-    @DisplayName("Should use legacy dispatcher from MockWebServerHolder if no other dispatcher is found")
-    void shouldUseLegacyDispatcher() {
+    @DisplayName("Should use dispatcher from ModuleDispatcher annotation with provider method")
+    void shouldUseProviderMethodDispatcher() {
         // Arrange
         var testClass = TestClassWithLegacyDispatcher.class;
 
@@ -203,7 +203,7 @@ class DispatcherResolverTest {
         }
     }
 
-    // Test class with legacy dispatcher - updated to use ModuleDispatcher
+    // Test class with ModuleDispatcher annotation using provider method
     @ModuleDispatcher(providerMethod = "provideDispatcher")
     static class TestClassWithLegacyDispatcher {
 
@@ -215,7 +215,7 @@ class DispatcherResolverTest {
         /**
          * Provides a test dispatcher for the mock web server
          *
-         * @return a legacy dispatcher
+         * @return a test dispatcher
          */
         @SuppressWarnings("unused") // implicitly called by the test framework
         static Dispatcher provideDispatcher() {

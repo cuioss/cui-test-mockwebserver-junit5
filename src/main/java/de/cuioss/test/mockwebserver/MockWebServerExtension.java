@@ -51,14 +51,12 @@ import okhttp3.tls.HandshakeCertificates;
  *   <li>Automatic server shutdown after each test</li>
  *   <li>Support for manual server control</li>
  *   <li>Parameter injection of server instances and related values (recommended approach)</li>
- *   <li>Integration with {@link MockWebServerHolder} for server access (legacy approach)</li>
  *   <li>HTTPS support with both self-signed and custom certificates</li>
  * </ul>
  *
  * <h2>Recommended Usage: Parameter Injection</h2>
  * <p>
- * The recommended approach is to use parameter injection rather than implementing the
- * {@link MockWebServerHolder} interface:
+ * The recommended approach is to use parameter injection:
  *
  * <pre>
  * {@code
@@ -135,7 +133,6 @@ import okhttp3.tls.HandshakeCertificates;
  *
  * @author Oliver Wolff
  * @see EnableMockWebServer
- * @see MockWebServerHolder
  * @since 1.0
  */
 public class MockWebServerExtension implements AfterEachCallback, BeforeEachCallback, ParameterResolver {
@@ -180,9 +177,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             // Configure dispatcher using the new resolver
             configureDispatcher(server, testInstance, context);
 
-            // Legacy support for MockWebServerHolder (deprecated)
-            // This will be removed in version 1.2 - tests should use parameter injection instead
-            setMockWebServer(testInstance, server, context);
 
             if (!config.manualStart()) {
                 startServer(server);
@@ -319,41 +313,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
 
     /**
-     * Sets the MockWebServer instance on the test class if it implements MockWebServerHolder.
-     * Note: The dispatcher resolution is now handled by DispatcherResolver, but we still
-     * call setMockWebServer for backward compatibility.
-     * <p>
-     * <strong>Migration Guide:</strong> Instead of implementing the MockWebServerHolder interface,
-     * use parameter injection in your test methods. For example:
-     * <pre>
-     * {@code
-     * @Test
-     * void testWithServer(MockWebServer server, URIBuilder uriBuilder) {
-     *     // Use server and uriBuilder directly
-     * }
-     * }
-     * </pre>
-     *
-     * @param testInstance  the test instance
-     * @param mockWebServer the MockWebServer instance
-     * @param context       the extension context
-     * @deprecated This method uses deprecated methods in MockWebServerHolder interface.
-     * Will be removed in version 1.2 when the deprecated methods are removed.
-     */
-    @Deprecated(since = "1.1", forRemoval = true)
-    private void setMockWebServer(Object testInstance, MockWebServer mockWebServer, ExtensionContext context) {
-        Optional<MockWebServerHolder> holder = findMockWebServerHolder(testInstance, context);
-        if (holder.isPresent()) {
-            holder.get().setMockWebServer(mockWebServer);
-            // We no longer set the dispatcher here since it's handled by DispatcherResolver
-            LOGGER.info("Fulfilled interface contract of MockWebServerHolder on {}", holder.get().getClass().getName());
-        } else {
-            LOGGER.debug("No instance of {} found. This is expected with the new annotation-based approach.",
-                    MockWebServerHolder.class.getName());
-        }
-    }
-
-    /**
      * Configures the dispatcher for the MockWebServer instance.
      * This method propagates any DispatcherResolutionException to ensure that test failures
      * are properly reported when a dispatcher cannot be resolved correctly.
@@ -378,38 +337,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         LOGGER.info("Configured dispatcher: {}", dispatcher.getClass().getName());
     }
 
-    /**
-     * Finds a MockWebServerHolder implementation in the test class hierarchy.
-     *
-     * @param testInstance the test class instance
-     * @param context      the extension context
-     * @return an Optional containing the MockWebServerHolder
-     */
-    @SuppressWarnings("deprecation")
-    private Optional<MockWebServerHolder> findMockWebServerHolder(Object testInstance, ExtensionContext context) {
-        if (testInstance instanceof MockWebServerHolder holder) {
-            LOGGER.debug("Found MockWebServerHolder in test instance %s", holder.getClass().getName());
-            return Optional.of(holder);
-        }
-
-        Optional<ExtensionContext> parentContext = context.getParent();
-        while (parentContext.isPresent()) {
-            var parentTestInstanceOptional = parentContext.get().getTestInstance();
-            if (parentTestInstanceOptional.isPresent()) {
-                Object parentTestInstance = parentTestInstanceOptional.get();
-                if (parentTestInstance instanceof MockWebServerHolder holder) {
-                    LOGGER.debug("Found MockWebServerHolder in parent test instance %s", holder.getClass().getName());
-                    return Optional.of(holder);
-                }
-            } else {
-                LOGGER.debug("Parent test instance is not present although context is present %s", parentContext.get().getDisplayName());
-            }
-            parentContext = parentContext.get().getParent();
-        }
-        LOGGER.debug("Found no MockWebServerHolder in test instance %s", testInstance.getClass().getName());
-
-        return Optional.empty();
-    }
 
     @Override
     public void afterEach(ExtensionContext context) {

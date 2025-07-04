@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
-import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import de.cuioss.test.mockwebserver.mockresponse.MockResponseConfig;
 import de.cuioss.test.mockwebserver.mockresponse.MockResponseConfigResolver;
 import de.cuioss.tools.logging.CuiLogger;
@@ -42,7 +41,6 @@ import java.util.Optional;
  * <ul>
  *   <li>{@link ModuleDispatcher} annotations on test classes</li>
  *   <li>Methods in test classes that return {@link ModuleDispatcherElement} instances</li>
- *   <li>Legacy {@link MockWebServerHolder#getDispatcher()} implementations</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -61,7 +59,6 @@ public class DispatcherResolver {
      * <ol>
      *   <li>Check for {@link ModuleDispatcher} annotations on the test class</li>
      *   <li>Check for a {@code getModuleDispatcher()} method in the test class</li>
-     *   <li>Check if the test class implements {@link MockWebServerHolder} and has a non-null dispatcher</li>
      *   <li>If no dispatcher is found, fall back to the default API dispatcher</li>
      * </ol>
      * <p>
@@ -111,13 +108,6 @@ public class DispatcherResolver {
         // Collect all dispatchers from different sources
         List<ModuleDispatcherElement> dispatchers = collectDispatchers(testClass, testInstance, testMethod);
 
-        // Check for legacy dispatcher if no other dispatchers found
-        if (dispatchers.isEmpty()) {
-            Optional<Dispatcher> legacyDispatcher = resolveLegacyDispatcher(testInstance);
-            if (legacyDispatcher.isPresent()) {
-                return legacyDispatcher.get();
-            }
-        }
 
         // If we have dispatchers, validate and combine them
         if (!dispatchers.isEmpty()) {
@@ -205,24 +195,6 @@ public class DispatcherResolver {
         return dispatchers;
     }
 
-    /**
-     * Resolves a legacy dispatcher from a MockWebServerHolder instance.
-     *
-     * @param testInstance the test instance
-     * @return an Optional containing the legacy dispatcher, or empty if none found
-     */
-    private Optional<Dispatcher> resolveLegacyDispatcher(Object testInstance) {
-        if (testInstance instanceof MockWebServerHolder holder) {
-            LOGGER.debug("Test class implements MockWebServerHolder, checking for dispatcher");
-            // Using deprecated method for backward compatibility
-            @SuppressWarnings({"removal"}) Dispatcher legacyDispatcher = holder.getDispatcher();
-            if (legacyDispatcher != null) {
-                LOGGER.debug("Using legacy dispatcher from MockWebServerHolder.getDispatcher()");
-                return Optional.of(legacyDispatcher);
-            }
-        }
-        return Optional.empty();
-    }
 
     /**
      * Creates a combined dispatcher from the given list of dispatchers.

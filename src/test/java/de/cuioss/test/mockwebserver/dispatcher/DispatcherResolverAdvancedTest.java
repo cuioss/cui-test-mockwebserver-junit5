@@ -15,7 +15,6 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
-import de.cuioss.test.mockwebserver.MockWebServerHolder;
 import lombok.NonNull;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
@@ -177,21 +176,6 @@ class DispatcherResolverAdvancedTest {
         assertInstanceOf(CombinedDispatcher.class, dispatcher);
     }
 
-    @Test
-    @DisplayName("Should handle legacy dispatcher with null return")
-    @Deprecated
-    void shouldHandleLegacyDispatcherWithNull() {
-        // Arrange
-        var testClass = TestClassWithNullLegacyDispatcher.class;
-        var testInstance = new TestClassWithNullLegacyDispatcher();
-
-        // Act
-        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
-
-        // Assert
-        assertNotNull(dispatcher);
-        assertInstanceOf(CombinedDispatcher.class, dispatcher);
-    }
 
     @Test
     @DisplayName("Should handle annotation with provider method returning direct Dispatcher")
@@ -264,13 +248,6 @@ class DispatcherResolverAdvancedTest {
         }
     }
 
-    @Deprecated
-    static class TestClassWithNullLegacyDispatcher implements MockWebServerHolder {
-        @Override
-        public Dispatcher getDispatcher() {
-            return null;
-        }
-    }
 
     @ModuleDispatcher(providerMethod = "provideDirectDispatcher")
     static class TestClassWithDirectDispatcherProvider {

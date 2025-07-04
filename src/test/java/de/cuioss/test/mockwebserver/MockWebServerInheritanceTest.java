@@ -51,16 +51,15 @@ class MockWebServerInheritanceTest {
     }
 
     /**
-     * Nested test class to verify that the MockWebServerHolder interface is not inherited.
+     * Nested test class to verify that parameter injection works correctly in nested tests.
      */
     @Nested
     class NestedTest {
 
         @Test
-        @DisplayName("Nested test should not inherit MockWebServerHolder implementation")
-        void nestedShouldNotInheritHolder(MockWebServer nestedServer, URIBuilder uriBuilder) {
-            // The nested class doesn't implement MockWebServerHolder
-            // But it can still get the server via parameter injection
+        @DisplayName("Nested test should receive server via parameter injection")
+        void nestedShouldReceiveServerViaParameterInjection(MockWebServer nestedServer, URIBuilder uriBuilder) {
+            // Nested tests can get the server via parameter injection
             assertNotNull(nestedServer, "Nested test should get server via parameter injection");
             assertTrue(nestedServer.getStarted(), "Server should be started");
 
