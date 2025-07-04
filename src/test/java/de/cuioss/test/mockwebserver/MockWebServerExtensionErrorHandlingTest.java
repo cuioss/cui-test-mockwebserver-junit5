@@ -1,12 +1,12 @@
-/*
- * Copyright 2023 the original author or authors.
- * <p>
+/**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * https://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -126,7 +126,7 @@ class MockWebServerExtensionErrorHandlingTest {
 
         /**
          * Sets up the dispatcher for the test.
-         * 
+         *
          * @param server the MockWebServer instance to configure
          */
         private void setupDispatcher(MockWebServer server) {
@@ -145,7 +145,7 @@ class MockWebServerExtensionErrorHandlingTest {
         @Test
         @DisplayName("Should handle server errors gracefully")
         void shouldHandleServerErrorsGracefully(MockWebServer server, URIBuilder uriBuilder) {
-            // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
+            // Setup the dispatcher directly on the server
             setupDispatcher(server);
             assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
             assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
@@ -234,7 +234,7 @@ class MockWebServerExtensionErrorHandlingTest {
          * Method to provide custom certificates for HTTPS testing.
          * This is used by the @TestProvidedCertificate annotation.
          * Returns null to simulate an error in certificate provision.
-         * 
+         *
          * @return null to test fallback behavior
          */
         @TestProvidedCertificate
@@ -245,7 +245,7 @@ class MockWebServerExtensionErrorHandlingTest {
 
         /**
          * Sets up the dispatcher for the test.
-         * 
+         *
          * @param server the MockWebServer instance to configure
          */
         private void setupDispatcher(MockWebServer server) {
@@ -255,7 +255,7 @@ class MockWebServerExtensionErrorHandlingTest {
         @Test
         @DisplayName("Should handle empty certificates gracefully")
         void shouldHandleEmptyCertificatesGracefully(MockWebServer server, SSLContext sslContext) {
-            // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
+            // Setup the dispatcher directly on the server
             setupDispatcher(server);
             assertNotNull(server, SERVER_SHOULD_BE_INJECTED + " despite certificate issues");
             assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
@@ -276,7 +276,7 @@ class MockWebServerExtensionErrorHandlingTest {
 
         /**
          * Sets up the dispatcher for the test.
-         * 
+         *
          * @param server the MockWebServer instance to configure
          */
         private void setupDispatcher(MockWebServer server) {
@@ -295,7 +295,7 @@ class MockWebServerExtensionErrorHandlingTest {
         @Test
         @DisplayName("Should handle server port conflicts")
         void shouldHandleServerPortConflicts(MockWebServer server, URIBuilder uriBuilder) {
-            // Setup the dispatcher directly instead of using the deprecated getDispatcher() method
+            // Setup the dispatcher directly on the server
             setupDispatcher(server);
             assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
             assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);

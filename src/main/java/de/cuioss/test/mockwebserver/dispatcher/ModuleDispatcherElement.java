@@ -1,12 +1,12 @@
-/*
- * Copyright 2023 the original author or authors.
- * <p>
+/**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * https://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -58,12 +58,13 @@ import java.util.Set;
  * <h2>Integration with MockWebServer</h2>
  * <pre>
  * &#64;EnableMockWebServer
- * class ApiTest implements MockWebServerHolder {
+ * class ApiTest {
  *     private final ModuleDispatcherElement dispatcher = new UserApiDispatcher();
  *
- *     &#64;Override
- *     public Dispatcher getDispatcher() {
- *         return new CombinedDispatcher(dispatcher);
+ *     &#64;Test
+ *     void testApi(MockWebServer server) {
+ *         server.setDispatcher(new CombinedDispatcher(dispatcher));
+ *         // Use the server for testing
  *     }
  * }
  * </pre>

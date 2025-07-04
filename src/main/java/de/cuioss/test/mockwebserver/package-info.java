@@ -1,4 +1,19 @@
 /**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/**
  * Mock web server infrastructure for HTTP and HTTPS interaction testing, based on
  * {@link mockwebserver3.MockWebServer}.
  *
@@ -13,7 +28,6 @@
  *   <li>Request Handling
  *     <ul>
  *       <li>{@link de.cuioss.test.mockwebserver.dispatcher} - Custom request dispatchers</li>
- *       <li>{@link de.cuioss.test.mockwebserver.MockWebServerHolder} - Custom dispatcher configuration</li>
  *     </ul>
  *   </li>
  *   <li>HTTPS Support
@@ -31,10 +45,10 @@
  *   <li><strong>HTTPS Support</strong> - Self-signed and custom certificate handling</li>
  *   <li><strong>Test Integration</strong> - JUnit 5 extension support</li>
  * </ul>
- * 
+ *
  * <h2>Best Practices</h2>
  * <ul>
- *   <li><strong>Parameter Injection</strong> - Use parameter injection instead of implementing MockWebServerHolder</li>
+ *   <li><strong>Parameter Injection</strong> - Use parameter injection for accessing server instances</li>
  *   <li><strong>MockResponse Creation</strong> - Always use the Builder pattern for creating MockResponse objects:
  *     <pre>
  *     MockResponse response = new MockResponse.Builder()
@@ -56,7 +70,7 @@
  *   <li>{@link de.cuioss.test.mockwebserver.URIBuilder} - A builder for constructing request URLs</li>
  *   <li>{@link javax.net.ssl.SSLContext} - When HTTPS is enabled</li>
  * </ul>
- * 
+ *
  * <h2>Documentation and Examples</h2>
  * <p>
  * For detailed documentation and examples, see:

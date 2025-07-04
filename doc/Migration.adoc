@@ -294,3 +294,93 @@ Version 1.1 includes improved HTTPS support with easier certificate handling. Se
 === Enhanced ModuleDispatcher
 
 The `@ModuleDispatcher` annotation and `ModuleDispatcherElement` interface have been enhanced for more flexible request handling. See link:ModuleDispatcher.adoc[Working with @ModuleDispatcher and ModuleDispatcherElement] for more details.
+
+== Breaking Changes in Version 1.4.0
+
+Version 1.4.0 introduces breaking changes by completely removing the deprecated `MockWebServerHolder` interface and related functionality that was deprecated in version 1.1.
+
+=== Removed Components
+
+The following components have been completely removed in version 1.4.0:
+
+* `MockWebServerHolder` interface
+* `MockWebServerHolder.getDispatcher()` method
+* `MockWebServerHolder.setMockWebServer()` method
+* `MockWebServerHolder.getTestProvidedHandshakeCertificates()` method
+* Legacy dispatcher resolution from `MockWebServerHolder.getDispatcher()`
+
+=== Migration Required
+
+If you are still using `MockWebServerHolder` in your tests, you **must** migrate to the new approach before upgrading to version 1.4.0. The migration steps are documented in the <<Migrating from Version 1.0>> section above.
+
+=== Compilation Errors
+
+After upgrading to version 1.4.0, any code that still implements `MockWebServerHolder` or calls its methods will result in compilation errors. These errors indicate that migration is required.
+
+Common compilation errors you might see:
+
+[source]
+----
+error: cannot find symbol MockWebServerHolder
+error: cannot find symbol getDispatcher()
+error: cannot find symbol setMockWebServer(MockWebServer)
+----
+
+=== Quick Migration Summary
+
+To quickly migrate from `MockWebServerHolder`:
+
+1. **Remove** `implements MockWebServerHolder` from your test classes
+2. **Remove** the `@Setter private MockWebServer mockWebServer` field
+3. **Remove** the `getDispatcher()` method override
+4. **Add** `@MockResponseConfig` annotations or `@ModuleDispatcher` with `getModuleDispatcher()` method
+5. **Update** test methods to use parameter injection: `void testMethod(MockWebServer server, URIBuilder uriBuilder)`
+
+=== Alternative Approaches
+
+Instead of `MockWebServerHolder`, use one of these approaches:
+
+==== Option 1: MockResponse Annotations (Recommended for simple cases)
+[source,java]
+----
+@EnableMockWebServer
+@MockResponseConfig(path = "/api/test", status = 200, textContent = "success")
+class MyTest {
+    @Test
+    void testApi(MockWebServer server, URIBuilder uriBuilder) {
+        // Test implementation
+    }
+}
+----
+
+==== Option 2: ModuleDispatcher with getModuleDispatcher() method
+[source,java]
+----
+@EnableMockWebServer
+@ModuleDispatcher
+class MyTest {
+    ModuleDispatcherElement getModuleDispatcher() {
+        return new BaseAllAcceptDispatcher("/api");
+    }
+
+    @Test
+    void testApi(MockWebServer server, URIBuilder uriBuilder) {
+        // Test implementation
+    }
+}
+----
+
+==== Option 3: Direct dispatcher configuration in test methods
+[source,java]
+----
+@EnableMockWebServer
+class MyTest {
+    @Test
+    void testApi(MockWebServer server, URIBuilder uriBuilder) {
+        server.setDispatcher(new CombinedDispatcher(
+            new BaseAllAcceptDispatcher("/api")
+        ));
+        // Test implementation
+    }
+}
+----

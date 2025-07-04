@@ -1,12 +1,12 @@
-/*
- * Copyright 2023 the original author or authors.
- * <p>
+/**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * https://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -122,8 +122,8 @@ class DispatcherResolverTest {
     }
 
     @Test
-    @DisplayName("Should use legacy dispatcher from MockWebServerHolder if no other dispatcher is found")
-    void shouldUseLegacyDispatcher() {
+    @DisplayName("Should use dispatcher from ModuleDispatcher annotation with provider method")
+    void shouldUseProviderMethodDispatcher() {
         // Arrange
         var testClass = TestClassWithLegacyDispatcher.class;
 
@@ -203,7 +203,7 @@ class DispatcherResolverTest {
         }
     }
 
-    // Test class with legacy dispatcher - updated to use ModuleDispatcher
+    // Test class with ModuleDispatcher annotation using provider method
     @ModuleDispatcher(providerMethod = "provideDispatcher")
     static class TestClassWithLegacyDispatcher {
 
@@ -215,7 +215,7 @@ class DispatcherResolverTest {
         /**
          * Provides a test dispatcher for the mock web server
          *
-         * @return a legacy dispatcher
+         * @return a test dispatcher
          */
         @SuppressWarnings("unused") // implicitly called by the test framework
         static Dispatcher provideDispatcher() {

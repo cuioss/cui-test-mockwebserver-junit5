@@ -1,12 +1,12 @@
-/*
- * Copyright 2023 the original author or authors.
- * <p>
+/**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * https://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -51,16 +51,15 @@ class MockWebServerInheritanceTest {
     }
 
     /**
-     * Nested test class to verify that the MockWebServerHolder interface is not inherited.
+     * Nested test class to verify that parameter injection works correctly in nested tests.
      */
     @Nested
     class NestedTest {
 
         @Test
-        @DisplayName("Nested test should not inherit MockWebServerHolder implementation")
-        void nestedShouldNotInheritHolder(MockWebServer nestedServer, URIBuilder uriBuilder) {
-            // The nested class doesn't implement MockWebServerHolder
-            // But it can still get the server via parameter injection
+        @DisplayName("Nested test should receive server via parameter injection")
+        void nestedShouldReceiveServerViaParameterInjection(MockWebServer nestedServer, URIBuilder uriBuilder) {
+            // Nested tests can get the server via parameter injection
             assertNotNull(nestedServer, "Nested test should get server via parameter injection");
             assertTrue(nestedServer.getStarted(), "Server should be started");
 

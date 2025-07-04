@@ -1,12 +1,12 @@
-/*
- * Copyright 2023 the original author or authors.
- * <p>
+/**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * https://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,9 +34,8 @@ import java.lang.annotation.Target;
  *   <li>In a separate provider class specified by the {@link #providerClass()} attribute</li>
  * </ol>
  * <p>
- * This annotation replaces the previous approach of implementing the
- * {@code MockWebServerHolder#getTestProvidedHandshakeCertificates()} method and setting
- * {@code EnableMockWebServer#testClassProvidesKeyMaterial = true}.
+ * This annotation provides a clean way to specify custom certificate material
+ * for HTTPS testing.
  * <p>
  * Example usage on a test class:
  * <pre>
@@ -44,14 +43,14 @@ import java.lang.annotation.Target;
  * @EnableMockWebServer(useHttps = true)
  * @TestProvidedCertificate(methodName = "createTestCertificates")
  * class HttpsTest {
- *     
+ *
  *     public static HandshakeCertificates createTestCertificates() {
  *         // Create and return custom certificates
  *         return new HandshakeCertificates.Builder()
  *             .addTrustedCertificate(...)
  *             .build();
  *     }
- *     
+ *
  *     @Test
  *     void testHttpsRequest(MockWebServer server, SSLContext sslContext) {
  *         // Test with custom certificates
@@ -66,13 +65,13 @@ import java.lang.annotation.Target;
  * @EnableMockWebServer(useHttps = true)
  * @TestProvidedCertificate(providerClass = MyCertificateProvider.class)
  * class HttpsTest {
- *     
+ *
  *     @Test
  *     void testHttpsRequest(MockWebServer server, SSLContext sslContext) {
  *         // Test with custom certificates from MyCertificateProvider
  *     }
  * }
- * 
+ *
  * class MyCertificateProvider {
  *     public static HandshakeCertificates provideHandshakeCertificates() {
  *         // Create and return custom certificates
@@ -97,7 +96,7 @@ public @interface TestProvidedCertificate {
      * If not specified, the default method name "getTestProvidedHandshakeCertificates" will be used.
      * The method can be an instance method or a static method, but must return
      * {@code okhttp3.tls.HandshakeCertificates}.
-     * 
+     *
      * @return the name of the method that provides the certificates
      */
     String methodName() default "getTestProvidedHandshakeCertificates";
@@ -108,7 +107,7 @@ public @interface TestProvidedCertificate {
      * By default, the method name is "provideHandshakeCertificates", but this can be
      * overridden using the {@link #methodName()} attribute.
      * This can be an instance method or a static method.
-     * 
+     *
      * @return the class that provides the certificates
      */
     Class<?> providerClass() default Void.class;
