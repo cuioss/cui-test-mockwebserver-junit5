@@ -1,12 +1,12 @@
-/*
- * Copyright 2023 the original author or authors.
- * <p>
+/**
+ * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
- * https://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -83,7 +83,7 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
         assertTrue(pathSegments.contains(API_PATH));
         assertTrue(pathSegments.contains(USERS_PATH));
         assertTrue(pathSegments.contains(ID_123));
-        assertEquals(API_PATH, pathSegments.get(0));
+        assertEquals(API_PATH, pathSegments.getFirst());
         assertEquals(USERS_PATH, pathSegments.get(1));
         assertEquals(ID_123, pathSegments.get(2));
     }
@@ -103,6 +103,6 @@ class URIBuilderPlaceholderTest extends URIBuilderTestBase {
         List<String> values = placeholder.getQueryParameters().get(NAME_PARAM);
         assertNotNull(values);
         assertEquals(1, values.size());
-        assertEquals(VALUE_PARAM, values.get(0));
+        assertEquals(VALUE_PARAM, values.getFirst());
     }
 }
