@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -187,7 +187,7 @@ public class DispatcherResolver {
         List<ModuleDispatcherElement> mockResponseDispatchers =
                 MockResponseConfigResolver.resolveFromAnnotations(testClass, testMethod);
         if (!mockResponseDispatchers.isEmpty()) {
-            LOGGER.debug("Found %d @MockResponseConfig annotations for context: %s",
+            LOGGER.debug("Found %s @MockResponseConfig annotations for context: %s",
                     mockResponseDispatchers.size(), testMethod != null ? testMethod.getName() : "all");
             dispatchers.addAll(mockResponseDispatchers);
         }
@@ -209,7 +209,7 @@ public class DispatcherResolver {
         // Log active dispatcher elements
         logActiveDispatchers(dispatchers);
 
-        LOGGER.debug("Creating CombinedDispatcher with %d module dispatchers", dispatchers.size());
+        LOGGER.debug("Creating CombinedDispatcher with %s module dispatchers", dispatchers.size());
         CombinedDispatcher combinedDispatcher = new CombinedDispatcher();
         combinedDispatcher.addDispatcher(dispatchers);
         return combinedDispatcher;
@@ -238,7 +238,7 @@ public class DispatcherResolver {
                 Constructor<? extends ModuleDispatcherElement> constructor = annotation.value().getDeclaredConstructor();
                 // Constructor accessibility needed for reflection
                 return Optional.of(constructor.newInstance());
-            } catch (Exception e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
                 LOGGER.error("Failed to instantiate dispatcher class: %s", e.getMessage());
                 LOGGER.debug(EXCEPTION_DETAILS, e);
                 return Optional.empty();
@@ -278,7 +278,7 @@ public class DispatcherResolver {
                     LOGGER.error("Provider method did not return a ModuleDispatcherElement or Dispatcher: %s", result);
                     return Optional.empty();
                 }
-            } catch (Exception e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
                 LOGGER.error("Failed to invoke provider method: %s", e.getMessage());
                 LOGGER.debug(EXCEPTION_DETAILS, e);
                 return Optional.empty();
@@ -344,7 +344,7 @@ public class DispatcherResolver {
      */
     @SuppressWarnings("java:S3011") // owolff: Setting accessibility is ok for test methods
     private ModuleDispatcherElement invokeModuleDispatcherMethod(Object testInstance, Method method) {
-        LOGGER.info("Invoking getModuleDispatcher method on instance of class: {}",
+        LOGGER.info("Invoking getModuleDispatcher method on instance of class: %s",
                 testInstance.getClass().getName());
         try {
             // Check if the method is public but still not accessible (due to Java module system or other reasons)
@@ -361,21 +361,21 @@ public class DispatcherResolver {
                 throw new DispatcherResolutionException("getModuleDispatcher method returned null");
             }
 
-            LOGGER.info("getModuleDispatcher method returned an object of type: {}",
+            LOGGER.info("getModuleDispatcher method returned an object of type: %s",
                     result.getClass().getName());
 
             // Check if the result implements ModuleDispatcherElement interface
             if (result instanceof ModuleDispatcherElement moduleDispatcherElement) {
-                LOGGER.info("Successfully resolved ModuleDispatcherElement with base URL: {}",
+                LOGGER.info("Successfully resolved ModuleDispatcherElement with base URL: %s",
                         moduleDispatcherElement.getBaseUrl());
 
                 // Log supported methods for debugging
-                LOGGER.info("ModuleDispatcherElement supports methods: {}",
+                LOGGER.info("ModuleDispatcherElement supports methods: %s",
                         moduleDispatcherElement.supportedMethods());
 
                 return moduleDispatcherElement;
             } else {
-                LOGGER.error("getModuleDispatcher method returned an object of type {} which is not a ModuleDispatcherElement",
+                LOGGER.error("getModuleDispatcher method returned an object of type %s which is not a ModuleDispatcherElement",
                         result.getClass().getName());
                 throw new DispatcherResolutionException(
                         "getModuleDispatcher method did not return a ModuleDispatcherElement: " +
@@ -442,7 +442,7 @@ public class DispatcherResolver {
                 LOGGER.debug("Found direct Dispatcher from provider method: %s", methodName);
                 return Optional.of(directDispatcher);
             }
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             LOGGER.debug("Failed to resolve direct Dispatcher: %s", e.getMessage());
         }
         return Optional.empty();

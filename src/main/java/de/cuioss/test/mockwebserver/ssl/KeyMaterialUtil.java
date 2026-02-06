@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,6 +19,9 @@ import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
 import lombok.experimental.UtilityClass;
 
+import okhttp3.tls.HandshakeCertificates;
+import okhttp3.tls.HeldCertificate;
+
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
@@ -30,10 +33,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
-
-
-import okhttp3.tls.HandshakeCertificates;
-import okhttp3.tls.HeldCertificate;
 
 /**
  * Utility class for handling SSL/TLS certificate operations in the context of MockWebServer.
@@ -101,7 +100,7 @@ public class KeyMaterialUtil {
                     .heldCertificate(heldCertificate)
                     .addTrustedCertificate(heldCertificate.certificate())
                     .build();
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             throw new IllegalStateException("Failed to create self-signed HandshakeCertificates", e);
         }
     }
@@ -152,7 +151,7 @@ public class KeyMaterialUtil {
             }
 
             return builder.build();
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             throw new IllegalStateException("Failed to convert SSLContext to HandshakeCertificates", e);
         }
     }

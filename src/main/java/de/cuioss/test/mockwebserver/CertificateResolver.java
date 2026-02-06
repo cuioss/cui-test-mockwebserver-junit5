@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,12 +20,11 @@ import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.platform.commons.util.ReflectionUtils;
 
+import okhttp3.tls.HandshakeCertificates;
+
 import java.lang.reflect.Method;
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
-
-
-import okhttp3.tls.HandshakeCertificates;
 
 /**
  * Package-private companion class for {@link MockWebServerExtension} that handles
@@ -131,7 +130,7 @@ class CertificateResolver {
             }
 
             return Optional.empty();
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             throw new IllegalStateException(
                     "Error resolving HandshakeCertificates from provider " + providerClass.getName(), e);
         }
@@ -147,7 +146,7 @@ class CertificateResolver {
     Object createProviderInstance(Class<?> providerClass) {
         try {
             return ReflectionUtils.newInstance(providerClass);
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             throw new IllegalStateException(
                     "Could not create instance of provider class " + providerClass.getName(), e);
         }
@@ -204,8 +203,8 @@ class CertificateResolver {
                     config.getKeyAlgorithm(), config.getCertificateDuration());
 
             return Optional.of(certificates);
-        } catch (Exception e) {
-            LOGGER.error("Failed to create self-signed certificates", e);
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+            LOGGER.error(e, "Failed to create self-signed certificates");
             return Optional.empty();
         }
     }
@@ -262,9 +261,9 @@ class CertificateResolver {
             LOGGER.debug("Stored SSLContext for parameter resolution");
 
             return sslContext;
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             String errorMessage = "Failed to create or store SSLContext";
-            LOGGER.error(errorMessage, e);
+            LOGGER.error(e, errorMessage);
             throw new IllegalStateException(errorMessage, e);
         }
     }

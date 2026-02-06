@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,7 +84,7 @@ class MockWebServerConfigurationTest {
                 } catch (InterruptedException e) {
                     // Restore the interrupted status
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                    /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
                 }
             });
         }
@@ -128,7 +128,7 @@ class MockWebServerConfigurationTest {
                 } catch (InterruptedException e) {
                     // Restore the interrupted status
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                    /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
                 }
             });
         }
@@ -177,7 +177,7 @@ class MockWebServerConfigurationTest {
                 } catch (InterruptedException e) {
                     // Restore the interrupted status
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                    /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
                 }
             });
         }
@@ -228,7 +228,7 @@ class MockWebServerConfigurationTest {
                 } catch (InterruptedException e) {
                     // Restore the interrupted status
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                    /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
                 }
             });
         }

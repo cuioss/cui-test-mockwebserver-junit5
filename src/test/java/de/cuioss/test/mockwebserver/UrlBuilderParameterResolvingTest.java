@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -58,7 +58,8 @@ class UrlBuilderParameterResolvingTest {
             public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
                 return Optional.of(new MockResponse.Builder()
                         .code(200)
-                        .body("Request to: " + request.getPath())
+                        .body("Request to: " + request.getUrl().encodedPath()
+                                + (request.getUrl().encodedQuery() != null ? "?" + request.getUrl().encodedQuery() : ""))
                         .build());
             }
 

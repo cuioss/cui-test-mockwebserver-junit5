@@ -30,8 +30,9 @@
         <system>GitHub Issues</system>
     </issueManagement>
     <properties>
+        <maven.compiler.release>17</maven.compiler.release>
         <maven.jar.plugin.automatic.module.name>de.cuioss.test.mockwebserver</maven.jar.plugin.automatic.module.name>
-        <version.okhttp3>5.0.0-alpha.14</version.okhttp3>
+        <version.okhttp3>5.3.2</version.okhttp3>
         <version.jakarta.servlet-api>6.1.0</version.jakarta.servlet-api>
     </properties>
     <dependencyManagement>

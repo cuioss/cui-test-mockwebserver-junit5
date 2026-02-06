@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
+import okhttp3.tls.HandshakeCertificates;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -35,9 +37,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import javax.net.ssl.SSLContext;
-
-
-import okhttp3.tls.HandshakeCertificates;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -323,8 +322,8 @@ class MockWebServerExtensionErrorHandlingTest {
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                     assertEquals(200, response.statusCode(), "Original server should still work");
                 });
-            } catch (Exception e) {
-                LOGGER.error("Error in second server test", e);
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+                LOGGER.error(e, "Error in second server test");
             }
         }
     }

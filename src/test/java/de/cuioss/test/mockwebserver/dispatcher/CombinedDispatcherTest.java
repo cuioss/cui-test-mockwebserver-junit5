@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,12 +18,11 @@ package de.cuioss.test.mockwebserver.dispatcher;
 import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.Test;
 
-import java.net.Socket;
-import java.util.Collections;
-
-
-import okio.Buffer;
 import okhttp3.Headers;
+import okhttp3.HttpUrl;
+import okio.ByteString;
+
+import java.util.Collections;
 
 import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CODE_NOT_FOUND;
 import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CODE_TEAPOT;
@@ -85,8 +84,13 @@ class CombinedDispatcherTest {
     }
 
     static RecordedRequest createRequestFor(HttpMethodMapper mapper, String urlPart) {
-        return new RecordedRequest(mapper.name() + " " + urlPart + "someResource  HTTP/1.1",
-                Headers.of("key=value", "key2=value2"), Collections.emptyList(), 0, new Buffer(), 0, new Socket(), null);
+        var target = urlPart + "someResource";
+        return new RecordedRequest(
+                0, 0, null, Collections.emptyList(),
+                mapper.name(), target, "HTTP/1.1",
+                HttpUrl.parse("http://localhost" + target),
+                Headers.of("key", "value", "key2", "value2"),
+                ByteString.EMPTY, 0, Collections.emptyList(), null);
     }
 
 }
