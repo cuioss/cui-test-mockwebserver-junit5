@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,11 +18,10 @@ package de.cuioss.test.mockwebserver;
 import org.easymock.EasyMock;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import okhttp3.tls.HandshakeCertificates;
+
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
-
-
-import okhttp3.tls.HandshakeCertificates;
 
 /**
  * Utility class providing common test methods and constants for CertificateResolver tests.

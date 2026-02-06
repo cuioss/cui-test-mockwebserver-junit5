@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -139,13 +139,13 @@ class DispatcherResolverMethodTest {
 
         @Override
         public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
-            if (request.getPath() != null) {
-                if (request.getPath().startsWith(METHOD_PATH)) {
+            if (request.getUrl().encodedPath() != null) {
+                if (request.getUrl().encodedPath().startsWith(METHOD_PATH)) {
                     return Optional.of(new MockResponse.Builder()
                             .code(200)
                             .body("Method Dispatcher")
                             .build());
-                } else if (request.getPath().startsWith(baseUrl)) {
+                } else if (request.getUrl().encodedPath().startsWith(baseUrl)) {
                     return Optional.of(new MockResponse.Builder()
                             .code(200)
                             .body("Default Dispatcher Response")
@@ -181,7 +181,7 @@ class DispatcherResolverMethodTest {
     static class TestClassWithThrowingMethod {
         @SuppressWarnings("unused") // implicitly called by the test framework
         public ModuleDispatcherElement getModuleDispatcher() {
-            throw new RuntimeException("Test exception");
+            /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException("Test exception");
         }
     }
 

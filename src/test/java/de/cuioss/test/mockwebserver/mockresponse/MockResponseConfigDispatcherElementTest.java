@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -25,14 +25,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.net.Socket;
+import okhttp3.Headers;
+import okhttp3.HttpUrl;
+import okio.Buffer;
+import okio.ByteString;
+
 import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
-
-
-import okio.Buffer;
-import okhttp3.Headers;
 
 import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -299,7 +299,7 @@ class MockResponseConfigDispatcherElementTest {
                 return buffer.readUtf8();
             }
             return "";
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             return "Error reading body: " + e.getMessage();
         }
     }
@@ -310,8 +310,11 @@ class MockResponseConfigDispatcherElementTest {
      * @return a RecordedRequest instance
      */
     private static RecordedRequest createTestRequest() {
-        return new RecordedRequest("GET " + DEFAULT_PATH + " HTTP/1.1",
-                Headers.of("key=value", "key2=value2"), Collections.emptyList(),
-                0, new Buffer(), 0, new Socket(), null);
+        return new RecordedRequest(
+                0, 0, null, Collections.emptyList(),
+                "GET", DEFAULT_PATH, "HTTP/1.1",
+                HttpUrl.parse("http://localhost" + DEFAULT_PATH),
+                Headers.of("key", "value", "key2", "value2"),
+                ByteString.EMPTY, 0, Collections.emptyList(), null);
     }
 }

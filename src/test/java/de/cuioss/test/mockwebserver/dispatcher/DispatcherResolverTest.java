@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -24,14 +24,14 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.net.Socket;
+import okhttp3.Headers;
+import okhttp3.HttpUrl;
+import okio.Buffer;
+import okio.ByteString;
+
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
-
-
-import okio.Buffer;
-import okhttp3.Headers;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -91,7 +91,7 @@ class DispatcherResolverTest {
             assert response.getBody() != null;
             response.getBody().writeTo(buffer);
             return buffer.readUtf8();
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             LOGGER.error(e, "Failed to read response body: %s", e.getMessage());
             return "Failed to read response body";
         }
@@ -114,8 +114,8 @@ class DispatcherResolverTest {
 
         // Verify the dispatcher works as expected
         var response = dispatchRequest(dispatcher, METHOD_PATH);
-        LOGGER.debug("METHOD_PATH Response Status: {}", response.getStatus());
-        LOGGER.debug("METHOD_PATH Response Body: {}", response.getBody());
+        LOGGER.debug("METHOD_PATH Response Status: %s", response.getStatus());
+        LOGGER.debug("METHOD_PATH Response Body: %s", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
                 response.getStatus() + STATUS_ERROR_MESSAGE);
         assertTrue(writeBodyToString(response).contains("Method Dispatcher"));
@@ -137,8 +137,8 @@ class DispatcherResolverTest {
 
         // Verify the dispatcher works as expected
         var response = dispatchRequest(dispatcher, LEGACY_PATH);
-        LOGGER.debug("LEGACY_PATH Response Status: {}", response.getStatus());
-        LOGGER.debug("LEGACY_PATH Response Body: {}", response.getBody());
+        LOGGER.debug("LEGACY_PATH Response Status: %s", response.getStatus());
+        LOGGER.debug("LEGACY_PATH Response Body: %s", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
                 response.getStatus() + STATUS_ERROR_MESSAGE);
         assertTrue(writeBodyToString(response).contains("Legacy Dispatcher"));
@@ -171,16 +171,14 @@ class DispatcherResolverTest {
     private static MockResponse dispatchRequest(Dispatcher dispatcher, String path) {
         try {
             // Create a request with the path directly
-            var request = new RecordedRequest("GET " + path + " HTTP/1.1",
+            var request = new RecordedRequest(
+                    0, 0, null, Collections.emptyList(),
+                    "GET", path, "HTTP/1.1",
+                    HttpUrl.parse("http://localhost" + path),
                     Headers.of("Host", "localhost"),
-                    Collections.emptyList(),
-                    0L,
-                    new Buffer(),
-                    0,
-                    new Socket(),
-                    null);
+                    ByteString.EMPTY, 0, Collections.emptyList(), null);
             return dispatcher.dispatch(request);
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             throw new IllegalStateException("Failed to dispatch request", e);
         }
     }
@@ -244,19 +242,19 @@ class DispatcherResolverTest {
 
         @Override
         public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
-            if (request.getPath() != null) {
+            if (request.getUrl().encodedPath() != null) {
                 // For the TestClassWithDispatcherAnnotation, we need to handle the TEST_PATH
-                if (request.getPath().startsWith(TEST_PATH)) {
+                if (request.getUrl().encodedPath().startsWith(TEST_PATH)) {
                     return Optional.of(new MockResponse.Builder()
                             .code(200)
                             .body("Test Dispatcher")
                             .build());
-                } else if (request.getPath().startsWith(METHOD_PATH)) {
+                } else if (request.getUrl().encodedPath().startsWith(METHOD_PATH)) {
                     return Optional.of(new MockResponse.Builder()
                             .code(200)
                             .body("Method Dispatcher")
                             .build());
-                } else if (request.getPath().startsWith(baseUrl)) {
+                } else if (request.getUrl().encodedPath().startsWith(baseUrl)) {
                     return Optional.of(new MockResponse.Builder()
                             .code(200)
                             .body("Default Dispatcher Response")
@@ -278,10 +276,10 @@ class DispatcherResolverTest {
         @Override
         public MockResponse dispatch(@NotNull RecordedRequest request) {
             // Log the incoming request path
-            LOGGER.debug("Legacy dispatcher received request with path: {}", request.getPath());
+            LOGGER.debug("Legacy dispatcher received request with path: %s", request.getUrl().encodedPath());
 
             // For legacy test, we need to handle the LEGACY_PATH
-            if (request.getPath() != null && request.getPath().contains(LEGACY_PATH)) {
+            if (request.getUrl().encodedPath() != null && request.getUrl().encodedPath().contains(LEGACY_PATH)) {
                 return new MockResponse.Builder()
                         .code(200)
                         .body("Legacy Dispatcher")

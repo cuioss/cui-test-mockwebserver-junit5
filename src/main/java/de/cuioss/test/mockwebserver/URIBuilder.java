@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -96,7 +96,7 @@ public class URIBuilder {
     public static URIBuilder from(@NonNull URI baseUri) {
         try {
             return new URIBuilder(baseUri.toURL());
-        } catch (Exception e) {
+        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
             throw new IllegalArgumentException("Could not convert URI to URL: " + baseUri, e);
         }
     }

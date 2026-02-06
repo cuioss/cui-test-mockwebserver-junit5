@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -108,7 +108,7 @@ public class MockResponseConfigResolver {
         for (MockResponseConfig annotation : annotations) {
             try {
                 result.add(new MockResponseConfigDispatcherElement(annotation));
-            } catch (Exception e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
                 LOGGER.error(e, "Failed to create MockResponseConfigDispatcherElement from annotation on class %s: %s",
                         clazz.getName(), e.getMessage());
             }
@@ -137,7 +137,7 @@ public class MockResponseConfigResolver {
                 result.add(new MockResponseConfigDispatcherElement(annotation));
                 LOGGER.debug("Added MockResponseConfig from class %s for path %s",
                         clazz.getName(), annotation.path());
-            } catch (Exception e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
                 LOGGER.error(e, "Failed to create MockResponseConfigDispatcherElement from annotation on class %s: %s",
                         clazz.getName(), e.getMessage());
             }
@@ -169,7 +169,7 @@ public class MockResponseConfigResolver {
                 result.add(new MockResponseConfigDispatcherElement(annotation));
                 LOGGER.debug("Added MockResponseConfig from method %s.%s for path %s",
                         method.getDeclaringClass().getName(), method.getName(), annotation.path());
-            } catch (Exception e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
                 LOGGER.error("Failed to create MockResponseConfigDispatcherElement from annotation on method %s.%s: %s",
                         method.getDeclaringClass().getName(), method.getName(), e.getMessage());
             }
@@ -188,7 +188,7 @@ public class MockResponseConfigResolver {
             for (MockResponseConfig annotation : annotations) {
                 try {
                     result.add(new MockResponseConfigDispatcherElement(annotation));
-                } catch (Exception e) {
+                } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
                     LOGGER.error("Failed to create MockResponseConfigDispatcherElement from annotation on method %s.%s: %s",
                             clazz.getName(), method.getName(), e.getMessage());
                 }

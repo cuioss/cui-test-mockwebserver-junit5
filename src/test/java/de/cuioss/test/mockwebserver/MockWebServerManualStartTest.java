@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -88,7 +88,7 @@ class MockWebServerManualStartTest {
                 LOGGER.info("Successfully received response from manually started server: " + response.body());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
             }
         });
         // end::manual-start-test-response[]
@@ -114,9 +114,9 @@ class MockWebServerManualStartTest {
             // Clean up
             try {
                 if (server.getStarted()) {
-                    server.shutdown();
+                    server.close();
                 }
-            } catch (IOException e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
                 // Ignore shutdown errors in tests
             }
         }
@@ -149,7 +149,7 @@ class MockWebServerManualStartTest {
                 assertEquals(200, response.statusCode(), "Should receive OK response");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
             }
         });
     }

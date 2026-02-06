@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,6 @@ package de.cuioss.test.mockwebserver.https;
 
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.net.ssl.KeyAlgorithm;
-
 
 import okhttp3.tls.HandshakeCertificates;
 

@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -28,6 +28,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import okhttp3.tls.HandshakeCertificates;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -36,9 +38,6 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-
-
-import okhttp3.tls.HandshakeCertificates;
 
 import static org.junit.jupiter.api.Assertions.*;
 

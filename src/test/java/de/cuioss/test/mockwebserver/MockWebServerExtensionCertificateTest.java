@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,6 +27,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import okhttp3.tls.HandshakeCertificates;
+
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -34,9 +36,6 @@ import java.time.Duration;
 import java.util.Objects;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
-
-
-import okhttp3.tls.HandshakeCertificates;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -94,7 +93,7 @@ class MockWebServerExtensionCertificateTest {
         assertTrue(server.url("/").url().toString().startsWith("https://"),
                 "Server URL should use HTTPS scheme");
 
-        LOGGER.debug("Server started with self-signed certificates on port: {}", server.getPort());
+        LOGGER.debug("Server started with self-signed certificates on port: %s", server.getPort());
 
         // Create HTTP client with the provided SSL context
         HttpClient client = HttpClient.newBuilder()
@@ -203,7 +202,7 @@ class MockWebServerExtensionCertificateTest {
                     exception.getMessage().contains("certificate"),
                     "Exception should be related to SSL handshake: " + exception);
 
-            LOGGER.info("Expected SSL handshake exception: {}", exception.getMessage());
+            LOGGER.info("Expected SSL handshake exception: %s", exception.getMessage());
         });
     }
 
@@ -227,8 +226,8 @@ class MockWebServerExtensionCertificateTest {
                 // Create custom certificates before the test runs
                 certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(2, KeyAlgorithm.RSA_2048);
                 LOGGER.info("Custom certificates created successfully");
-            } catch (Exception e) {
-                LOGGER.error("Failed to create custom certificates", e);
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+                LOGGER.error(e, "Failed to create custom certificates");
                 fail("Failed to create custom certificates: " + e.getMessage());
             }
         }
@@ -273,10 +272,10 @@ class MockWebServerExtensionCertificateTest {
             } catch (InterruptedException e) {
                 // Restore the interrupted status
                 Thread.currentThread().interrupt();
-                LOGGER.error(REQUEST_INTERRUPTED_MESSAGE, e);
+                LOGGER.error(e, REQUEST_INTERRUPTED_MESSAGE);
                 fail(REQUEST_INTERRUPTED_MESSAGE + ": " + e.getMessage());
-            } catch (Exception e) {
-                LOGGER.error("Failed to make HTTPS request with custom certificates", e);
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+                LOGGER.error(e, "Failed to make HTTPS request with custom certificates");
                 fail("Failed to make HTTPS request with custom certificates: " + e.getMessage());
             }
         }
@@ -316,7 +315,7 @@ class MockWebServerExtensionCertificateTest {
 
             // The test is configured to provide certificates but returns empty
             // The extension should fall back to self-signed certificates
-            LOGGER.info("Server started with fallback certificates on port: {}", server.getPort());
+            LOGGER.info("Server started with fallback certificates on port: %s", server.getPort());
 
             // Verify the server is working with the fallback certificates
             HttpClient client = HttpClient.newBuilder()
@@ -336,7 +335,7 @@ class MockWebServerExtensionCertificateTest {
                 } catch (InterruptedException e) {
                     // Restore the interrupted status and rethrow with runtime exception
                     Thread.currentThread().interrupt();
-                    throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                    /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
                 }
             });
         }

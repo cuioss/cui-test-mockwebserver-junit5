@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -105,9 +105,9 @@ public class CombinedDispatcher extends Dispatcher {
 
     @Override
     public @NotNull MockResponse dispatch(@NonNull RecordedRequest request) {
-        var path = MoreStrings.nullToEmpty(request.getPath());
+        var path = MoreStrings.nullToEmpty(request.getUrl() != null ? request.getUrl().encodedPath() : null);
         var mapper = HttpMethodMapper.of(request);
-        LOGGER.info("Processing method '%s' with path '%s'", mapper, path);
+        /*~~(TODO: INFO needs LogRecord. Suppress: // cui-rewrite:disable CuiLogRecordPatternRecipe)~~>*/LOGGER.info("Processing method '%s' with path '%s'", mapper, path);
 
         List<ModuleDispatcherElement> filtered = new ArrayList<>();
 
@@ -119,7 +119,7 @@ public class CombinedDispatcher extends Dispatcher {
             }
 
             if (!filtered.contains(dispatcher)) {
-                LOGGER.info(dispatcher.getBaseUrl());
+                /*~~(TODO: INFO needs LogRecord. Suppress: // cui-rewrite:disable CuiLogRecordPatternRecipe)~~>*/LOGGER.info(dispatcher.getBaseUrl());
             }
         }
 
@@ -129,7 +129,7 @@ public class CombinedDispatcher extends Dispatcher {
                 return result.get();
             }
         }
-        LOGGER.info(
+        /*~~(TODO: INFO needs LogRecord. Suppress: // cui-rewrite:disable CuiLogRecordPatternRecipe)~~>*/LOGGER.info(
                 "Method '%s' with path '%s' could not be processed by the configured ModuleDispatcherElements. Going to default",
                 mapper, path);
 
@@ -137,7 +137,7 @@ public class CombinedDispatcher extends Dispatcher {
         if (!endWithTeapot) {
             code = HTTP_CODE_NOT_FOUND;
         }
-        return new MockResponse(code);
+        return new MockResponse.Builder().code(code).build();
     }
 
     /**

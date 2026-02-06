@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,11 +26,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import okhttp3.tls.HandshakeCertificates;
+
 import java.util.Optional;
 import javax.net.ssl.SSLContext;
-
-
-import okhttp3.tls.HandshakeCertificates;
 
 import static de.cuioss.test.mockwebserver.CertificateResolverTestUtil.*;
 import static org.junit.jupiter.api.Assertions.*;

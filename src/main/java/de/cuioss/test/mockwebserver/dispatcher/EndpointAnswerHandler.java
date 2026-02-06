@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -72,13 +72,13 @@ public class EndpointAnswerHandler {
      * Empty response with status code 403 Forbidden.
      * Use this for endpoints that require authentication/authorization.
      */
-    public static final MockResponse RESPONSE_FORBIDDEN = new MockResponse(HttpServletResponse.SC_FORBIDDEN);
+    public static final MockResponse RESPONSE_FORBIDDEN = new MockResponse.Builder().code(HttpServletResponse.SC_FORBIDDEN).build();
 
     /**
      * Empty response with status code 401 Unauthorized.
      * Use this for endpoints that require valid credentials.
      */
-    public static final MockResponse RESPONSE_UNAUTHORIZED = new MockResponse(HttpServletResponse.SC_UNAUTHORIZED);
+    public static final MockResponse RESPONSE_UNAUTHORIZED = new MockResponse.Builder().code(HttpServletResponse.SC_UNAUTHORIZED).build();
 
     /**
      * Default response body for successful requests.
@@ -99,32 +99,32 @@ public class EndpointAnswerHandler {
      * Empty response with status code 204 No Content.
      * Typically used for successful PUT/DELETE operations.
      */
-    public static final MockResponse RESPONSE_NO_CONTENT = new MockResponse(HttpServletResponse.SC_NO_CONTENT);
+    public static final MockResponse RESPONSE_NO_CONTENT = new MockResponse.Builder().code(HttpServletResponse.SC_NO_CONTENT).build();
 
     /**
      * Empty response transporting {@link HttpServletResponse#SC_NOT_FOUND}
      */
-    public static final MockResponse RESPONSE_NOT_FOUND = new MockResponse(HttpServletResponse.SC_NOT_FOUND);
+    public static final MockResponse RESPONSE_NOT_FOUND = new MockResponse.Builder().code(HttpServletResponse.SC_NOT_FOUND).build();
 
     /**
      * Empty response transporting {@link HttpServletResponse#SC_NOT_IMPLEMENTED}
      */
-    public static final MockResponse RESPONSE_NOT_IMPLEMENTED = new MockResponse(HttpServletResponse.SC_NOT_IMPLEMENTED);
+    public static final MockResponse RESPONSE_NOT_IMPLEMENTED = new MockResponse.Builder().code(HttpServletResponse.SC_NOT_IMPLEMENTED).build();
 
     /**
      * Empty response transporting {@link HttpServletResponse#SC_CREATED}
      */
-    public static final MockResponse RESPONSE_CREATED = new MockResponse(HttpServletResponse.SC_CREATED);
+    public static final MockResponse RESPONSE_CREATED = new MockResponse.Builder().code(HttpServletResponse.SC_CREATED).build();
 
     /**
      * Empty response transporting {@link HttpServletResponse#SC_MOVED_PERMANENTLY}
      */
-    public static final MockResponse RESPONSE_MOVED_PERMANENTLY = new MockResponse(HttpServletResponse.SC_MOVED_PERMANENTLY);
+    public static final MockResponse RESPONSE_MOVED_PERMANENTLY = new MockResponse.Builder().code(HttpServletResponse.SC_MOVED_PERMANENTLY).build();
 
     /**
      * Empty response transporting {@link HttpServletResponse#SC_MOVED_TEMPORARILY}
      */
-    public static final MockResponse RESPONSE_MOVED_TEMPORARILY = new MockResponse(HttpServletResponse.SC_MOVED_TEMPORARILY);
+    public static final MockResponse RESPONSE_MOVED_TEMPORARILY = new MockResponse.Builder().code(HttpServletResponse.SC_MOVED_TEMPORARILY).build();
 
     @Getter
     @Setter

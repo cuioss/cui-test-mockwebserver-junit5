@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -217,7 +217,7 @@ class DispatcherResolverAdvancedTest {
     @ModuleDispatcher(provider = TestClassWithFailingProviderMethod.class, providerMethod = "failingProvider")
     static class TestClassWithFailingProviderMethod {
         public static ModuleDispatcherElement failingProvider() {
-            throw new RuntimeException("Provider method failed");
+            /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException("Provider method failed");
         }
     }
 
@@ -278,7 +278,7 @@ class DispatcherResolverAdvancedTest {
 
     static class FailingConstructorDispatcher implements ModuleDispatcherElement {
         public FailingConstructorDispatcher() {
-            throw new RuntimeException("Constructor failed");
+            /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException("Constructor failed");
         }
 
         @Override
