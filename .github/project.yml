@@ -1,8 +1,8 @@
 name: cui-test-mockwebserver-junit5
 
 release:
-  current-version: 1.4.0
-  next-version: 1.4-SNAPSHOT
+  current-version: 1.5.0
+  next-version: 1.6-SNAPSHOT
   create-github-release: true
 
 maven-build:
