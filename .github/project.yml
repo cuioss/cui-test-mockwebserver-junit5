@@ -25,3 +25,12 @@ pages:
 github-automation:
   auto-merge-build-versions: true
   auto-merge-build-timeout: 300
+
+consumers:
+  - cuioss-parent-pom:version.cui.test.mockwebserver
+  - nifi-extensions:version.cui.test.mockwebserver
+
+dependency-propagation:
+  group-id: de.cuioss.test
+  artifact-id: cui-test-mockwebserver-junit5
+  scope: dependency
