@@ -104,18 +104,18 @@ class DispatcherResolverMethodTest {
     }
 
     @Test
-    @DisplayName("Should throw exception when getModuleDispatcher method is not accessible")
-    void shouldThrowExceptionWhenMethodIsNotAccessible() {
+    @DisplayName("Should resolve a private getModuleDispatcher method")
+    void shouldResolvePrivateMethod() {
         // Arrange
         var testClass = TestClassWithPrivateMethod.class;
         var testInstance = new TestClassWithPrivateMethod();
 
-        // Act & Assert
-        var exception = assertThrows(DispatcherResolutionException.class, () ->
-                resolver.resolveDispatcher(testClass, testInstance));
+        // Act - accessibility is handled by the resolver, so a private method still resolves
+        var dispatcher = resolver.resolveDispatcher(testClass, testInstance);
 
-        assertTrue(exception.getMessage().contains("Cannot access"),
-                "Exception message should indicate access issue: " + exception.getMessage());
+        // Assert
+        assertNotNull(dispatcher);
+        assertInstanceOf(CombinedDispatcher.class, dispatcher);
     }
 
     // Test dispatcher element implementation
