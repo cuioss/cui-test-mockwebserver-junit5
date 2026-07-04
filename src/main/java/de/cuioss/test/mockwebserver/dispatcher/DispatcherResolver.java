@@ -219,6 +219,9 @@ public class DispatcherResolver {
     /**
      * Creates a combined dispatcher from the resolved elements after validating them.
      */
+    // The CombinedDispatcher is returned to the caller and installed on the MockWebServer, which owns
+    // its lifecycle; it holds no closeable resources of its own, so it must not be closed here.
+    @SuppressWarnings("java:S2095") // owolff: dispatcher is returned to and owned by the caller
     private Dispatcher createCombinedDispatcher(List<ModuleDispatcherElement> dispatchers) {
         validateDispatchers(dispatchers);
         LOGGER.debug("Creating CombinedDispatcher with %s module dispatchers", dispatchers.size());
