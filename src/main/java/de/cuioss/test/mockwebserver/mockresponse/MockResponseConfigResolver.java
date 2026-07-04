@@ -135,14 +135,14 @@ public class MockResponseConfigResolver {
      * the result and are later reported as a genuine conflict.
      */
     private List<MockResponseConfig> deduplicateByPrecedence(List<LeveledConfig> leveled) {
-        Map<String, Integer> minLevelByKey = new HashMap<>();
-        for (LeveledConfig config : leveled) {
-            minLevelByKey.merge(key(config.annotation()), config.level(), Math::min);
-        }
-
+        // leveled is ordered by ascending precedence level (0 = method, then class hierarchy), so the
+        // first level recorded for a key is the most specific. Same-level duplicates are retained so a
+        // genuine conflict is still detected later.
+        Map<String, Integer> keptLevelByKey = new HashMap<>();
         List<MockResponseConfig> kept = new ArrayList<>();
         for (LeveledConfig config : leveled) {
-            if (minLevelByKey.get(key(config.annotation())) == config.level()) {
+            Integer keptLevel = keptLevelByKey.putIfAbsent(key(config.annotation()), config.level());
+            if (keptLevel == null || keptLevel.intValue() == config.level()) {
                 kept.add(config.annotation());
             }
         }

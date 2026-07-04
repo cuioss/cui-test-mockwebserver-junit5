@@ -85,21 +85,24 @@ public class DispatcherResolver {
     public Dispatcher resolveDispatcher(Class<?> testClass, Object testInstance, Method testMethod) {
         LOGGER.debug("Resolving dispatcher for test class: %s", testClass.getName());
 
-        // Resolve the @ModuleDispatcher annotation (if any) exactly once
-        AnnotationResolution annotationResolution = findModuleDispatcherAnnotation(testClass, testMethod)
+        // Resolve the @ModuleDispatcher annotation (if any) exactly once. The result is either a
+        // ModuleDispatcherElement, a raw Dispatcher, or null (bare annotation / no annotation).
+        Object resolvedAnnotation = findModuleDispatcherAnnotation(testClass, testMethod)
                 .map(annotation -> resolveAnnotation(annotation, testClass))
-                .orElse(AnnotationResolution.empty());
+                .orElse(null);
 
         // Collect all ModuleDispatcherElements from the configured sources
         List<ModuleDispatcherElement> elements = new ArrayList<>();
-        annotationResolution.element().ifPresent(elements::add);
+        if (resolvedAnnotation instanceof ModuleDispatcherElement element) {
+            elements.add(element);
+        }
         if (testInstance != null) {
             resolveFromMethod(testInstance).ifPresent(elements::add);
         }
         elements.addAll(MockResponseConfigResolver.resolveFromAnnotations(testClass, testMethod));
 
         // A provider that returns a raw Dispatcher is exclusive by design
-        if (annotationResolution.directDispatcher().isPresent()) {
+        if (resolvedAnnotation instanceof Dispatcher directDispatcher) {
             if (!elements.isEmpty()) {
                 throw new DispatcherResolutionException(
                         "A @ModuleDispatcher provider returning a raw Dispatcher cannot be combined with other " +
@@ -107,7 +110,7 @@ public class DispatcherResolver {
                                 "sources or return a ModuleDispatcherElement instead.");
             }
             LOGGER.debug("Using directly provided Dispatcher");
-            return annotationResolution.directDispatcher().get();
+            return directDispatcher;
         }
 
         if (!elements.isEmpty()) {
@@ -144,26 +147,23 @@ public class DispatcherResolver {
 
     /**
      * Resolves a {@link ModuleDispatcher} annotation into either a {@link ModuleDispatcherElement},
-     * a raw {@link Dispatcher} (from a provider method), or nothing (bare annotation deferring to
+     * a raw {@link Dispatcher} (from a provider method), or {@code null} (bare annotation deferring to
      * {@code getModuleDispatcher()}).
      *
      * @throws DispatcherResolutionException if the explicitly configured value/provider cannot be resolved
      */
-    private AnnotationResolution resolveAnnotation(ModuleDispatcher annotation, Class<?> testClass) {
+    private Object resolveAnnotation(ModuleDispatcher annotation, Class<?> testClass) {
         // Direct class reference
         if (annotation.value() != ModuleDispatcherElement.class) {
-            return AnnotationResolution.element(instantiate(annotation.value()));
+            return instantiate(annotation.value());
         }
 
         // Provider method (on the provider class, or on the test class when no provider is given)
         if (!annotation.providerMethod().isEmpty()) {
             Class<?> providerClass = annotation.provider() != Object.class ? annotation.provider() : testClass;
             Object result = invokeProviderMethod(providerClass, annotation.providerMethod());
-            if (result instanceof ModuleDispatcherElement element) {
-                return AnnotationResolution.element(element);
-            }
-            if (result instanceof Dispatcher dispatcher) {
-                return AnnotationResolution.direct(dispatcher);
+            if (result instanceof ModuleDispatcherElement || result instanceof Dispatcher) {
+                return result;
             }
             throw new DispatcherResolutionException(
                     "Provider method %s.%s must return a ModuleDispatcherElement or Dispatcher but returned %s"
@@ -178,7 +178,7 @@ public class DispatcherResolver {
         }
 
         // Bare @ModuleDispatcher -> defer to getModuleDispatcher()
-        return AnnotationResolution.empty();
+        return null;
     }
 
     /**
@@ -287,26 +287,6 @@ public class DispatcherResolver {
             String errorMessage = "Dispatcher conflicts found:\n" + String.join("\n", conflicts);
             LOGGER.error(errorMessage);
             throw new IllegalStateException(errorMessage);
-        }
-    }
-
-    /**
-     * The outcome of resolving a {@link ModuleDispatcher} annotation: either a
-     * {@link ModuleDispatcherElement}, a raw {@link Dispatcher}, or nothing.
-     */
-    private record AnnotationResolution(Optional<ModuleDispatcherElement> element,
-                                        Optional<Dispatcher> directDispatcher) {
-
-        static AnnotationResolution empty() {
-            return new AnnotationResolution(Optional.empty(), Optional.empty());
-        }
-
-        static AnnotationResolution element(ModuleDispatcherElement element) {
-            return new AnnotationResolution(Optional.of(element), Optional.empty());
-        }
-
-        static AnnotationResolution direct(Dispatcher dispatcher) {
-            return new AnnotationResolution(Optional.empty(), Optional.of(dispatcher));
         }
     }
 }
