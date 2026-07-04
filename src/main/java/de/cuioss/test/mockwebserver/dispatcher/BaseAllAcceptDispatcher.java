@@ -181,10 +181,10 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     }
 
     /**
-     * @return A new instance of the BaseAllAcceptDispatcher with a default configuration providing an /api endpoint
+     * @return A new instance of the BaseAllAcceptDispatcher with a default configuration providing an /api endpoint.
+     * This is {@code static} so it can be referenced as a {@code @ModuleDispatcher(providerMethod = ...)} target.
      */
-    @SuppressWarnings("unused")  // Implicitly called by the test framework
-    public ModuleDispatcherElement getOptimisticAPIDispatcher() {
+    public static ModuleDispatcherElement getOptimisticAPIDispatcher() {
         return new BaseAllAcceptDispatcher("/api");
     }
 }
