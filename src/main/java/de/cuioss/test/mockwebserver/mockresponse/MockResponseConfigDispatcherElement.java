@@ -108,6 +108,17 @@ public class MockResponseConfigDispatcherElement implements ModuleDispatcherElem
         return Optional.empty();
     }
 
+    @Override
+    public Optional<MockResponse> handleHead(@NonNull RecordedRequest request) {
+        if (method == HttpMethodMapper.HEAD) {
+            // A HEAD response carries the configured status and headers but never a body.
+            var responseBuilder = new MockResponse.Builder().code(statusCode);
+            headers.forEach(responseBuilder::addHeader);
+            return Optional.of(responseBuilder.build());
+        }
+        return Optional.empty();
+    }
+
     /**
      * {@inheritDoc}
      * <p>
@@ -150,12 +161,17 @@ public class MockResponseConfigDispatcherElement implements ModuleDispatcherElem
     private Map<String, String> parseHeaders(MockResponseConfig annotation) {
         Map<String, String> headerMap = new HashMap<>();
 
-        // Add explicit headers
+        // Add explicit headers; a malformed entry is a configuration error and fails fast
         for (String header : annotation.headers()) {
-            if (!MoreStrings.isEmpty(header) && header.contains("=")) {
-                String[] parts = header.split("=", 2);
-                headerMap.put(parts[0].trim(), parts[1].trim());
+            if (MoreStrings.isEmpty(header)) {
+                continue;
             }
+            int separator = header.indexOf('=');
+            if (separator < 0) {
+                throw new IllegalArgumentException(
+                        "Malformed header entry '" + header + "'. Expected format 'name=value'.");
+            }
+            headerMap.put(header.substring(0, separator).trim(), header.substring(separator + 1).trim());
         }
 
         // Add content type if specified
@@ -288,8 +304,8 @@ public class MockResponseConfigDispatcherElement implements ModuleDispatcherElem
         String key = keyValue[0].trim();
         String value = keyValue[1].trim();
 
-        // Add quotes to key
-        jsonBuilder.append("\"").append(key).append("\":");
+        // Add quotes to the (escaped) key
+        jsonBuilder.append('"').append(escapeJson(key)).append("\":");
 
         // Add value with appropriate formatting
         appendFormattedValue(jsonBuilder, value);
@@ -305,8 +321,30 @@ public class MockResponseConfigDispatcherElement implements ModuleDispatcherElem
         if (shouldBeUnquoted(value)) {
             jsonBuilder.append(value);
         } else {
-            jsonBuilder.append("\"").append(value).append("\"");
+            jsonBuilder.append('"').append(escapeJson(value)).append('"');
         }
+    }
+
+    /**
+     * Escapes the characters that are not legal inside a JSON string literal.
+     *
+     * @param raw the raw value
+     * @return the value with {@code "}, {@code \} and control characters escaped
+     */
+    private static String escapeJson(String raw) {
+        StringBuilder escaped = new StringBuilder(raw.length());
+        for (int i = 0; i < raw.length(); i++) {
+            char c = raw.charAt(i);
+            switch (c) {
+                case '"' -> escaped.append("\\\"");
+                case '\\' -> escaped.append("\\\\");
+                case '\n' -> escaped.append("\\n");
+                case '\r' -> escaped.append("\\r");
+                case '\t' -> escaped.append("\\t");
+                default -> escaped.append(c);
+            }
+        }
+        return escaped.toString();
     }
 
     /**

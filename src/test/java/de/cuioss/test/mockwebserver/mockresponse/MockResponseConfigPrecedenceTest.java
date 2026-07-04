@@ -75,12 +75,14 @@ class MockResponseConfigPrecedenceTest {
     }
 
     @Test
-    @DisplayName("Legacy resolution (no test method) collects class and method annotations")
-    void legacyCollectsAll() {
+    @DisplayName("Legacy resolution (no test method) collects only class-level annotations")
+    void legacyCollectsClassLevelOnly() {
         List<ModuleDispatcherElement> elements =
                 MockResponseConfigResolver.resolveFromAnnotations(DistinctFixture.class);
 
-        assertEquals(2, elements.size(), "Legacy mode collects both the class and method annotation");
+        assertEquals(1, elements.size(), "Legacy mode collects only the class-level annotation");
+        assertEquals("class", body(elements.get(0), "/class-only"),
+                "Legacy mode must resolve the class-level annotation");
     }
 
     private static String body(ModuleDispatcherElement element, String path) {

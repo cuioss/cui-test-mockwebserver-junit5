@@ -19,6 +19,7 @@ import de.cuioss.test.mockwebserver.EnableMockWebServer;
 import de.cuioss.tools.collect.CollectionLiterals;
 import de.cuioss.tools.logging.CuiLogger;
 import de.cuioss.tools.string.MoreStrings;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import mockwebserver3.Dispatcher;
@@ -27,6 +28,7 @@ import mockwebserver3.RecordedRequest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Combines multiple {@link ModuleDispatcherElement}s into a single dispatcher for handling HTTP requests
@@ -74,8 +76,16 @@ import java.util.List;
 @NoArgsConstructor
 public class CombinedDispatcher extends Dispatcher {
 
-    public static final int HTTP_CODE_NOT_FOUND = 404;
+    /**
+     * HTTP status returned for unmatched requests when teapot mode is disabled
+     * ({@link HttpServletResponse#SC_NOT_FOUND}).
+     */
+    public static final int HTTP_CODE_NOT_FOUND = HttpServletResponse.SC_NOT_FOUND;
 
+    /**
+     * HTTP 418 ("I'm a teapot") returned for unmatched requests by default. There is no
+     * {@link HttpServletResponse} constant for 418, so the literal is kept.
+     */
     public static final int HTTP_CODE_TEAPOT = 418;
 
     private static final CuiLogger LOGGER = new CuiLogger(CombinedDispatcher.class);
@@ -105,38 +115,37 @@ public class CombinedDispatcher extends Dispatcher {
     @Override
     public @NonNull MockResponse dispatch(@NonNull RecordedRequest request) {
         var path = MoreStrings.nullToEmpty(request.getUrl() != null ? request.getUrl().encodedPath() : null);
-        var mapper = HttpMethodMapper.of(request);
-        /*~~(TODO: INFO needs LogRecord. Suppress: // cui-rewrite:disable CuiLogRecordPatternRecipe)~~>*/LOGGER.info("Processing method '%s' with path '%s'", mapper, path);
+        Optional<HttpMethodMapper> mapper = HttpMethodMapper.of(request);
+        LOGGER.debug("Processing method '%s' with path '%s'", mapper.map(HttpMethodMapper::name).orElse("UNKNOWN"), path);
 
-        List<ModuleDispatcherElement> filtered = new ArrayList<>();
-
-        for (ModuleDispatcherElement dispatcher : singleDispatcher) {
-            // Use prefix matching for all dispatchers
-            if (path.startsWith(dispatcher.getBaseUrl())) {
-                filtered.add(dispatcher);
-                LOGGER.debug("Prefix match for path '%s' with dispatcher '%s'", path, dispatcher.getClass().getSimpleName());
-            }
-
-            if (!filtered.contains(dispatcher)) {
-                /*~~(TODO: INFO needs LogRecord. Suppress: // cui-rewrite:disable CuiLogRecordPatternRecipe)~~>*/LOGGER.info(dispatcher.getBaseUrl());
+        // Unknown/unsupported methods (e.g. OPTIONS, PATCH) fall through to the default response
+        if (mapper.isPresent()) {
+            for (ModuleDispatcherElement dispatcher : singleDispatcher) {
+                if (matchesBaseUrl(path, dispatcher.getBaseUrl())) {
+                    Optional<MockResponse> result = mapper.get().handleMethod(dispatcher, request);
+                    if (result.isPresent()) {
+                        return result.get();
+                    }
+                }
             }
         }
 
-        for (ModuleDispatcherElement moduleDispatcherElement : filtered) {
-            var result = mapper.handleMethod(moduleDispatcherElement, request);
-            if (result.isPresent()) {
-                return result.get();
-            }
-        }
-        /*~~(TODO: INFO needs LogRecord. Suppress: // cui-rewrite:disable CuiLogRecordPatternRecipe)~~>*/LOGGER.info(
-                "Method '%s' with path '%s' could not be processed by the configured ModuleDispatcherElements. Going to default",
-                mapper, path);
+        LOGGER.debug("Method '%s' with path '%s' was not handled by any ModuleDispatcherElement, returning default",
+                mapper.map(HttpMethodMapper::name).orElse("UNKNOWN"), path);
+        return new MockResponse.Builder().code(endWithTeapot ? HTTP_CODE_TEAPOT : HTTP_CODE_NOT_FOUND).build();
+    }
 
-        var code = HTTP_CODE_TEAPOT;
-        if (!endWithTeapot) {
-            code = HTTP_CODE_NOT_FOUND;
+    /**
+     * Matches a request path against a dispatcher base URL on segment boundaries, so that base URL
+     * {@code /api} matches {@code /api} and {@code /api/users} but not {@code /apiary}. The base URL
+     * {@code /} matches every path.
+     */
+    private static boolean matchesBaseUrl(String path, String baseUrl) {
+        if ("/".equals(baseUrl)) {
+            return true;
         }
-        return new MockResponse.Builder().code(code).build();
+        String normalized = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+        return path.equals(normalized) || path.startsWith(normalized + "/");
     }
 
     /**
@@ -179,6 +188,9 @@ public class CombinedDispatcher extends Dispatcher {
     /**
      * @return A new instance of the CombinedDispatcher with a default configuration providing an /api endpoint
      */
+    // The returned dispatcher is installed on the MockWebServer, which owns its lifecycle; it holds no
+    // closeable resources of its own.
+    @SuppressWarnings("java:S2095") // owolff: dispatcher is returned to and owned by the caller
     public static CombinedDispatcher createAPIDispatcher() {
         return new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
     }

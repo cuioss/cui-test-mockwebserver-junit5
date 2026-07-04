@@ -112,13 +112,22 @@ public enum HttpMethodMapper {
 
     /**
      * Creates an HttpMethodMapper from a RecordedRequest's method.
+     * <p>
+     * This lookup is total: an unsupported or unknown HTTP method (e.g. OPTIONS, PATCH, TRACE) yields
+     * an empty {@link Optional} rather than throwing, so callers can answer such requests with a
+     * defined fallback instead of aborting the connection.
      *
      * @param request the request containing the HTTP method, must not be null
-     * @return the corresponding HttpMethodMapper for the request's method
-     * @throws IllegalArgumentException if the method is not supported
-     * @throws NullPointerException     if request is null
+     * @return an {@link Optional} with the corresponding HttpMethodMapper, or empty if the method is
+     * not one of the supported methods
      */
-    public static HttpMethodMapper of(RecordedRequest request) {
-        return HttpMethodMapper.valueOf(MoreStrings.nullToEmpty(request.getMethod()).toUpperCase());
+    public static Optional<HttpMethodMapper> of(RecordedRequest request) {
+        String method = MoreStrings.nullToEmpty(request.getMethod()).toUpperCase();
+        for (HttpMethodMapper mapper : values()) {
+            if (mapper.name().equals(method)) {
+                return Optional.of(mapper);
+            }
+        }
+        return Optional.empty();
     }
 }
