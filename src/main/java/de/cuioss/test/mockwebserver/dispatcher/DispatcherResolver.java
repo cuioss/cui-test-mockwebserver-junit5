@@ -243,33 +243,26 @@ public class DispatcherResolver {
     }
 
     /**
-     * Invokes the {@code getModuleDispatcher} method. Access rules are respected: only public
-     * methods are made accessible, so an inaccessible method results in a
-     * {@link DispatcherResolutionException} rather than silently succeeding.
+     * Invokes the {@code getModuleDispatcher} method and validates its result. Accessibility is
+     * handled by {@link ReflectionUtils#invokeMethod(Method, Object, Object...)}.
      */
-    @SuppressWarnings("java:S3011") // owolff: Setting accessibility is ok for public test methods
     private ModuleDispatcherElement invokeModuleDispatcherMethod(Object testInstance, Method method) {
+        Object result;
         try {
-            if (Modifier.isPublic(method.getModifiers()) && !method.canAccess(testInstance)) {
-                method.setAccessible(true);
-            }
-
-            Object result = method.invoke(testInstance);
-            if (result == null) {
-                throw new DispatcherResolutionException("getModuleDispatcher method returned null");
-            }
-            if (result instanceof ModuleDispatcherElement moduleDispatcherElement) {
-                LOGGER.debug("Resolved ModuleDispatcherElement from getModuleDispatcher with base URL: %s",
-                        moduleDispatcherElement.getBaseUrl());
-                return moduleDispatcherElement;
-            }
-            throw new DispatcherResolutionException(
-                    "getModuleDispatcher method did not return a ModuleDispatcherElement: " + result.getClass().getName());
-        } catch (IllegalAccessException e) {
-            throw new DispatcherResolutionException("Cannot access getModuleDispatcher method", e);
-        } catch (InvocationTargetException e) {
-            throw new DispatcherResolutionException("getModuleDispatcher method threw an exception", e.getCause());
+            result = ReflectionUtils.invokeMethod(method, testInstance);
+        } catch (RuntimeException e) {
+            throw new DispatcherResolutionException("getModuleDispatcher method threw an exception", e);
         }
+        if (result == null) {
+            throw new DispatcherResolutionException("getModuleDispatcher method returned null");
+        }
+        if (result instanceof ModuleDispatcherElement moduleDispatcherElement) {
+            LOGGER.debug("Resolved ModuleDispatcherElement from getModuleDispatcher with base URL: %s",
+                    moduleDispatcherElement.getBaseUrl());
+            return moduleDispatcherElement;
+        }
+        throw new DispatcherResolutionException(
+                "getModuleDispatcher method did not return a ModuleDispatcherElement: " + result.getClass().getName());
     }
 
     /**

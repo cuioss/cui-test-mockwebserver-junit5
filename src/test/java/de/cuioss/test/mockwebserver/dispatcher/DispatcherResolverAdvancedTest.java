@@ -19,15 +19,10 @@ import lombok.NonNull;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okio.Buffer;
-import okio.ByteString;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -183,42 +178,14 @@ class DispatcherResolverAdvancedTest {
     // --- probe helpers -------------------------------------------------------------------------
 
     private void assertStatus(Dispatcher dispatcher, String path, int expectedStatus) {
-        var response = dispatch(dispatcher, path);
+        var response = DispatcherTestSupport.dispatch(dispatcher, path);
         assertTrue(response.getStatus().contains(String.valueOf(expectedStatus)),
                 "Expected status " + expectedStatus + " for path " + path + " but was " + response.getStatus());
     }
 
     private void assertResponseBody(Dispatcher dispatcher, String path, String expectedBody) {
-        var response = dispatch(dispatcher, path);
-        assertEquals(expectedBody, readBody(response), "Unexpected body for path " + path);
-    }
-
-    private static MockResponse dispatch(Dispatcher dispatcher, String path) {
-        var request = new RecordedRequest(
-                0, 0, null, Collections.emptyList(),
-                "GET", path, "HTTP/1.1",
-                HttpUrl.parse("http://localhost" + path),
-                Headers.of("Host", "localhost"),
-                ByteString.EMPTY, 0, Collections.emptyList(), null);
-        try {
-            return dispatcher.dispatch(request);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException("Dispatch was interrupted", e);
-        }
-    }
-
-    private static String readBody(MockResponse response) {
-        if (response.getBody() == null) {
-            return "";
-        }
-        var buffer = new Buffer();
-        try {
-            response.getBody().writeTo(buffer);
-            return buffer.readUtf8();
-        } catch (java.io.IOException e) {
-            throw new IllegalStateException("Failed to read response body", e);
-        }
+        var response = DispatcherTestSupport.dispatch(dispatcher, path);
+        assertEquals(expectedBody, DispatcherTestSupport.readBody(response), "Unexpected body for path " + path);
     }
 
     // --- test fixtures -------------------------------------------------------------------------

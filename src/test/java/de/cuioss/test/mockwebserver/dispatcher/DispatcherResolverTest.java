@@ -23,12 +23,6 @@ import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okio.Buffer;
-import okio.ByteString;
-
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -69,31 +63,13 @@ class DispatcherResolverTest {
         assertInstanceOf(CombinedDispatcher.class, dispatcher, "Dispatcher should be a CombinedDispatcher");
 
         // Verify the dispatcher works as expected
-        var response = dispatchRequest(dispatcher, TEST_PATH);
+        var response = DispatcherTestSupport.dispatch(dispatcher, TEST_PATH);
         LOGGER.debug("TEST_PATH Response Status: %s", response.getStatus());
         LOGGER.debug("TEST_PATH Response Body: %s", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
                 response.getStatus() + STATUS_ERROR_MESSAGE);
-        assertTrue(writeBodyToString(response).contains("Test Dispatcher"),
+        assertTrue(DispatcherTestSupport.readBody(response).contains("Test Dispatcher"),
                 "Response body should contain expected content");
-    }
-
-    /**
-     * Helper method to convert a MockResponse body to a string for assertion.
-     *
-     * @param response the MockResponse to extract the body from
-     * @return the body as a string, or an error message if extraction fails
-     */
-    private String writeBodyToString(MockResponse response) {
-        Buffer buffer = new Buffer();
-        try {
-            assert response.getBody() != null;
-            response.getBody().writeTo(buffer);
-            return buffer.readUtf8();
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
-            LOGGER.error(e, "Failed to read response body: %s", e.getMessage());
-            return "Failed to read response body";
-        }
     }
 
 
@@ -112,12 +88,12 @@ class DispatcherResolverTest {
         assertInstanceOf(CombinedDispatcher.class, dispatcher);
 
         // Verify the dispatcher works as expected
-        var response = dispatchRequest(dispatcher, METHOD_PATH);
+        var response = DispatcherTestSupport.dispatch(dispatcher, METHOD_PATH);
         LOGGER.debug("METHOD_PATH Response Status: %s", response.getStatus());
         LOGGER.debug("METHOD_PATH Response Body: %s", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
                 response.getStatus() + STATUS_ERROR_MESSAGE);
-        assertTrue(writeBodyToString(response).contains("Method Dispatcher"));
+        assertTrue(DispatcherTestSupport.readBody(response).contains("Method Dispatcher"));
     }
 
     @Test
@@ -135,12 +111,12 @@ class DispatcherResolverTest {
         assertInstanceOf(TestDispatcher.class, dispatcher);
 
         // Verify the dispatcher works as expected
-        var response = dispatchRequest(dispatcher, LEGACY_PATH);
+        var response = DispatcherTestSupport.dispatch(dispatcher, LEGACY_PATH);
         LOGGER.debug("LEGACY_PATH Response Status: %s", response.getStatus());
         LOGGER.debug("LEGACY_PATH Response Body: %s", response.getBody());
         assertTrue(response.getStatus().contains(String.valueOf(200)),
                 response.getStatus() + STATUS_ERROR_MESSAGE);
-        assertTrue(writeBodyToString(response).contains("Legacy Dispatcher"));
+        assertTrue(DispatcherTestSupport.readBody(response).contains("Legacy Dispatcher"));
     }
 
     @Test
@@ -164,23 +140,6 @@ class DispatcherResolverTest {
     private static final String LEGACY_PATH = "/legacy";
     private static final String STATUS_ERROR_MESSAGE = " does not contain 200";
 
-    /**
-     * Helper method to dispatch a request to a dispatcher
-     */
-    private static MockResponse dispatchRequest(Dispatcher dispatcher, String path) {
-        try {
-            // Create a request with the path directly
-            var request = new RecordedRequest(
-                    0, 0, null, Collections.emptyList(),
-                    "GET", path, "HTTP/1.1",
-                    HttpUrl.parse("http://localhost" + path),
-                    Headers.of("Host", "localhost"),
-                    ByteString.EMPTY, 0, Collections.emptyList(), null);
-            return dispatcher.dispatch(request);
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
-            throw new IllegalStateException("Failed to dispatch request", e);
-        }
-    }
 
 
     // Test classes for the tests

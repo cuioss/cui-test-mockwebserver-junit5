@@ -15,20 +15,14 @@
  */
 package de.cuioss.test.mockwebserver.mockresponse;
 
+import de.cuioss.test.mockwebserver.dispatcher.DispatcherTestSupport;
 import de.cuioss.test.mockwebserver.dispatcher.HttpMethodMapper;
 import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okio.Buffer;
-import okio.ByteString;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -90,25 +84,7 @@ class MockResponseConfigPrecedenceTest {
     }
 
     private static String body(ModuleDispatcherElement element, String path) {
-        MockResponse response = element.handleGet(request(path)).orElseThrow();
-        if (response.getBody() == null) {
-            return "";
-        }
-        var buffer = new Buffer();
-        try {
-            response.getBody().writeTo(buffer);
-            return buffer.readUtf8();
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read response body", e);
-        }
-    }
-
-    private static RecordedRequest request(String path) {
-        return new RecordedRequest(
-                0, 0, null, Collections.emptyList(),
-                "GET", path, "HTTP/1.1",
-                HttpUrl.parse("http://localhost" + path),
-                Headers.of("Host", "localhost"),
-                ByteString.EMPTY, 0, Collections.emptyList(), null);
+        MockResponse response = element.handleGet(DispatcherTestSupport.getRequest(path)).orElseThrow();
+        return DispatcherTestSupport.readBody(response);
     }
 }
