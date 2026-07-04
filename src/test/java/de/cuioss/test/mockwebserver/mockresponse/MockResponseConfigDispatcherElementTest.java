@@ -224,23 +224,41 @@ class MockResponseConfigDispatcherElementTest {
         }
 
         @Test
-        @DisplayName("Should ignore malformed headers")
-        void shouldIgnoreMalformedHeaders() {
-            // Arrange
+        @DisplayName("Should reject malformed headers")
+        void shouldRejectMalformedHeaders() {
+            // Arrange - a header entry without '=' is a configuration error
             var annotation = createMockResponseWithHeaders(
                     DEFAULT_PATH, HttpMethodMapper.GET, DEFAULT_STATUS,
                     new String[]{"InvalidHeader", "X-Valid=Value"});
 
-            // Act
-            var element = new MockResponseConfigDispatcherElement(annotation);
-            RecordedRequest request = createTestRequest();
-            var response = element.handleGet(request).orElseThrow();
+            // Act & Assert
+            var exception = assertThrows(IllegalArgumentException.class,
+                    () -> new MockResponseConfigDispatcherElement(annotation));
+            assertTrue(exception.getMessage().contains("InvalidHeader"),
+                    "Exception should name the malformed header: " + exception.getMessage());
+        }
+    }
 
-            // Assert
-            assertNull(response.getHeaders().get("InvalidHeader"),
-                    "Malformed header should not be present in response");
-            assertEquals("Value", response.getHeaders().get("X-Valid"),
-                    "Valid header should be present in response");
+    @Nested
+    @DisplayName("HEAD handling tests")
+    class HeadTests {
+
+        @Test
+        @DisplayName("Should answer HEAD with status and headers but no body")
+        void shouldHandleHead() {
+            // Arrange
+            var annotation = createMockResponseWithTextContent(
+                    DEFAULT_PATH, HttpMethodMapper.HEAD, DEFAULT_STATUS, DEFAULT_TEXT_CONTENT);
+            var element = new MockResponseConfigDispatcherElement(annotation);
+
+            // Assert - a HEAD config supports HEAD only and does not answer GET
+            assertEquals(Set.of(HttpMethodMapper.HEAD), element.supportedMethods(), "Should support HEAD only");
+            assertTrue(element.handleGet(createTestRequest()).isEmpty(), "A HEAD config must not handle GET");
+
+            var response = element.handleHead(createTestRequest()).orElseThrow();
+            assertEquals("text/plain", response.getHeaders().get(CONTENT_TYPE_HEADER),
+                    "HEAD response should carry the configured headers");
+            assertNull(response.getBody(), "HEAD response must not carry a body");
         }
     }
 
@@ -278,7 +296,11 @@ class MockResponseConfigDispatcherElementTest {
                     Arguments.of("key={\"nested\":\"value\"}", "{\"key\":{\"nested\":\"value\"}}"),
                     Arguments.of("{}", "{}"),
                     Arguments.of("[]", "[]"),
-                    Arguments.of("{\"already\":\"valid\"}", "{\"already\":\"valid\"}")
+                    Arguments.of("{\"already\":\"valid\"}", "{\"already\":\"valid\"}"),
+                    // Quotes, backslashes and control characters in string values must be JSON-escaped
+                    Arguments.of("q=a\"b", "{\"q\":\"a\\\"b\"}"),
+                    Arguments.of("p=a\\b", "{\"p\":\"a\\\\b\"}"),
+                    Arguments.of("k=a\nb\tc\rd", "{\"k\":\"a\\nb\\tc\\rd\"}")
             );
         }
     }

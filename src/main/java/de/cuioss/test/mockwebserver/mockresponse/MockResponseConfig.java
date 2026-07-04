@@ -108,8 +108,13 @@ public @interface MockResponseConfig {
      * In the form of key-value pairs.
      * Mutually exclusive with {@link #textContent()} and {@link #stringContent()}.
      * <p>
-     * Format: key1=value1,key2=value2 (will be converted to {"key1":"value1","key2":"value2"})
-     * In case you need a more complex JSON structure, use {@link #stringContent()} instead.
+     * Format: key1=value1,key2=value2 (will be converted to {"key1":"value1","key2":"value2"}).
+     * String values are JSON-escaped; numeric, boolean, {@code null}, array and object literals are
+     * emitted unquoted.
+     * <p>
+     * <strong>Limitations:</strong> {@code ,} separates pairs and {@code =} separates key from value,
+     * so neither character may appear inside a key or value. For anything more complex (or values that
+     * need commas/equals signs) use {@link #stringContent()} with a literal JSON document instead.
      *
      * @return the JSON content in key-value format
      */

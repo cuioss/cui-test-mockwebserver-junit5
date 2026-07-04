@@ -19,7 +19,6 @@ import de.cuioss.test.mockwebserver.dispatcher.ModuleDispatcherElement;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import lombok.experimental.UtilityClass;
-import org.junit.jupiter.api.Nested;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -31,12 +30,11 @@ import java.util.Map;
  * Utility class for resolving {@link MockResponseConfig} annotations from test classes
  * and converting them to {@link MockResponseConfigDispatcherElement} instances.
  * <p>
- * This class collects annotations from:
- * <ul>
- *   <li>The test class itself</li>
- *   <li>Any nested test classes (annotated with {@link Nested})</li>
- *   <li>Test methods</li>
- * </ul>
+ * Annotations are collected from the class hierarchy (the test class, its enclosing classes for
+ * {@code @Nested} tests, and its superclasses). When a test method is supplied, method-level
+ * annotations are additionally collected and take the highest precedence. In every case the result
+ * is de-duplicated by precedence so a more specific annotation overrides a less specific one that
+ * targets the same path and HTTP method.
  *
  * @author Oliver Wolff
  * @since 1.1
@@ -71,19 +69,33 @@ public class MockResponseConfigResolver {
     public List<ModuleDispatcherElement> resolveFromAnnotations(@NonNull Class<?> testClass, Method testMethod) {
         List<ModuleDispatcherElement> result = new ArrayList<>();
 
-        if (testMethod == null) {
-            // Legacy behavior: collect all annotations from the class hierarchy and all methods
-            collectFromClass(testClass, result);
-            collectFromMethods(testClass, result);
-        } else {
-            // Context-aware behavior: collect annotations relevant to the test method,
-            // de-duplicated by precedence.
-            for (MockResponseConfig annotation : collectContextAware(testMethod)) {
-                addConfigElement(annotation, result);
-            }
+        // Both modes collect class-level annotations from the class hierarchy, de-duplicated by
+        // precedence. The context-aware mode additionally gives method-level annotations the highest
+        // precedence; the legacy mode (no test method) uses class-level annotations only.
+        List<MockResponseConfig> annotations = testMethod == null
+                ? collectClassHierarchy(testClass)
+                : collectContextAware(testMethod);
+        for (MockResponseConfig annotation : annotations) {
+            addConfigElement(annotation, result);
         }
 
         return result;
+    }
+
+    /**
+     * Collects the class-level {@link MockResponseConfig} annotations from the given class and its
+     * hierarchy, de-duplicated by precedence (most-specific class first).
+     */
+    private List<MockResponseConfig> collectClassHierarchy(Class<?> testClass) {
+        List<LeveledConfig> leveled = new ArrayList<>();
+        int level = 0;
+        for (Class<?> clazz : collectContextClasses(testClass)) {
+            for (MockResponseConfig annotation : clazz.getAnnotationsByType(MockResponseConfig.class)) {
+                leveled.add(new LeveledConfig(annotation, level));
+            }
+            level++;
+        }
+        return deduplicateByPrecedence(leveled);
     }
 
     /**
@@ -151,37 +163,6 @@ public class MockResponseConfigResolver {
 
     private String key(MockResponseConfig annotation) {
         return annotation.method() + " " + annotation.path();
-    }
-
-    /**
-     * Collects {@link MockResponseConfig} annotations from the given class and its nested classes.
-     */
-    private void collectFromClass(Class<?> clazz, List<ModuleDispatcherElement> result) {
-        for (MockResponseConfig annotation : clazz.getAnnotationsByType(MockResponseConfig.class)) {
-            addConfigElement(annotation, result);
-        }
-        for (Class<?> nestedClass : clazz.getDeclaredClasses()) {
-            if (nestedClass.isAnnotationPresent(Nested.class)) {
-                collectFromClass(nestedClass, result);
-            }
-        }
-    }
-
-    /**
-     * Collects {@link MockResponseConfig} annotations from the methods of the given class and its
-     * nested classes.
-     */
-    private void collectFromMethods(Class<?> clazz, List<ModuleDispatcherElement> result) {
-        for (Method method : clazz.getDeclaredMethods()) {
-            for (MockResponseConfig annotation : method.getAnnotationsByType(MockResponseConfig.class)) {
-                addConfigElement(annotation, result);
-            }
-        }
-        for (Class<?> nestedClass : clazz.getDeclaredClasses()) {
-            if (nestedClass.isAnnotationPresent(Nested.class)) {
-                collectFromMethods(nestedClass, result);
-            }
-        }
     }
 
     /**

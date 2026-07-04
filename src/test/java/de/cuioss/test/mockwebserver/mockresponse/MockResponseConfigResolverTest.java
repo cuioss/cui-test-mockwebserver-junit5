@@ -20,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static de.cuioss.test.mockwebserver.mockresponse.MockResponseTestUtil.DEFAULT_PATH;
@@ -75,13 +76,14 @@ class MockResponseConfigResolverTest {
     class MethodAnnotationTests {
 
         @Test
-        @DisplayName("Should resolve MockResponseConfig annotation on method")
-        void shouldResolveMethodAnnotation() {
-            // Arrange
-            Class<?> testClass = ClassWithMethodAnnotation.class;
+        @DisplayName("Should resolve MockResponseConfig annotation on the context method")
+        void shouldResolveMethodAnnotation() throws NoSuchMethodException {
+            // Arrange - method-level annotations are resolved for the current test method (context aware)
+            Method testMethod = ClassWithMethodAnnotation.class.getDeclaredMethod("testMethod");
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements =
+                    MockResponseConfigResolver.resolveFromAnnotations(ClassWithMethodAnnotation.class, testMethod);
 
             // Assert
             assertEquals(1, elements.size(), "Should resolve one dispatcher element");
@@ -90,6 +92,14 @@ class MockResponseConfigResolverTest {
             assertEquals("/api/method", element.getBaseUrl(),
                     "Element should have correct path");
         }
+
+        @Test
+        @DisplayName("Should not resolve method annotations without a context method (legacy mode)")
+        void shouldNotResolveMethodAnnotationInLegacyMode() {
+            List<ModuleDispatcherElement> elements =
+                    MockResponseConfigResolver.resolveFromAnnotations(ClassWithMethodAnnotation.class);
+            assertEquals(0, elements.size(), "Legacy mode resolves class-level annotations only");
+        }
     }
 
     @Nested
@@ -97,24 +107,21 @@ class MockResponseConfigResolverTest {
     class NestedClassTests {
 
         @Test
-        @DisplayName("Should resolve MockResponseConfig annotations on nested classes")
-        void shouldResolveNestedClassAnnotations() {
-            // Arrange
-            Class<?> testClass = ClassWithNestedClassTest.class;
+        @DisplayName("Should resolve annotations from the nested class and its enclosing class for a nested test method")
+        void shouldResolveNestedClassAnnotations() throws NoSuchMethodException {
+            // Arrange - resolve for a method declared in the nested class (context aware)
+            Method testMethod = ClassWithNestedClassTest.NestedTestClass.class.getDeclaredMethod("nestedTest");
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements =
+                    MockResponseConfigResolver.resolveFromAnnotations(ClassWithNestedClassTest.class, testMethod);
 
             // Assert
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
-            assertTrue(elements.stream().allMatch(MockResponseConfigDispatcherElement.class::isInstance),
-                    "All elements should be MockResponseDispatcherElements");
-
-            // Verify paths from both parent and nested class
             assertTrue(elements.stream()
                             .map(ModuleDispatcherElement::getBaseUrl)
                             .anyMatch(DEFAULT_PATH::equals),
-                    "Should include element from parent class");
+                    "Should include element from enclosing class");
             assertTrue(elements.stream()
                             .map(ModuleDispatcherElement::getBaseUrl)
                             .anyMatch("/api/nested"::equals),
@@ -123,12 +130,13 @@ class MockResponseConfigResolverTest {
 
         @Test
         @DisplayName("Should resolve MockResponseConfig annotations on methods in nested classes")
-        void shouldResolveNestedClassMethodAnnotations() {
+        void shouldResolveNestedClassMethodAnnotations() throws NoSuchMethodException {
             // Arrange
-            Class<?> testClass = ClassWithNestedClassMethodTest.class;
+            Method testMethod = ClassWithNestedClassMethodTest.NestedTestClass.class.getDeclaredMethod("testMethod");
 
             // Act
-            List<ModuleDispatcherElement> elements = MockResponseConfigResolver.resolveFromAnnotations(testClass);
+            List<ModuleDispatcherElement> elements =
+                    MockResponseConfigResolver.resolveFromAnnotations(ClassWithNestedClassMethodTest.class, testMethod);
 
             // Assert
             assertEquals(2, elements.size(), SHOULD_RESOLVE_TWO_DISPATCHER_ELEMENTS);
@@ -184,7 +192,10 @@ class MockResponseConfigResolverTest {
         @Nested
         @MockResponseConfig(path = "/api/nested", status = DEFAULT_STATUS, textContent = "Nested content")
         class NestedTestClass {
-            // Empty nested test class
+            @SuppressWarnings("unused") // used via reflection as the context method
+            void nestedTest() {
+                // Empty nested test method
+            }
         }
     }
 
