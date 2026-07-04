@@ -151,6 +151,14 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      */
     public static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
 
+    /**
+     * Maps parameter types to resolver functions.
+     */
+    private final Map<Class<?>, Function<MockWebServer, Object>> parameterResolvers = Map.of(
+            MockWebServer.class, this::resolveServerParameter,
+            URIBuilder.class, this::resolveUrlBuilderParameter
+    );
+
     @Override
     @SuppressWarnings({"java:S2093", "java:S2095"}) // We solve it using finally block.
     // Close is linked to 'shutdown',
@@ -435,14 +443,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             current = current.getSuperclass();
         }
     }
-
-    /**
-     * Maps parameter types to resolver functions.
-     */
-    private final Map<Class<?>, Function<MockWebServer, Object>> parameterResolvers = Map.of(
-            MockWebServer.class, this::resolveServerParameter,
-            URIBuilder.class, this::resolveUrlBuilderParameter
-    );
 
     @Override
     public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) throws ParameterResolutionException {

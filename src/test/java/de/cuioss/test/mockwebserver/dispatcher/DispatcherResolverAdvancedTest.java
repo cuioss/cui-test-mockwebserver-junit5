@@ -19,7 +19,6 @@ import lombok.NonNull;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -287,7 +286,7 @@ class DispatcherResolverAdvancedTest {
         }
 
         @Override
-        public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
+        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
             return Optional.empty();
         }
 
@@ -308,7 +307,7 @@ class DispatcherResolverAdvancedTest {
         }
 
         @Override
-        public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
+        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
             return Optional.empty();
         }
 
@@ -325,7 +324,7 @@ class DispatcherResolverAdvancedTest {
         }
 
         @Override
-        public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
+        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
             return Optional.of(new MockResponse.Builder()
                     .code(200)
                     .body("Conflict 1")
@@ -351,7 +350,7 @@ class DispatcherResolverAdvancedTest {
         }
 
         @Override
-        public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
+        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
             return Optional.of(new MockResponse.Builder()
                     .code(200)
                     .body("Test Response")
@@ -365,9 +364,9 @@ class DispatcherResolverAdvancedTest {
     }
 
     static class TestDirectDispatcher extends Dispatcher {
-        @NotNull
+        @NonNull
         @Override
-        public MockResponse dispatch(@NotNull RecordedRequest request) {
+        public MockResponse dispatch(@NonNull RecordedRequest request) {
             return new MockResponse.Builder()
                     .code(200)
                     .body("Direct Dispatcher")
