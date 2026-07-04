@@ -24,7 +24,6 @@ import lombok.NonNull;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,7 +103,7 @@ public class CombinedDispatcher extends Dispatcher {
     }
 
     @Override
-    public @NotNull MockResponse dispatch(@NonNull RecordedRequest request) {
+    public @NonNull MockResponse dispatch(@NonNull RecordedRequest request) {
         var path = MoreStrings.nullToEmpty(request.getUrl() != null ? request.getUrl().encodedPath() : null);
         var mapper = HttpMethodMapper.of(request);
         /*~~(TODO: INFO needs LogRecord. Suppress: // cui-rewrite:disable CuiLogRecordPatternRecipe)~~>*/LOGGER.info("Processing method '%s' with path '%s'", mapper, path);

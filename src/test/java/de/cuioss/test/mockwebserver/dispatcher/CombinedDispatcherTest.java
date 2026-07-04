@@ -29,6 +29,7 @@ import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CO
 import static de.cuioss.tools.collect.CollectionLiterals.mutableList;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CombinedDispatcherTest {
@@ -69,6 +70,12 @@ class CombinedDispatcherTest {
     void shouldHandleMissingFilter() {
         var dispatcher = new CombinedDispatcher().addDispatcher(okDispatcher);
         assertDispatchWithCode(dispatcher, HTTP_CODE_TEAPOT, "/notThere");
+    }
+
+    @Test
+    void shouldRejectNullRequest() {
+        var dispatcher = new CombinedDispatcher(okDispatcher);
+        assertThrows(NullPointerException.class, () -> dispatcher.dispatch(null));
     }
 
     private void assertDispatchWithCode(CombinedDispatcher dispatcher, int httpCode, String urlPart) {

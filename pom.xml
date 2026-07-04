@@ -39,21 +39,18 @@
         <dependencies>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
-                <artifactId>mockwebserver3-junit5</artifactId>
+                <artifactId>mockwebserver3</artifactId>
                 <version>${version.okhttp3}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>com.squareup.okhttp3</groupId>
                 <artifactId>okhttp-tls</artifactId>
                 <version>${version.okhttp3}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>jakarta.servlet-api</artifactId>
                 <version>${version.jakarta.servlet-api}</version>
-                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -63,13 +60,8 @@
             <artifactId>lombok</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-params</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.squareup.okhttp3</groupId>
-            <artifactId>mockwebserver3-junit5</artifactId>
+            <artifactId>mockwebserver3</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -89,6 +81,7 @@
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- Unit testing -->

@@ -20,7 +20,6 @@ import lombok.NonNull;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -241,7 +240,7 @@ class DispatcherResolverTest {
         }
 
         @Override
-        public Optional<MockResponse> handleGet(@NotNull RecordedRequest request) {
+        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
             if (request.getUrl().encodedPath() != null) {
                 // For the TestClassWithDispatcherAnnotation, we need to handle the TEST_PATH
                 if (request.getUrl().encodedPath().startsWith(TEST_PATH)) {
@@ -272,9 +271,9 @@ class DispatcherResolverTest {
 
     // Test legacy dispatcher implementation
     static class TestDispatcher extends Dispatcher {
-        @NotNull
+        @NonNull
         @Override
-        public MockResponse dispatch(@NotNull RecordedRequest request) {
+        public MockResponse dispatch(@NonNull RecordedRequest request) {
             // Log the incoming request path
             LOGGER.debug("Legacy dispatcher received request with path: %s", request.getUrl().encodedPath());
 
