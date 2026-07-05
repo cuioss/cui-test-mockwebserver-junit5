@@ -23,9 +23,6 @@ import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.util.Optional;
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -141,7 +138,6 @@ class DispatcherResolverTest {
     private static final String STATUS_ERROR_MESSAGE = " does not contain 200";
 
 
-
     // Test classes for the tests
 
     // Test class with @ModuleDispatcher annotation
@@ -178,54 +174,6 @@ class DispatcherResolverTest {
             return new TestDispatcher();
         }
 
-    }
-
-    // Test dispatcher element implementation
-    private static final class TestDispatcherElement implements ModuleDispatcherElement {
-        private final String baseUrl;
-
-        @SuppressWarnings("unused") // Implicitly called by the test framework
-        public TestDispatcherElement() {
-            this.baseUrl = "/"; // Default to handle all paths
-        }
-
-        public TestDispatcherElement(String baseUrl) {
-            this.baseUrl = baseUrl;
-        }
-
-        @Override
-        public String getBaseUrl() {
-            return baseUrl;
-        }
-
-        @Override
-        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
-            if (request.getUrl().encodedPath() != null) {
-                // For the TestClassWithDispatcherAnnotation, we need to handle the TEST_PATH
-                if (request.getUrl().encodedPath().startsWith(TEST_PATH)) {
-                    return Optional.of(new MockResponse.Builder()
-                            .code(200)
-                            .body("Test Dispatcher")
-                            .build());
-                } else if (request.getUrl().encodedPath().startsWith(METHOD_PATH)) {
-                    return Optional.of(new MockResponse.Builder()
-                            .code(200)
-                            .body("Method Dispatcher")
-                            .build());
-                } else if (request.getUrl().encodedPath().startsWith(baseUrl)) {
-                    return Optional.of(new MockResponse.Builder()
-                            .code(200)
-                            .body("Default Dispatcher Response")
-                            .build());
-                }
-            }
-            return Optional.empty();
-        }
-
-        @Override
-        public @NonNull Set<HttpMethodMapper> supportedMethods() {
-            return Set.of(HttpMethodMapper.GET);
-        }
     }
 
     // Test legacy dispatcher implementation

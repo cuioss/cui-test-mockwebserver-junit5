@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import okhttp3.tls.HandshakeCertificates;
 
+import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -219,27 +220,26 @@ class MockWebServerExtensionCertificateTest {
     class CustomCertificateTests {
 
         private HandshakeCertificates certificates;
+        private boolean providerInvoked;
 
         @BeforeEach
         void setUp() {
-            try {
-                // Create custom certificates before the test runs
-                certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(2, KeyAlgorithm.RSA_2048);
-                LOGGER.info("Custom certificates created successfully");
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
-                LOGGER.error(e, "Failed to create custom certificates");
-                fail("Failed to create custom certificates: " + e.getMessage());
-            }
+            // Create custom certificates before the test runs
+            certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(2, KeyAlgorithm.RSA_2048);
+            LOGGER.info("Custom certificates created successfully");
         }
 
         /**
-         * Method to provide custom certificates for HTTPS testing.
-         * This is used by the @TestProvidedCertificate annotation.
-         * 
+         * Provider method resolved by the class-level {@link TestProvidedCertificate} annotation
+         * (default name {@code getTestProvidedHandshakeCertificates}). Records that it was actually
+         * invoked so the test can prove the provided certificates were used rather than a silent
+         * self-signed fallback.
+         *
          * @return the HandshakeCertificates to be used
          */
         @SuppressWarnings("unused") // implicitly called by the test framework
-        public HandshakeCertificates provideCertificates() {
+        public HandshakeCertificates getTestProvidedHandshakeCertificates() {
+            providerInvoked = true;
             return certificates;
         }
 
@@ -251,6 +251,7 @@ class MockWebServerExtensionCertificateTest {
             assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
             assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
             assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
+            assertTrue(providerInvoked, "The @TestProvidedCertificate provider method must actually be invoked");
 
             // Create HTTPS client with the injected SSL context and timeout
             HttpClient client = HttpClient.newBuilder()
@@ -274,7 +275,7 @@ class MockWebServerExtensionCertificateTest {
                 Thread.currentThread().interrupt();
                 LOGGER.error(e, REQUEST_INTERRUPTED_MESSAGE);
                 fail(REQUEST_INTERRUPTED_MESSAGE + ": " + e.getMessage());
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+            } catch (IOException e) {
                 LOGGER.error(e, "Failed to make HTTPS request with custom certificates");
                 fail("Failed to make HTTPS request with custom certificates: " + e.getMessage());
             }
@@ -292,14 +293,14 @@ class MockWebServerExtensionCertificateTest {
     class CertificateFallbackTests {
 
         /**
-         * Method to provide custom certificates for HTTPS testing.
-         * This is used by the @TestProvidedCertificate annotation.
-         * Returns null to simulate an error in certificate provision.
-         * 
+         * Provider method resolved by the class-level {@link TestProvidedCertificate} annotation
+         * (default name {@code getTestProvidedHandshakeCertificates}). Returning {@code null} exercises
+         * the provider-returns-null branch, which must fall back to self-signed certificates.
+         *
          * @return null to test fallback behavior
          */
         @SuppressWarnings("unused") // implicitly called by the test framework
-        public HandshakeCertificates provideCertificates() {
+        public HandshakeCertificates getTestProvidedHandshakeCertificates() {
             // Return null to simulate an error in certificate provision
             return null;
         }
@@ -335,7 +336,8 @@ class MockWebServerExtensionCertificateTest {
                 } catch (InterruptedException e) {
                     // Restore the interrupted status and rethrow with runtime exception
                     Thread.currentThread().interrupt();
-                    /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                    /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/
+                    throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
                 }
             });
         }

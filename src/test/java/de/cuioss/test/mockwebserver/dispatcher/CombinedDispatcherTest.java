@@ -15,22 +15,13 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
-import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.Test;
-
-import okhttp3.Headers;
-import okhttp3.HttpUrl;
-import okio.ByteString;
-
-import java.util.Collections;
 
 import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CODE_NOT_FOUND;
 import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CODE_TEAPOT;
 import static de.cuioss.tools.collect.CollectionLiterals.mutableList;
 import static jakarta.servlet.http.HttpServletResponse.SC_OK;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class CombinedDispatcherTest {
 
@@ -83,12 +74,12 @@ class CombinedDispatcherTest {
         // PATCH is not a supported HttpMethodMapper: it must fall through to the default response
         // instead of throwing out of dispatch().
         var dispatcher = new CombinedDispatcher(okDispatcher);
-        var teapot = assertDoesNotThrow(() -> dispatcher.dispatch(createRequest("PATCH", AllOkDispatcher.BASE + "/x")));
+        var teapot = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("PATCH", AllOkDispatcher.BASE + "/x")));
         assertTrue(teapot.getStatus().contains(String.valueOf(HTTP_CODE_TEAPOT)),
                 "Unsupported method should yield the teapot default, was: " + teapot.getStatus());
 
         dispatcher.endWithTeapot(false);
-        var notFound = assertDoesNotThrow(() -> dispatcher.dispatch(createRequest("OPTIONS", AllOkDispatcher.BASE + "/x")));
+        var notFound = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("OPTIONS", AllOkDispatcher.BASE + "/x")));
         assertTrue(notFound.getStatus().contains(String.valueOf(HTTP_CODE_NOT_FOUND)),
                 "Unsupported method should yield 404 when teapot is disabled, was: " + notFound.getStatus());
     }
@@ -96,18 +87,18 @@ class CombinedDispatcherTest {
     @Test
     void shouldMatchOnSegmentBoundary() {
         var dispatcher = new CombinedDispatcher(new BaseAllAcceptDispatcher("/api"));
-        var matched = assertDoesNotThrow(() -> dispatcher.dispatch(createRequest("GET", "/api/users")));
+        var matched = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("GET", "/api/users")));
         assertTrue(matched.getStatus().contains(String.valueOf(SC_OK)),
                 "/api/users should match base /api, was: " + matched.getStatus());
 
-        var notMatched = assertDoesNotThrow(() -> dispatcher.dispatch(createRequest("GET", "/apiary/list")));
+        var notMatched = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("GET", "/apiary/list")));
         assertTrue(notMatched.getStatus().contains(String.valueOf(HTTP_CODE_TEAPOT)),
                 "/apiary should not match base /api, was: " + notMatched.getStatus());
     }
 
     private void assertDispatchWithCode(CombinedDispatcher dispatcher, int httpCode, String urlPart) {
         for (HttpMethodMapper mapper : HttpMethodMapper.values()) {
-            var request = createRequest(mapper.name(), urlPart + "/someResource");
+            var request = DispatcherTestSupport.createRequest(mapper.name(), urlPart + "/someResource");
             assertDoesNotThrow(() -> {
                 var result = dispatcher.dispatch(request);
                 assertTrue(result.getStatus().contains(String.valueOf(httpCode)),
@@ -115,15 +106,6 @@ class CombinedDispatcherTest {
             });
         }
 
-    }
-
-    static RecordedRequest createRequest(String method, String target) {
-        return new RecordedRequest(
-                0, 0, null, Collections.emptyList(),
-                method, target, "HTTP/1.1",
-                HttpUrl.parse("http://localhost" + target),
-                Headers.of("key", "value", "key2", "value2"),
-                ByteString.EMPTY, 0, Collections.emptyList(), null);
     }
 
 }

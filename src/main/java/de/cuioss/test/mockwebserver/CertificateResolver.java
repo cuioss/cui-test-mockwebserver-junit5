@@ -53,8 +53,10 @@ class CertificateResolver {
      * configured (i.e. not overridden) and not found. Kept for backwards compatibility.
      */
     private static final String LEGACY_PROVIDER_METHOD_NAME = "provideHandshakeCertificates";
-    private static final String SELF_SIGNED_CERTIFICATES_KEY = "self-signed-certificates";
-    private static final String SSL_CONTEXT_KEY = "ssl-context";
+    /** Store key for the cached self-signed certificates; package-visible for tests. */
+    static final String SELF_SIGNED_CERTIFICATES_KEY = "self-signed-certificates";
+    /** Store key for the resolved {@code SSLContext}; package-visible for tests. */
+    static final String SSL_CONTEXT_KEY = "ssl-context";
 
     /**
      * Identifies the {@link ExtensionContext.Namespace} under which the Resolver stores its data.

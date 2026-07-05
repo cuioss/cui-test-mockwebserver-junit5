@@ -16,21 +16,27 @@
 package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
+import de.cuioss.test.mockwebserver.mockresponse.MockResponseConfig;
 import de.cuioss.tools.logging.CuiLogger;
 import lombok.NonNull;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
+import org.easymock.EasyMock;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 
 import okhttp3.tls.HandshakeCertificates;
 
 import java.io.IOException;
+import java.lang.reflect.Parameter;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -230,14 +236,13 @@ class MockWebServerExtensionErrorHandlingTest {
     class CertificateErrorTests {
 
         /**
-         * Method to provide custom certificates for HTTPS testing.
-         * This is used by the @TestProvidedCertificate annotation.
-         * Returns null to simulate an error in certificate provision.
+         * Provider method resolved by the class-level {@link TestProvidedCertificate} annotation
+         * (default name {@code getTestProvidedHandshakeCertificates}). Returning {@code null} exercises
+         * the provider-returns-null branch, which must fall back to self-signed certificates.
          *
          * @return null to test fallback behavior
          */
-        @TestProvidedCertificate
-        public HandshakeCertificates provideCertificates() {
+        public HandshakeCertificates getTestProvidedHandshakeCertificates() {
             // Return null to simulate an error in certificate provision
             return null;
         }
@@ -322,10 +327,63 @@ class MockWebServerExtensionErrorHandlingTest {
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                     assertEquals(200, response.statusCode(), "Original server should still work");
                 });
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (Exception e) {
-                LOGGER.error(e, "Error in second server test");
             }
         }
     }
+
     // end::extension-error-handling[]
+
+    /**
+     * Verifies that parameter resolution fails loudly when no server is available, rather than
+     * returning silently. Exercised directly against the extension so the failure is observable.
+     */
+    @Test
+    @DisplayName("Should throw ParameterResolutionException when no MockWebServer is available")
+    void shouldThrowParameterResolutionExceptionWhenNoServerAvailable() throws Exception {
+        MockWebServerExtension extension = new MockWebServerExtension();
+        Parameter uriBuilderParameter = ParameterResolutionTests.class
+                .getDeclaredMethod("shouldResolveAllSupportedParameterTypes", MockWebServer.class, URIBuilder.class)
+                .getParameters()[1];
+
+        ParameterContext parameterContext = EasyMock.createMock(ParameterContext.class);
+        EasyMock.expect(parameterContext.getParameter()).andReturn(uriBuilderParameter).anyTimes();
+
+        ExtensionContext.Store store = EasyMock.createMock(ExtensionContext.Store.class);
+        EasyMock.expect(store.get(EasyMock.anyObject())).andReturn(null).anyTimes();
+        ExtensionContext extensionContext = EasyMock.createMock(ExtensionContext.class);
+        EasyMock.expect(extensionContext.getStore(MockWebServerExtension.NAMESPACE)).andReturn(store).anyTimes();
+        EasyMock.replay(parameterContext, store, extensionContext);
+
+        ParameterResolutionException exception = assertThrows(ParameterResolutionException.class,
+                () -> extension.resolveParameter(parameterContext, extensionContext));
+        assertEquals("No MockWebServer instance available", exception.getMessage(),
+                "The failure should name the missing server");
+    }
+
+    /**
+     * Verifies that a class-level {@link MockResponseConfig} configures the dispatcher and the
+     * response is served. Folded here from the former {@code MockWebServerErrorHandlingTest} (H6).
+     */
+    @Nested
+    @DisplayName("MockResponseConfig Dispatcher Tests")
+    @EnableMockWebServer
+    @MockResponseConfig(status = 500, textContent = "Error response for testing")
+    class MockResponseConfigDispatcherTests {
+
+        @Test
+        @DisplayName("Should serve the response configured via MockResponseConfig")
+        void shouldServeConfiguredResponse(MockWebServer server, URIBuilder uriBuilder) throws Exception {
+            assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
+
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(uriBuilder.build())
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            assertEquals(500, response.statusCode(), "Should receive the configured status");
+            assertEquals("Error response for testing", response.body(), "Should receive the configured body");
+        }
+    }
 }

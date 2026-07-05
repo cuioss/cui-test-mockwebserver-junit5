@@ -26,10 +26,7 @@ import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Advanced tests for {@link DispatcherResolver} covering the resolution edge cases. Where a
@@ -129,7 +126,7 @@ class DispatcherResolverAdvancedTest {
 
     @Test
     @DisplayName("Should resolve from getModuleDispatcher with context-aware resolution")
-    void shouldResolveContextAware() throws NoSuchMethodException {
+    void shouldResolveContextAware() throws Exception {
         Method testMethod = getClass().getDeclaredMethod("shouldResolveContextAware");
         var dispatcher = resolver.resolveDispatcher(TestClassWithMethod.class,
                 new TestClassWithMethod(), testMethod);
@@ -145,7 +142,7 @@ class DispatcherResolverAdvancedTest {
 
     @Test
     @DisplayName("Should resolve a method-level @ModuleDispatcher taking precedence over the class")
-    void shouldResolveMethodLevelAnnotation() throws NoSuchMethodException {
+    void shouldResolveMethodLevelAnnotation() throws Exception {
         Method testMethod = MethodLevelAnnotationClass.class.getDeclaredMethod("annotatedTest");
         var dispatcher = resolver.resolveDispatcher(MethodLevelAnnotationClass.class,
                 new MethodLevelAnnotationClass(), testMethod);
@@ -334,36 +331,6 @@ class DispatcherResolverAdvancedTest {
         @Override
         public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
             return Optional.of(new MockResponse.Builder().code(200).body("Conflict").build());
-        }
-
-        @Override
-        public @NonNull Set<HttpMethodMapper> supportedMethods() {
-            return Set.of(HttpMethodMapper.GET);
-        }
-    }
-
-    static class TestDispatcherElement implements ModuleDispatcherElement {
-        private final String baseUrl;
-        private final String body;
-
-        @SuppressWarnings("unused") // required so the class is a valid @ModuleDispatcher value target
-        public TestDispatcherElement() {
-            this("/", "default");
-        }
-
-        public TestDispatcherElement(String baseUrl, String body) {
-            this.baseUrl = baseUrl;
-            this.body = body;
-        }
-
-        @Override
-        public String getBaseUrl() {
-            return baseUrl;
-        }
-
-        @Override
-        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
-            return Optional.of(new MockResponse.Builder().code(200).body(body).build());
         }
 
         @Override
