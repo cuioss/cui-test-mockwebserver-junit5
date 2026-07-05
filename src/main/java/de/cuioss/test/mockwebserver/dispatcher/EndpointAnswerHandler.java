@@ -50,7 +50,8 @@ import java.util.Optional;
  * handler.resetToDefaultResponse();
  *
  * // Create handler with a specific default response for a given method
- * var customHandler = new EndpointAnswerHandler(RESPONSE_NO_CONTENT, HttpMethodMapper.DELETE);
+ * var customHandler = new EndpointAnswerHandler(RESPONSE_NO_CONTENT, HttpMethodMapper.DELETE)
+ *         .resetToDefaultResponse();
  * </pre>
  *
  * <h2>Factory Methods</h2>
@@ -138,8 +139,8 @@ public class EndpointAnswerHandler {
     /**
      * Creates a handler bound to a single HTTP method with a given default response.
      *
-     * @param defaultResponse the response returned after {@link #resetToDefaultResponse()} and the
-     *                         initial value produced by {@link #respond()}
+     * @param defaultResponse the response applied by {@link #resetToDefaultResponse()} (the initial
+     *                         {@link #respond()} value is empty until that method is called)
      * @param httpMethod       the HTTP method this handler answers for
      */
     public EndpointAnswerHandler(MockResponse defaultResponse, HttpMethodMapper httpMethod) {

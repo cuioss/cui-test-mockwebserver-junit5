@@ -217,9 +217,7 @@ class ManualStartTest {
         URI uri = uriBuilder.addPathSegment("api").build();
         assertEquals(server.getPort(), uri.getPort());
 
-        // Manual closing is normally unnecessary: the extension closes the server in its
-        // afterEach callback. Call close() explicitly only if you need to stop it earlier.
-        server.close();
+        // Manual closing is unnecessary: the extension closes the server in its afterEach callback.
     }
 }
 ----
