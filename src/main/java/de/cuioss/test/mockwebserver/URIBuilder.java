@@ -21,12 +21,12 @@ import lombok.NonNull;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * A builder for creating URIs for MockWebServer tests.
@@ -54,6 +54,26 @@ import java.util.stream.Collectors;
  * @see mockwebserver3.MockWebServer
  */
 public class URIBuilder {
+
+    /**
+     * Message used when {@link #build()} or {@link #buildAsString()} is called on a placeholder builder.
+     */
+    private static final String PLACEHOLDER_BUILD_MESSAGE =
+            "Cannot build URI from placeholder URIBuilder. The server must be started first, and a proper " +
+                    "URIBuilder must be created using URIBuilder.from(server.url(\"/\").url()).";
+
+    /**
+     * Characters allowed unencoded in a path, in addition to the RFC 3986 unreserved set. The forward
+     * slash is preserved so that segments containing separators (and {@link #setPath(String)} inputs)
+     * keep their structure.
+     */
+    private static final String PATH_ALLOWED = ":@!$&'()*+,;=/";
+
+    /**
+     * Characters allowed unencoded in a query name/value, in addition to the RFC 3986 unreserved set.
+     * The structural delimiters {@code & = +} are deliberately excluded so they are percent-encoded.
+     */
+    private static final String QUERY_ALLOWED = ":@!$'()*,;/?";
 
     private URL baseUrl;
     private final Supplier<URL> baseUrlSupplier;
@@ -219,34 +239,27 @@ public class URIBuilder {
 
     /**
      * Validates that the URIBuilder is in a valid state for building URIs.
-     * 
-     * @param forBuildAsString whether the validation is for buildAsString() method
-     * @throws IllegalStateException if this is a placeholder URIBuilder or if baseUrl is null
+     *
+     * @throws IllegalStateException if this is a placeholder URIBuilder
      */
-    private void validateBuilderState(boolean forBuildAsString) {
+    private void validateBuilderState() {
         if (placeholder) {
-            if (forBuildAsString) {
-                throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
-                        "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/').url())");
-            } else {
-                throw new IllegalStateException("Cannot build URI from placeholder URIBuilder. " +
-                        "The server must be started first, and a proper URIBuilder must be created using URIBuilder.from(server.url('/')).url())");
-            }
-        }
-
-        if (resolveBaseUrl() == null) {
-            throw new IllegalStateException("Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
+            throw new IllegalStateException(PLACEHOLDER_BUILD_MESSAGE);
         }
     }
 
     /**
      * Builds the URI with all configured path segments and query parameters.
+     * <p>
+     * Path segments and query parameter names/values are percent-encoded per RFC 3986, so values
+     * containing spaces or reserved characters (e.g. {@code &}, {@code =}, {@code #}) are transmitted
+     * literally rather than throwing or silently altering the URI structure.
      *
      * @return the constructed URI
-     * @throws IllegalStateException if this is a placeholder URIBuilder or if baseUrl is null
+     * @throws IllegalStateException if this is a placeholder URIBuilder
      */
     public URI build() {
-        validateBuilderState(false);
+        validateBuilderState();
 
         String baseUrlString = resolveBaseUrl().toString();
         StringBuilder uriBuilder = new StringBuilder();
@@ -258,21 +271,31 @@ public class URIBuilder {
             uriBuilder.append(baseUrlString);
         }
 
-        // Add path segments
+        // Add path segments (percent-encoded, preserving embedded separators)
         if (!pathSegments.isEmpty()) {
-            uriBuilder.append('/').append(String.join("/", pathSegments));
+            uriBuilder.append('/');
+            for (int i = 0; i < pathSegments.size(); i++) {
+                if (i > 0) {
+                    uriBuilder.append('/');
+                }
+                uriBuilder.append(encodePathSegment(pathSegments.get(i)));
+            }
         }
 
-        // Add query parameters
+        // Add query parameters (percent-encoded names and values)
         if (!queryParameters.isEmpty()) {
             uriBuilder.append('?');
-
-            String queryString = queryParameters.entrySet().stream()
-                    .flatMap(entry -> entry.getValue().stream()
-                            .map(value -> entry.getKey() + "=" + value))
-                    .collect(Collectors.joining("&"));
-
-            uriBuilder.append(queryString);
+            boolean first = true;
+            for (Map.Entry<String, List<String>> entry : queryParameters.entrySet()) {
+                String encodedName = encodeQueryComponent(entry.getKey());
+                for (String value : entry.getValue()) {
+                    if (!first) {
+                        uriBuilder.append('&');
+                    }
+                    uriBuilder.append(encodedName).append('=').append(encodeQueryComponent(value));
+                    first = false;
+                }
+            }
         }
 
         return URI.create(uriBuilder.toString());
@@ -285,7 +308,7 @@ public class URIBuilder {
      * @throws IllegalStateException if this is a placeholder URIBuilder
      */
     public String buildAsString() {
-        validateBuilderState(true);
+        validateBuilderState();
         return build().toString();
     }
 
@@ -299,11 +322,7 @@ public class URIBuilder {
         if (placeholder) {
             return "/";
         }
-        URL resolved = resolveBaseUrl();
-        if (resolved == null) {
-            throw new IllegalStateException("Cannot access path with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
-        }
-        return resolved.getPath();
+        return resolveBaseUrl().getPath();
     }
 
     /**
@@ -315,11 +334,7 @@ public class URIBuilder {
         if (placeholder) {
             return "http";
         }
-        URL resolved = resolveBaseUrl();
-        if (resolved == null) {
-            throw new IllegalStateException("Cannot access scheme with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
-        }
-        return resolved.getProtocol();
+        return resolveBaseUrl().getProtocol();
     }
 
     /**
@@ -331,11 +346,55 @@ public class URIBuilder {
         if (placeholder) {
             return -1; // -1 indicates no port is explicitly set
         }
-        URL resolved = resolveBaseUrl();
-        if (resolved == null) {
-            throw new IllegalStateException("Cannot access port with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
+        return resolveBaseUrl().getPort();
+    }
+
+    /**
+     * Percent-encodes a single path segment per RFC 3986, leaving the forward slash intact so segments
+     * that contain separators keep their structure.
+     *
+     * @param segment the raw path segment
+     * @return the percent-encoded segment
+     */
+    private static String encodePathSegment(String segment) {
+        return percentEncode(segment, PATH_ALLOWED);
+    }
+
+    /**
+     * Percent-encodes a query parameter name or value per RFC 3986, encoding the structural delimiters
+     * {@code & = +} and space so the query structure is preserved.
+     *
+     * @param component the raw query name or value
+     * @return the percent-encoded component
+     */
+    private static String encodeQueryComponent(String component) {
+        return percentEncode(component, QUERY_ALLOWED);
+    }
+
+    /**
+     * Percent-encodes the input for use in a URI, leaving the RFC 3986 unreserved characters and the
+     * supplied {@code allowedExtra} characters untouched.
+     *
+     * @param input        the raw text to encode
+     * @param allowedExtra characters permitted unencoded in addition to the unreserved set
+     * @return the percent-encoded text
+     */
+    private static String percentEncode(String input, String allowedExtra) {
+        StringBuilder encoded = new StringBuilder(input.length());
+        for (byte rawByte : input.getBytes(StandardCharsets.UTF_8)) {
+            int value = rawByte & 0xFF;
+            char c = (char) value;
+            boolean unreserved = (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
+                    || (c >= '0' && c <= '9') || c == '-' || c == '.' || c == '_' || c == '~';
+            if (unreserved || allowedExtra.indexOf(c) >= 0) {
+                encoded.append(c);
+            } else {
+                encoded.append('%')
+                        .append(Character.toUpperCase(Character.forDigit(value >> 4, 16)))
+                        .append(Character.toUpperCase(Character.forDigit(value & 0xF, 16)));
+            }
         }
-        return resolved.getPort();
+        return encoded.toString();
     }
 
     /**
@@ -368,14 +427,13 @@ public class URIBuilder {
      *   <li>Avoiding manual path string manipulation and slash handling</li>
      * </ul>
      *
-     * @param path the path to set
+     * @param path the path to set, split into individual segments on {@code /}
      * @return this builder for method chaining
      */
-    public URIBuilder setPath(String path) {
-        // Clear existing path segments
+    public URIBuilder setPath(@NonNull String path) {
+        // Clear existing path segments and split the incoming path into individual segments so
+        // getPathSegments() stays consistent with addPathSegment semantics.
         pathSegments.clear();
-
-        // Add the new path as a segment
-        return addPathSegment(path);
+        return addPathSegments(path.split("/"));
     }
 }
