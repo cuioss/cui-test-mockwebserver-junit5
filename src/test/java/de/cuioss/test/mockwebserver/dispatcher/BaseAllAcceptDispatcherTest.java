@@ -25,7 +25,7 @@ import static jakarta.servlet.http.HttpServletResponse.*;
 class BaseAllAcceptDispatcherTest {
 
     private static final String DEFAULT_PATH = "/hello";
-    static final RecordedRequest DUMMY = CombinedDispatcherTest.createRequest("GET", "/");
+    static final RecordedRequest DUMMY = DispatcherTestSupport.createRequest("GET", "/");
 
     @Test
     void shouldDefaultToPositiveResponse() {
@@ -38,12 +38,26 @@ class BaseAllAcceptDispatcherTest {
     }
 
     @Test
-    void shouldModifyMethodsWithNull() {
+    void shouldKeepDefaultsWhenResultSetToNull() {
         var dispatcher = new BaseAllAcceptDispatcher(DEFAULT_PATH);
 
+        // Passing a null result leaves every method at its default response
         dispatcher.setMethodToResult(null);
         assertMockResponse(dispatcher.handleDelete(DUMMY).get(), SC_NO_CONTENT);
         assertMockResponse(dispatcher.handleGet(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
+        assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
+    }
+
+    @Test
+    void shouldForbidOnlyTheGivenSubset() {
+        var dispatcher = new BaseAllAcceptDispatcher(DEFAULT_PATH);
+
+        // Forbid only GET; every other method must keep its default response
+        dispatcher.setMethodToResult(EndpointAnswerHandler.RESPONSE_FORBIDDEN, GET);
+        assertMockResponse(dispatcher.handleGet(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handleDelete(DUMMY).get(), SC_NO_CONTENT);
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
@@ -82,15 +96,29 @@ class BaseAllAcceptDispatcherTest {
     }
 
     @Test
-    void shouldModifyOtherMethodsToForbidden() {
+    void shouldKeepDefaultsWhenAllMethodsAreExcluded() {
         var dispatcher = new BaseAllAcceptDispatcher(DEFAULT_PATH);
 
+        // When every method is listed as "given", none fall into the "all but given" set: defaults stay
         dispatcher.setAllButGivenMethodToResult(EndpointAnswerHandler.RESPONSE_FORBIDDEN, DELETE, GET, POST, PUT, HEAD);
         assertMockResponse(dispatcher.handleDelete(DUMMY).get(), SC_NO_CONTENT);
         assertMockResponse(dispatcher.handleGet(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
+    }
+
+    @Test
+    void shouldForbidEveryMethodExceptTheGivenSubset() {
+        var dispatcher = new BaseAllAcceptDispatcher(DEFAULT_PATH);
+
+        // Forbid all methods except GET; GET keeps its default, the rest become forbidden
+        dispatcher.setAllButGivenMethodToResult(EndpointAnswerHandler.RESPONSE_FORBIDDEN, GET);
+        assertMockResponse(dispatcher.handleGet(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handleDelete(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_FORBIDDEN);
     }
 
 }

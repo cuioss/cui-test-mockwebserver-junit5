@@ -22,7 +22,7 @@ import mockwebserver3.MockWebServer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -88,39 +88,28 @@ class MockWebServerManualStartTest {
                 LOGGER.info("Successfully received response from manually started server: " + response.body());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/
-                throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                throw new MockWebServerTestException(REQUEST_INTERRUPTED_MESSAGE, e);
             }
         });
         // end::manual-start-test-response[]
     }
 
     @Test
-    @DisplayName("Should be able to start server on specific port")
-    void shouldStartServerOnSpecificPort(MockWebServer server) {
+    @DisplayName("Should be able to start server on a specific port")
+    void shouldStartServerOnSpecificPort(MockWebServer server) throws Exception {
         assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
 
-        // Try to start on a specific port
-        try {
-            int specificPort = 8090;
-            server.start(specificPort);
-            assertTrue(server.getStarted(), "Server should be started");
-            assertEquals(specificPort, server.getPort(), "Server should use specified port");
-
-        } catch (IOException e) {
-            // Port might be in use, which is acceptable in a test environment
-            // This is a corner case test, so we don't fail the test if the port is unavailable
-            LOGGER.info("Could not start on specific port, likely already in use: " + e.getMessage());
-        } finally {
-            // Clean up
-            try {
-                if (server.getStarted()) {
-                    server.close();
-                }
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (Exception e) {
-                // Ignore shutdown errors in tests
-            }
+        // Reserve a currently-free port so the test is deterministic instead of relying on a fixed one.
+        int freePort;
+        try (ServerSocket socket = new ServerSocket(0)) {
+            freePort = socket.getLocalPort();
         }
+
+        // Start on the reserved port; any IOException here is a real failure and must fail the test.
+        // The extension's afterEach closes the server.
+        server.start(freePort);
+        assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
+        assertEquals(freePort, server.getPort(), "Server should use the reserved port");
     }
 
     @Test
@@ -178,8 +167,7 @@ class MockWebServerManualStartTest {
                 assertEquals(200, response.statusCode(), "Should receive OK response");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/
-                throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                throw new MockWebServerTestException(REQUEST_INTERRUPTED_MESSAGE, e);
             }
         });
     }

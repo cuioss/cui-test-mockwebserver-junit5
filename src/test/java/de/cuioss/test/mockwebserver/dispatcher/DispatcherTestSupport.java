@@ -24,7 +24,7 @@ import okio.Buffer;
 import okio.ByteString;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 /**
  * Shared helpers for dispatcher tests: building a {@link RecordedRequest}, dispatching it, and
@@ -37,15 +37,22 @@ public final class DispatcherTestSupport {
     }
 
     /**
+     * Creates a {@link RecordedRequest} with the given HTTP method for the given path.
+     */
+    public static RecordedRequest createRequest(String method, String path) {
+        return new RecordedRequest(
+                0, 0, null, List.of(),
+                method, path, "HTTP/1.1",
+                HttpUrl.parse("http://localhost" + path),
+                Headers.of("Host", "localhost"),
+                ByteString.EMPTY, 0, List.of(), null);
+    }
+
+    /**
      * Creates a GET {@link RecordedRequest} for the given path.
      */
     public static RecordedRequest getRequest(String path) {
-        return new RecordedRequest(
-                0, 0, null, Collections.emptyList(),
-                "GET", path, "HTTP/1.1",
-                HttpUrl.parse("http://localhost" + path),
-                Headers.of("Host", "localhost"),
-                ByteString.EMPTY, 0, Collections.emptyList(), null);
+        return createRequest("GET", path);
     }
 
     /**

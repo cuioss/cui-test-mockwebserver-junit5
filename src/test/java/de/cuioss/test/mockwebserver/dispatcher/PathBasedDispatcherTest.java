@@ -58,21 +58,21 @@ class PathBasedDispatcherTest {
             public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
                 String path = request.getUrl().encodedPath();
 
-                // Return different responses based on the path
+                // Return different responses based on the exact path
                 assert path != null;
-                if (path.endsWith("/api/users/active")) {
+                if ("/api/users/active".equals(path)) {
                     return Optional.of(new MockResponse.Builder()
                             .code(SC_OK)
                             .addHeader("Content-Type", "application/json")
                             .body("{\"users\":[{\"id\":1,\"name\":\"John\",\"status\":\"active\"}]}")
                             .build());
-                } else if (path.endsWith("/api/users/inactive")) {
+                } else if ("/api/users/inactive".equals(path)) {
                     return Optional.of(new MockResponse.Builder()
                             .code(SC_OK)
                             .addHeader("Content-Type", "application/json")
                             .body("{\"users\":[{\"id\":2,\"name\":\"Jane\",\"status\":\"inactive\"}]}")
                             .build());
-                } else if (path.matches(".*/api/users/\\d+")) {
+                } else if (path.matches("/api/users/\\d+")) {
                     // Extract user ID from path using regex
                     String userId = path.substring(path.lastIndexOf('/') + 1);
                     return Optional.of(new MockResponse.Builder()
@@ -105,11 +105,11 @@ class PathBasedDispatcherTest {
                 .sslContext(sslContext)
                 .build();
 
-        // Test different paths
+        // Each request resets the path via setPath so segments do not accumulate across requests.
 
         // 1. Get all users (empty list)
         HttpRequest allUsersRequest = HttpRequest.newBuilder()
-                .uri(uriBuilder.addPathSegments("api", "users").build())
+                .uri(uriBuilder.setPath("/api/users").build())
                 .GET()
                 .build();
         HttpResponse<String> allUsersResponse = client.send(allUsersRequest,
@@ -119,7 +119,7 @@ class PathBasedDispatcherTest {
 
         // 2. Get active users
         HttpRequest activeUsersRequest = HttpRequest.newBuilder()
-                .uri(uriBuilder.addPathSegments("api", "users", "active").build())
+                .uri(uriBuilder.setPath("/api/users/active").build())
                 .GET()
                 .build();
         HttpResponse<String> activeUsersResponse = client.send(activeUsersRequest,
@@ -130,7 +130,7 @@ class PathBasedDispatcherTest {
 
         // 3. Get inactive users
         HttpRequest inactiveUsersRequest = HttpRequest.newBuilder()
-                .uri(uriBuilder.addPathSegments("api", "users", "inactive").build())
+                .uri(uriBuilder.setPath("/api/users/inactive").build())
                 .GET()
                 .build();
         HttpResponse<String> inactiveUsersResponse = client.send(inactiveUsersRequest,
@@ -141,7 +141,7 @@ class PathBasedDispatcherTest {
 
         // 4. Get user by ID
         HttpRequest userRequest = HttpRequest.newBuilder()
-                .uri(uriBuilder.addPathSegments("api", "users", "42").build())
+                .uri(uriBuilder.setPath("/api/users/42").build())
                 .GET()
                 .build();
         HttpResponse<String> userResponse = client.send(userRequest,

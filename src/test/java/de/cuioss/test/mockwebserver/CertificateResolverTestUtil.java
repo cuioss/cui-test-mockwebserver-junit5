@@ -28,8 +28,9 @@ import javax.net.ssl.SSLContext;
  */
 final class CertificateResolverTestUtil {
 
-    static final String SELF_SIGNED_CERTIFICATES_KEY = "self-signed-certificates";
-    static final String SSL_CONTEXT_KEY = "ssl-context";
+    // Reference the resolver's own store keys instead of duplicating their string values.
+    static final String SELF_SIGNED_CERTIFICATES_KEY = CertificateResolver.SELF_SIGNED_CERTIFICATES_KEY;
+    static final String SSL_CONTEXT_KEY = CertificateResolver.SSL_CONTEXT_KEY;
     static final String CERTIFICATES_SHOULD_NOT_BE_NULL = "Certificates should not be null";
     static final String KEY_MANAGER_ASSERTION_MESSAGE = "Key manager should not be null";
     static final String TRUST_MANAGER_ASSERTION_MESSAGE = "Trust manager should not be null";

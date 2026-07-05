@@ -15,14 +15,8 @@
  */
 package de.cuioss.test.mockwebserver.dispatcher;
 
-import lombok.NonNull;
-import mockwebserver3.MockResponse;
-import mockwebserver3.RecordedRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -118,48 +112,6 @@ class DispatcherResolverMethodTest {
         assertInstanceOf(CombinedDispatcher.class, dispatcher);
     }
 
-    // Test dispatcher element implementation
-    private static final class TestDispatcherElement implements ModuleDispatcherElement {
-        private final String baseUrl;
-
-        @SuppressWarnings("unused") // implicitly called by the test framework
-        public TestDispatcherElement() {
-            this.baseUrl = "/"; // Default to handle all paths
-        }
-
-        public TestDispatcherElement(String baseUrl) {
-            this.baseUrl = baseUrl;
-        }
-
-        @Override
-        public String getBaseUrl() {
-            return baseUrl;
-        }
-
-        @Override
-        public Optional<MockResponse> handleGet(@NonNull RecordedRequest request) {
-            if (request.getUrl().encodedPath() != null) {
-                if (request.getUrl().encodedPath().startsWith(METHOD_PATH)) {
-                    return Optional.of(new MockResponse.Builder()
-                            .code(200)
-                            .body("Method Dispatcher")
-                            .build());
-                } else if (request.getUrl().encodedPath().startsWith(baseUrl)) {
-                    return Optional.of(new MockResponse.Builder()
-                            .code(200)
-                            .body("Default Dispatcher Response")
-                            .build());
-                }
-            }
-            return Optional.empty();
-        }
-
-        @Override
-        public @NonNull Set<HttpMethodMapper> supportedMethods() {
-            return Set.of(HttpMethodMapper.GET);
-        }
-    }
-
     // Test class with getModuleDispatcher method that returns null
     static class TestClassWithNullMethod {
         @SuppressWarnings("unused") // implicitly called by the test framework
@@ -180,7 +132,8 @@ class DispatcherResolverMethodTest {
     static class TestClassWithThrowingMethod {
         @SuppressWarnings("unused") // implicitly called by the test framework
         public ModuleDispatcherElement getModuleDispatcher() {
-            /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException("Test exception");
+            /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/
+            throw new RuntimeException("Test exception");
         }
     }
 
