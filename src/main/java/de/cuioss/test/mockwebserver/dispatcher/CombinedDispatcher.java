@@ -48,7 +48,7 @@ import java.util.Optional;
  * var dispatcher = new CombinedDispatcher()
  *     .addDispatcher(new UserApiDispatcher())
  *     .addDispatcher(new ProductApiDispatcher())
- *     .setEndWithTeapot(false); // Use 404 for unhandled requests
+ *     .endWithTeapot(false); // Use 404 for unhandled requests
  *
  * &#64;EnableMockWebServer
  * class ApiTest {

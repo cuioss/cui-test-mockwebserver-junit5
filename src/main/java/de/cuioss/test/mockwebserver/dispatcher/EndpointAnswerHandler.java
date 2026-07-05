@@ -49,17 +49,16 @@ import java.util.Optional;
  * // Reset to default
  * handler.resetToDefaultResponse();
  *
- * // Create handler with specific default response
- * var customHandler = EndpointAnswerHandler.builder()
- *     .defaultResponse(RESPONSE_NO_CONTENT)
- *     .build();
+ * // Create handler with a specific default response for a given method
+ * var customHandler = new EndpointAnswerHandler(RESPONSE_NO_CONTENT, HttpMethodMapper.DELETE)
+ *         .resetToDefaultResponse();
  * </pre>
  *
  * <h2>Factory Methods</h2>
  * <ul>
  *   <li>{@link #forPositiveGetRequest()} - Handler for GET requests (200 OK)</li>
- *   <li>{@link #forPositivePostRequest()} - Handler for POST requests (201 Created)</li>
- *   <li>{@link #forPositivePutRequest()} - Handler for PUT requests (204 No Content)</li>
+ *   <li>{@link #forPositivePostRequest()} - Handler for POST requests (200 OK)</li>
+ *   <li>{@link #forPositivePutRequest()} - Handler for PUT requests (201 Created)</li>
  *   <li>{@link #forPositiveDeleteRequest()} - Handler for DELETE requests (204 No Content)</li>
  * </ul>
  *
@@ -138,10 +137,11 @@ public class EndpointAnswerHandler {
     private MockResponse response;
 
     /**
-     * Default Constructor
+     * Creates a handler bound to a single HTTP method with a given default response.
      *
-     * @param defaultResponse
-     * @param httpMethod
+     * @param defaultResponse the response applied by {@link #resetToDefaultResponse()} (the initial
+     *                         {@link #respond()} value is empty until that method is called)
+     * @param httpMethod       the HTTP method this handler answers for
      */
     public EndpointAnswerHandler(MockResponse defaultResponse, HttpMethodMapper httpMethod) {
         this.httpMethod = httpMethod;
@@ -289,8 +289,15 @@ public class EndpointAnswerHandler {
     }
 
     /**
-     * @return An {@link EndpointAnswerHandler} resulting {@link #respond()} to
-     * return {@link Optional#empty()}
+     * Creates a handler that does not answer at all: {@link #respond()} returns {@link Optional#empty()},
+     * so the request falls through to the next dispatcher.
+     * <p>
+     * <strong>Note:</strong> despite the name, this does <em>not</em> produce an HTTP 204 "No Content"
+     * response — for that use {@link #RESPONSE_NO_CONTENT}. The name refers to "no response content
+     * emitted by this handler". (The method will be renamed to {@code passthrough} in the next major release.)
+     *
+     * @param httpMethod the HTTP method this handler is bound to
+     * @return an {@link EndpointAnswerHandler} whose {@link #respond()} returns {@link Optional#empty()}
      */
     public static EndpointAnswerHandler noContent(HttpMethodMapper httpMethod) {
         return new EndpointAnswerHandler(null, httpMethod);

@@ -48,7 +48,7 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  *
  * // Customize GET response
  * dispatcher.getGetResult().setResponse(
- *     new MockResponse().setBody("{'data': 'test'}")
+ *     new MockResponse.Builder().body("{'data': 'test'}").build()
  * );
  *
  * // Reset to default responses
@@ -58,8 +58,8 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  * <h2>Default Responses</h2>
  * <ul>
  *   <li>GET: 200 OK with empty body</li>
- *   <li>POST: 201 Created</li>
- *   <li>PUT: 204 No Content</li>
+ *   <li>POST: 200 OK</li>
+ *   <li>PUT: 201 Created</li>
  *   <li>DELETE: 204 No Content</li>
  *   <li>HEAD: 200 OK</li>
  * </ul>

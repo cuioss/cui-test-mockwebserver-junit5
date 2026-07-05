@@ -103,6 +103,8 @@ class CustomCertificateTest {
 }
 ----
 
+The second argument to `KeyMaterialUtil.createSelfSignedHandshakeCertificates` is the `keyAlgorithm`, which selects the key algorithm of the generated certificate. Elliptic-curve values (whose name starts with `ECDSA`) produce an EC (ECDSA P-256) certificate; every other value, including the RSA variants and `null`, produces an RSA-2048 certificate.
+
 === Using a Provider Class
 
 You can also use a separate provider class for better reuse of certificate creation logic:

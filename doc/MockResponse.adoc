@@ -1,4 +1,4 @@
-= Working with @MockResponse
+= Working with @MockResponseConfig
 :toc: macro
 :toclevels: 3
 :sectnumlevels: 1
@@ -57,18 +57,21 @@ The annotation supports different types of content:
 // Text content (Content-Type: text/plain)
 @MockResponseConfig(
     path = "/api/text",
+    status = 200,
     textContent = "Hello, World!"
 )
 
 // JSON content (Content-Type: application/json)
 @MockResponseConfig(
     path = "/api/json",
+    status = 200,
     jsonContentKeyValue = "message=Hello,count=42"
 )
 
 // Raw string content (no Content-Type set)
 @MockResponseConfig(
     path = "/api/raw",
+    status = 200,
     stringContent = "<custom>content</custom>"
 )
 ----
@@ -90,7 +93,7 @@ You can add custom headers to your responses:
 
 == Context-Aware Behavior
 
-Starting with version 1.2, `@MockResponseConfig` annotations are context-aware. This means that each test method only has access to:
+Starting with version 1.1, `@MockResponseConfig` annotations are context-aware. This means that each test method only has access to:
 
 1. Its own method-level `@MockResponseConfig` annotations
 2. Class-level `@MockResponseConfig` annotations from its containing class and parent classes
