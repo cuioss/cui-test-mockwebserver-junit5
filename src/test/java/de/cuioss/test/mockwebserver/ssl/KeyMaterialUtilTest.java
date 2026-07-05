@@ -27,6 +27,7 @@ import okhttp3.tls.HandshakeCertificates;
 
 import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509KeyManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -57,6 +58,32 @@ class KeyMaterialUtilTest {
                     Arguments.of(7, KeyAlgorithm.RSA_2048),
                     Arguments.of(1, KeyAlgorithm.RSA_2048) // Single day certificate
             );
+        }
+
+        @Test
+        @DisplayName("Should honor an elliptic-curve key algorithm")
+        void shouldHonorEcKeyAlgorithm() {
+            var certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(
+                    TEST_DURATION_DAYS, KeyAlgorithm.ECDSA_P_256);
+
+            var keyManager = (X509KeyManager) certificates.keyManager();
+            assertNotNull(keyManager.getServerAliases("EC", null),
+                    "Requesting ECDSA_P_256 must produce an EC key");
+            assertNull(keyManager.getServerAliases("RSA", null),
+                    "An EC certificate must not present an RSA key");
+        }
+
+        @Test
+        @DisplayName("Should default to an RSA key algorithm")
+        void shouldDefaultToRsaKeyAlgorithm() {
+            var certificates = KeyMaterialUtil.createSelfSignedHandshakeCertificates(
+                    TEST_DURATION_DAYS, KeyAlgorithm.RSA_2048);
+
+            var keyManager = (X509KeyManager) certificates.keyManager();
+            assertNotNull(keyManager.getServerAliases("RSA", null),
+                    "Requesting RSA_2048 must produce an RSA key");
+            assertNull(keyManager.getServerAliases("EC", null),
+                    "An RSA certificate must not present an EC key");
         }
     }
 

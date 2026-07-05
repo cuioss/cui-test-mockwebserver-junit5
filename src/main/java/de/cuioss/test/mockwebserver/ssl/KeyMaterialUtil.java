@@ -24,8 +24,8 @@ import okhttp3.tls.HeldCertificate;
 
 import java.security.KeyManagementException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -87,35 +87,60 @@ public class KeyMaterialUtil {
             Instant now = Instant.now();
             Instant validUntil = now.plus(durationDays, ChronoUnit.DAYS);
 
-            // Create the certificate
-            var heldCertificate = new HeldCertificate.Builder()
+            // Create the certificate honoring the requested key algorithm
+            HeldCertificate.Builder builder = new HeldCertificate.Builder()
                     .commonName("MockWebServer")
                     .addSubjectAlternativeName("localhost")
-                    .validityInterval(now.toEpochMilli(), validUntil.toEpochMilli())
-                    .rsa2048()  // Default to RSA 2048
-                    .build();
+                    .validityInterval(now.toEpochMilli(), validUntil.toEpochMilli());
+            applyKeyAlgorithm(builder, keyAlgorithm);
+            var heldCertificate = builder.build();
 
             // Create HandshakeCertificates that includes the certificate as both server and trusted cert
             return new HandshakeCertificates.Builder()
                     .heldCertificate(heldCertificate)
                     .addTrustedCertificate(heldCertificate.certificate())
                     .build();
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
             throw new IllegalStateException("Failed to create self-signed HandshakeCertificates", e);
+        }
+    }
+
+    /**
+     * Configures the key algorithm on the given certificate builder.
+     * <p>
+     * Elliptic-curve algorithms map to {@code ecdsa256()}; every other value (including RSA variants
+     * and {@code null}) maps to {@code rsa2048()}, the default.
+     *
+     * @param builder      the certificate builder to configure
+     * @param keyAlgorithm the requested algorithm, may be {@code null}
+     */
+    private static void applyKeyAlgorithm(HeldCertificate.Builder builder, KeyAlgorithm keyAlgorithm) {
+        if (keyAlgorithm != null && keyAlgorithm.name().startsWith("ECDSA")) {
+            builder.ecdsa256();
+        } else {
+            builder.rsa2048();
         }
     }
 
 
     /**
-     * Converts an SSLContext to HandshakeCertificates.
-     * This method creates a HandshakeCertificates instance from an existing SSLContext,
-     * which is useful when you have an SSLContext and need to use it with MockWebServer.
+     * Generates fresh {@link HandshakeCertificates} backed by a newly created self-signed certificate,
+     * combined with the JVM's system trust roots.
+     * <p>
+     * <strong>This method does not derive any key material from {@code sslContext}.</strong> Private
+     * keys and certificates cannot be extracted from an initialized {@link SSLContext}, so the input is
+     * used only as a non-null guard; the returned certificates are unrelated to it. The parameter is
+     * retained for source compatibility.
      *
-     * @param sslContext the SSLContext to convert
-     * @return HandshakeCertificates configured from the provided SSLContext
+     * @param sslContext must not be {@code null}; otherwise unused
+     * @return freshly generated self-signed {@code HandshakeCertificates} plus system trust roots
      * @throws IllegalArgumentException if the SSLContext is null
-     * @throws IllegalStateException    if the conversion fails
+     * @throws IllegalStateException    if certificate generation fails
+     * @deprecated cannot convert an existing {@link SSLContext}; use
+     * {@link #createSelfSignedHandshakeCertificates(int, KeyAlgorithm)} to generate test material.
+     * Scheduled for removal in the next major release.
      */
+    @Deprecated(forRemoval = true)
     public static HandshakeCertificates convertToHandshakeCertificates(SSLContext sslContext) {
         LOGGER.debug("Converting SSLContext to HandshakeCertificates");
 
@@ -151,7 +176,7 @@ public class KeyMaterialUtil {
             }
 
             return builder.build();
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+        } catch (NoSuchAlgorithmException | KeyStoreException e) {
             throw new IllegalStateException("Failed to convert SSLContext to HandshakeCertificates", e);
         }
     }
@@ -178,15 +203,11 @@ public class KeyMaterialUtil {
             // Create and initialize the SSLContext with the TrustManager
             SSLContext sslContext = SSLContext.getInstance("TLS");
 
-            // Use a properly seeded SecureRandom instance
-            // For testing purposes only - not for production use
-            SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
-            secureRandom.setSeed(System.currentTimeMillis());
-
+            // Pass null so the provider supplies its own securely-seeded SecureRandom
             sslContext.init(
                     null, // No need for KeyManager as we're configuring client-side trust
                     new TrustManager[]{trustManager},
-                    secureRandom
+                    null
             );
 
             return sslContext;

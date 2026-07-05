@@ -88,7 +88,8 @@ class MockWebServerManualStartTest {
                 LOGGER.info("Successfully received response from manually started server: " + response.body());
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/
+                throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
             }
         });
         // end::manual-start-test-response[]
@@ -116,10 +117,38 @@ class MockWebServerManualStartTest {
                 if (server.getStarted()) {
                     server.close();
                 }
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (Exception e) {
                 // Ignore shutdown errors in tests
             }
         }
+    }
+
+    @Test
+    @DisplayName("Injected URIBuilder should bind lazily and work after manual start")
+    void shouldUseInjectedUriBuilderAfterManualStart(MockWebServer server, URIBuilder injectedUriBuilder) {
+        assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
+        assertNotNull(injectedUriBuilder, "URIBuilder should be injected");
+        assertFalse(server.getStarted(), SERVER_SHOULD_NOT_BE_STARTED);
+
+        // Start the server manually; the injected builder must resolve the base URL lazily at build() time
+        assertDoesNotThrow(() -> server.start());
+        assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(injectedUriBuilder.addPathSegments("api", "test").build())
+                .GET()
+                .build();
+
+        assertDoesNotThrow(() -> {
+            try {
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                assertEquals(200, response.statusCode(), "Should receive OK response via injected URIBuilder");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new MockWebServerTestException(REQUEST_INTERRUPTED_MESSAGE, e);
+            }
+        });
     }
 
     @Test
@@ -149,7 +178,8 @@ class MockWebServerManualStartTest {
                 assertEquals(200, response.statusCode(), "Should receive OK response");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
+                /*~~(TODO: Throw specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/
+                throw new RuntimeException(REQUEST_INTERRUPTED_MESSAGE, e);
             }
         });
     }

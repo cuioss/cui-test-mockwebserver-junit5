@@ -18,6 +18,8 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.test.mockwebserver.ssl.KeyMaterialUtil;
 import de.cuioss.tools.logging.CuiLogger;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.support.AnnotationSupport;
+import org.junit.platform.commons.support.SearchOption;
 import org.junit.platform.commons.util.ReflectionUtils;
 
 import okhttp3.tls.HandshakeCertificates;
@@ -41,7 +43,16 @@ import javax.net.ssl.SSLContext;
 class CertificateResolver {
 
     private static final CuiLogger LOGGER = new CuiLogger(CertificateResolver.class);
-    private static final String DEFAULT_PROVIDER_METHOD_NAME = "provideHandshakeCertificates";
+    /**
+     * The default provider-method name, matching {@link TestProvidedCertificate#methodName()}. This is
+     * the primary name looked up on the provider class.
+     */
+    private static final String DEFAULT_PROVIDER_METHOD_NAME = "getTestProvidedHandshakeCertificates";
+    /**
+     * Legacy provider-method name, tried only when the {@link #DEFAULT_PROVIDER_METHOD_NAME} is
+     * configured (i.e. not overridden) and not found. Kept for backwards compatibility.
+     */
+    private static final String LEGACY_PROVIDER_METHOD_NAME = "provideHandshakeCertificates";
     private static final String SELF_SIGNED_CERTIFICATES_KEY = "self-signed-certificates";
     private static final String SSL_CONTEXT_KEY = "ssl-context";
 
@@ -63,17 +74,16 @@ class CertificateResolver {
             return Optional.empty();
         }
 
-        // Check for TestProvidedCertificate annotation on the class
-        Optional<TestProvidedCertificate> classAnnotation =
-                Optional.ofNullable(testClass.get().getAnnotation(TestProvidedCertificate.class));
-
-        // Check for TestProvidedCertificate annotation on the test method
+        // Method annotation takes precedence over class annotation. The class lookup walks
+        // superclasses and enclosing classes (for @Nested tests) and honors meta-annotations,
+        // consistent with the other AnnotationSupport-based lookups in the extension.
         Optional<TestProvidedCertificate> methodAnnotation = context.getTestMethod()
-                .map(method -> method.getAnnotation(TestProvidedCertificate.class));
+                .flatMap(method -> AnnotationSupport.findAnnotation(method, TestProvidedCertificate.class));
 
-        // Method annotation takes precedence over class annotation
-        Optional<TestProvidedCertificate> annotation = methodAnnotation.isPresent() ?
-                methodAnnotation : classAnnotation;
+        Optional<TestProvidedCertificate> annotation = methodAnnotation.isPresent()
+                ? methodAnnotation
+                : AnnotationSupport.findAnnotation(testClass.get(), TestProvidedCertificate.class,
+                SearchOption.INCLUDE_ENCLOSING_CLASSES);
 
         if (annotation.isEmpty()) {
             return Optional.empty();
@@ -91,6 +101,16 @@ class CertificateResolver {
 
     /**
      * Gets HandshakeCertificates from the specified provider class.
+     * <p>
+     * Provider-method lookup order:
+     * <ol>
+     *   <li>The configured {@code methodName}.</li>
+     *   <li>Only if {@code methodName} is the {@linkplain #DEFAULT_PROVIDER_METHOD_NAME default}
+     *       and was not found: the {@linkplain #LEGACY_PROVIDER_METHOD_NAME legacy} name.</li>
+     * </ol>
+     * If an <em>explicitly configured</em> (non-default) method name does not resolve, this fails
+     * fast with an {@link IllegalStateException} rather than silently falling back to self-signed
+     * certificates — a typo in {@code methodName()} must not silently change the certificate source.
      *
      * @param providerClass the class that provides certificates
      * @param methodName    the name of the method that provides certificates
@@ -100,17 +120,24 @@ class CertificateResolver {
     @SuppressWarnings("java:S3655")
     // owolff: False positive: context.getTestClass().isPresent() is called before
     Optional<HandshakeCertificates> getCertificatesFromProvider(Class<?> providerClass, String methodName, ExtensionContext context) {
-        try {
-            // Look for the certificate method in the provider class
-            Optional<Method> method = ReflectionUtils.findMethod(providerClass, methodName);
-            if (method.isEmpty() && !DEFAULT_PROVIDER_METHOD_NAME.equals(methodName)) {
-                // Try the default provider method name as a fallback
-                method = ReflectionUtils.findMethod(providerClass, DEFAULT_PROVIDER_METHOD_NAME);
+        // Look for the certificate method in the provider class
+        Optional<Method> method = ReflectionUtils.findMethod(providerClass, methodName);
+        if (method.isEmpty()) {
+            if (DEFAULT_PROVIDER_METHOD_NAME.equals(methodName)) {
+                // Default was requested (i.e. not overridden): fall back to the legacy name, then
+                // to self-signed certificates if neither resolves.
+                method = ReflectionUtils.findMethod(providerClass, LEGACY_PROVIDER_METHOD_NAME);
+                if (method.isEmpty()) {
+                    return Optional.empty();
+                }
+            } else {
+                // An explicit method name was configured but does not exist: fail fast.
+                throw new IllegalStateException("Configured @TestProvidedCertificate method '" + methodName +
+                        "' not found on provider class " + providerClass.getName());
             }
-            if (method.isEmpty()) {
-                return Optional.empty();
-            }
+        }
 
+        try {
             // Create an instance of the provider class if it's the test class
             Object providerInstance = null;
 
@@ -130,7 +157,7 @@ class CertificateResolver {
             }
 
             return Optional.empty();
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
             throw new IllegalStateException(
                     "Error resolving HandshakeCertificates from provider " + providerClass.getName(), e);
         }
@@ -146,7 +173,7 @@ class CertificateResolver {
     Object createProviderInstance(Class<?> providerClass) {
         try {
             return ReflectionUtils.newInstance(providerClass);
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
             throw new IllegalStateException(
                     "Could not create instance of provider class " + providerClass.getName(), e);
         }
@@ -203,7 +230,7 @@ class CertificateResolver {
                     config.getKeyAlgorithm(), config.getCertificateDuration());
 
             return Optional.of(certificates);
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
             LOGGER.error(e, "Failed to create self-signed certificates");
             return Optional.empty();
         }
@@ -254,14 +281,15 @@ class CertificateResolver {
         try {
             SSLContext sslContext = KeyMaterialUtil.createSslContext(handshakeCertificates);
 
-            // Store the SSLContext in the context store for parameter resolution
-            ExtensionContext rootContext = getRootContext(context);
-            rootContext.getStore(NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
+            // Store the SSLContext in the class-level store so it is scoped to the current test
+            // class: a subsequently-executed class without useHttps must not receive this context,
+            // and parallel classes with different certificates must not race on a shared root key.
+            getClassContext(context).getStore(NAMESPACE).put(SSL_CONTEXT_KEY, sslContext);
 
             LOGGER.debug("Stored SSLContext for parameter resolution");
 
             return sslContext;
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
             String errorMessage = "Failed to create or store SSLContext";
             LOGGER.error(e, errorMessage);
             throw new IllegalStateException(errorMessage, e);
@@ -275,11 +303,8 @@ class CertificateResolver {
      * @return the SSLContext for HTTPS configuration
      */
     public Optional<SSLContext> getSSLContext(ExtensionContext context) {
-        // Get the root context to access the store
-        ExtensionContext rootContext = getRootContext(context);
-
-        // Try to get the SSLContext from the store
-        return Optional.ofNullable(rootContext.getStore(NAMESPACE)
+        // The SSLContext is stored in the class-level store (see createAndStoreSSLContext).
+        return Optional.ofNullable(getClassContext(context).getStore(NAMESPACE)
                 .get(SSL_CONTEXT_KEY, SSLContext.class));
     }
 
@@ -297,5 +322,19 @@ class CertificateResolver {
             current = current.getParent().get();
         }
         return current;
+    }
+
+    /**
+     * Returns the class-level context for the current (method-level) context.
+     * <p>
+     * The extension resolves certificates and parameters from a method-level context whose parent is
+     * the (possibly {@link org.junit.jupiter.api.Nested @Nested}) test-class context. Scoping the
+     * {@code SSLContext} there keeps it isolated per test class.
+     *
+     * @param context the current extension context
+     * @return the class-level context, or {@code context} itself if it has no parent
+     */
+    ExtensionContext getClassContext(ExtensionContext context) {
+        return context.getParent().orElse(context);
     }
 }
