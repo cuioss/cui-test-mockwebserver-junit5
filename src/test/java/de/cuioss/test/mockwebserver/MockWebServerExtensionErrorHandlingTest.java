@@ -17,11 +17,11 @@ package de.cuioss.test.mockwebserver;
 
 import de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher;
 import de.cuioss.tools.logging.CuiLogger;
+import lombok.NonNull;
 import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
-import lombok.NonNull;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -199,7 +199,8 @@ class MockWebServerExtensionErrorHandlingTest {
 
         /**
          * Nested class with a different annotation configuration.
-         * The parent class annotation should take precedence.
+         * The most-specific annotation (this nested class's own) takes precedence over the
+         * enclosing class's annotation.
          */
         @Nested
         @DisplayName("Nested With Different Config")
@@ -207,15 +208,14 @@ class MockWebServerExtensionErrorHandlingTest {
         class NestedWithDifferentConfig {
 
             @Test
-            @DisplayName("Should use parent class annotation")
-            void shouldUseParentClassAnnotation(MockWebServer server, SSLContext sslContext) {
+            @DisplayName("Should use this class's own annotation over the enclosing one")
+            void shouldUseMostSpecificAnnotation(MockWebServer server) {
                 assertNotNull(server, SERVER_SHOULD_BE_INJECTED);
                 assertTrue(server.getStarted(), SERVER_SHOULD_BE_STARTED);
-                assertNotNull(sslContext, SSL_CONTEXT_SHOULD_BE_INJECTED);
 
-                // Even though this class has useHttps=false, it should inherit useHttps=true from parent
-                assertTrue(server.url("/").url().toString().startsWith("https://"),
-                        "Server URL should use HTTPS scheme from parent config");
+                // This class declares useHttps=false, which must win over the enclosing useHttps=true.
+                assertTrue(server.url("/").url().toString().startsWith("http://"),
+                        "Server URL should use HTTP scheme from this class's own config");
             }
         }
     }
@@ -322,7 +322,7 @@ class MockWebServerExtensionErrorHandlingTest {
                     HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
                     assertEquals(200, response.statusCode(), "Original server should still work");
                 });
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (Exception e) {
                 LOGGER.error(e, "Error in second server test");
             }
         }

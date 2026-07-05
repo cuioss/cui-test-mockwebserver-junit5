@@ -194,7 +194,7 @@ class CertificateResolverTest {
 
 
         @ParameterizedTest
-        @ValueSource(classes = {NonAnnotatedTestClass.class, TestClassWithNonExistentMethod.class, TestClassWithNonExistentProvider.class})
+        @ValueSource(classes = {NonAnnotatedTestClass.class, TestClassWithNonExistentProvider.class})
         @DisplayName("Should return empty optional for invalid configurations")
         void shouldReturnEmptyOptionalForInvalidConfigurations(Class<?> testClass) {
             // Arrange
@@ -205,6 +205,20 @@ class CertificateResolverTest {
 
             // Assert
             assertFalse(result.isPresent(), "Should return empty optional for " + testClass.getSimpleName());
+        }
+
+        @Test
+        @DisplayName("Should fail fast when an explicitly configured method name does not exist")
+        void shouldFailFastForExplicitNonExistentMethod() {
+            // Arrange
+            ExtensionContext mockContext = createMockContext(TestClassWithNonExistentMethod.class);
+
+            // Act + Assert: a typo in an explicit methodName() must not silently fall back to self-signed
+            var exception = assertThrows(IllegalStateException.class,
+                    () -> resolver.determineTestProvidedHandshakeCertificates(mockContext),
+                    "Explicitly configured missing method should fail fast");
+            assertTrue(exception.getMessage().contains("nonExistentMethod"),
+                    "Message should name the missing method");
         }
 
         @Test
@@ -315,6 +329,33 @@ class CertificateResolverTest {
             }
             // This class intentionally has no provider method to test error handling
         }
+
+        @Test
+        @DisplayName("Should wrap a provider method that throws in an IllegalStateException")
+        void shouldWrapProviderMethodFailure() {
+            // Arrange
+            ExtensionContext mockContext = createMockContext(TestClassWithThrowingProvider.class);
+
+            // Act + Assert
+            var exception = assertThrows(IllegalStateException.class,
+                    () -> resolver.determineTestProvidedHandshakeCertificates(mockContext),
+                    "A throwing provider method should surface as IllegalStateException");
+            assertTrue(exception.getMessage().contains(TestClassWithThrowingProvider.class.getName()),
+                    "Message should name the provider class");
+        }
+
+        @TestProvidedCertificate(methodName = "boom")
+        static class TestClassWithThrowingProvider {
+            /**
+             * Provider method that always fails, to verify error propagation.
+             *
+             * @return never returns
+             */
+            @SuppressWarnings("unused") // implicitly called by the resolver
+            public static HandshakeCertificates boom() {
+                throw new IllegalArgumentException("provider failure");
+            }
+        }
     }
 
     @Nested
@@ -417,6 +458,46 @@ class CertificateResolverTest {
             assertTrue(retrievedContextOptional.isPresent(), "SSLContext should be retrieved from context");
             SSLContext retrievedContext = retrievedContextOptional.get();
             assertSame(sslContext, retrievedContext, "Should return the same SSLContext instance from context");
+        }
+
+        @Test
+        @DisplayName("Should store the SSLContext in the class-level (parent) store, not globally")
+        void shouldStoreSslContextInClassLevelStore() {
+            // Arrange: a method-level context whose parent is the class-level context.
+            // The SSLContext must be scoped to the class store so a subsequent non-HTTPS class
+            // cannot receive a stale context.
+            final SSLContext[] classStored = new SSLContext[1];
+
+            ExtensionContext.Store classStore = EasyMock.createMock(ExtensionContext.Store.class);
+            classStore.put(EasyMock.eq(SSL_CONTEXT_KEY), EasyMock.anyObject(SSLContext.class));
+            EasyMock.expectLastCall().andAnswer(() -> {
+                classStored[0] = (SSLContext) EasyMock.getCurrentArguments()[1];
+                return null;
+            }).anyTimes();
+            EasyMock.expect(classStore.get(SSL_CONTEXT_KEY, SSLContext.class))
+                    .andAnswer(() -> classStored[0]).anyTimes();
+
+            ExtensionContext classContext = EasyMock.createMock(ExtensionContext.class);
+            EasyMock.expect(classContext.getStore(CertificateResolver.NAMESPACE)).andReturn(classStore).anyTimes();
+
+            ExtensionContext methodContext = EasyMock.createMock(ExtensionContext.class);
+            EasyMock.expect(methodContext.getParent()).andReturn(Optional.of(classContext)).anyTimes();
+
+            EasyMock.replay(classStore, classContext, methodContext);
+
+            HandshakeCertificates certificates =
+                    KeyMaterialUtil.createSelfSignedHandshakeCertificates(1, KeyAlgorithm.RSA_2048);
+
+            // Act
+            SSLContext created = resolver.createAndStoreSSLContext(methodContext, certificates);
+            Optional<SSLContext> retrieved = resolver.getSSLContext(methodContext);
+
+            // Assert: it went to the class store and is read back from there
+            assertSame(created, classStored[0], "SSLContext should be stored in the class-level store");
+            assertTrue(retrieved.isPresent(), "SSLContext should be retrieved from the class-level store");
+            assertSame(created, retrieved.get(), "Should return the SSLContext from the class-level store");
+
+            EasyMock.verify(classStore, classContext, methodContext);
         }
     }
 }

@@ -34,6 +34,16 @@ import java.lang.annotation.Target;
  *   <li>In a separate provider class specified by the {@link #providerClass()} attribute</li>
  * </ol>
  * <p>
+ * <strong>Provider-method lookup order.</strong> The extension resolves the provider method on
+ * the configured class as follows:
+ * <ol>
+ *   <li>The method named by {@link #methodName()} (default {@code getTestProvidedHandshakeCertificates}).</li>
+ *   <li>Only when {@link #methodName()} is left at its default and that method is absent, the legacy
+ *       name {@code provideHandshakeCertificates} is tried for backwards compatibility.</li>
+ * </ol>
+ * If an <em>explicitly configured</em> {@link #methodName()} does not resolve, resolution fails fast
+ * rather than silently falling back — a typo must not change the certificate source unnoticed.
+ * <p>
  * This annotation provides a clean way to specify custom certificate material
  * for HTTPS testing.
  * <p>
@@ -103,9 +113,10 @@ public @interface TestProvidedCertificate {
 
     /**
      * Optional class that provides the HandshakeCertificates.
-     * The class must have a method that returns {@code okhttp3.tls.HandshakeCertificates}.
-     * By default, the method name is "provideHandshakeCertificates", but this can be
-     * overridden using the {@link #methodName()} attribute.
+     * The class must have a method that returns {@code okhttp3.tls.HandshakeCertificates}, resolved
+     * according to the lookup order documented on this annotation (default
+     * {@code getTestProvidedHandshakeCertificates}, then the legacy {@code provideHandshakeCertificates}).
+     * The method name can be overridden using the {@link #methodName()} attribute.
      * This can be an instance method or a static method.
      *
      * @return the class that provides the certificates

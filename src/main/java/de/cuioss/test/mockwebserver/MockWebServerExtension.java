@@ -32,6 +32,7 @@ import org.junit.platform.commons.support.AnnotationSupport;
 
 import okhttp3.tls.HandshakeCertificates;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -152,6 +153,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     public static final Namespace NAMESPACE = Namespace.create(MockWebServerExtension.class);
 
     /**
+     * Key under which the {@link MockWebServer} is stored in the extension context.
+     */
+    private static final String SERVER_KEY = MockWebServer.class.getName();
+
+    /**
      * Maps parameter types to resolver functions.
      */
     private final Map<Class<?>, Function<MockWebServer, Object>> parameterResolvers = Map.of(
@@ -184,10 +190,10 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             configureDispatcher(server, testInstance, context);
 
 
-            if (!config.manualStart()) {
-                startServer(server);
+            if (config.manualStart()) {
+                LOGGER.debug("Manual start requested, MockWebServer not started");
             } else {
-                ensureServerNotStarted(server);
+                startServer(server);
             }
 
             // Store the server in context - it will be properly closed in afterEach
@@ -195,21 +201,19 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             // We've successfully stored the server in context, so don't close it in the finally block
             server = null;
             LOGGER.debug("MockWebServer setup completed successfully");
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
-            if (e instanceof IllegalStateException || e instanceof DispatcherResolutionException) {
-                LOGGER.error(e, "Critical error during MockWebServer setup: %s", e.getMessage());
-                throw e; // Propagate these exceptions directly
-            } else {
-                LOGGER.error(e, "Unexpected error during MockWebServer setup");
-            }
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+            // Never continue silently: a swallowed setup failure surfaces later as a misleading
+            // "No MockWebServer instance available" and hides the real cause.
+            LOGGER.error(e, "Error during MockWebServer setup: %s", e.getMessage());
+            throw e;
         } finally {
             // Close the server if something went wrong and we didn't store it in context
             if (server != null) {
                 try {
                     server.close();
-                    LOGGER.info("Shutdown server due to exception during setup");
-                } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception closeEx) {
-                    LOGGER.warn("Failed to shutdown server during exception handling: %s", closeEx.getMessage());
+                    LOGGER.debug("Closed MockWebServer after a failed setup");
+                } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException closeEx) {
+                    LOGGER.warn("Failed to close MockWebServer during exception handling: %s", closeEx.getMessage());
                 }
             }
         }
@@ -224,30 +228,12 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
     private void startServer(MockWebServer server) {
         try {
             server.start();
-            LOGGER.info("Started MockWebServer at %s", server.url("/"));
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+            LOGGER.debug("Started MockWebServer at %s", server.url("/"));
+        } catch (IOException e) {
             String errorMessage = "Failed to start MockWebServer";
             LOGGER.error(e, errorMessage);
             throw new IllegalStateException(errorMessage, e);
         }
-    }
-
-    /**
-     * Ensures the server is not started when manual start is requested.
-     *
-     * @param server the server to check
-     */
-    private void ensureServerNotStarted(MockWebServer server) {
-        // When manual start is requested, ensure the server is not started
-        if (server.getStarted()) {
-            try {
-                server.close();
-                LOGGER.info("Shutdown server to enforce manual start configuration");
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
-                LOGGER.warn("Failed to shutdown server for manual start: %s", e.getMessage());
-            }
-        }
-        LOGGER.info("Manual start requested, server not started");
     }
 
     /**
@@ -291,7 +277,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @throws IllegalStateException if certificate material cannot be obtained
      */
     private void configureHttps(MockWebServer server, ExtensionContext context, MockServerConfig config) {
-        LOGGER.info("Configuring HTTPS for MockWebServer");
+        LOGGER.debug("Configuring HTTPS for MockWebServer");
 
         // Use the CertificateResolver to get HandshakeCertificates
         CertificateResolver certificateResolver = new CertificateResolver();
@@ -301,11 +287,11 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             try {
                 // Apply certificates to server
                 server.useHttps(handshakeCertificates.get().sslSocketFactory());
-                LOGGER.info("HTTPS configured for MockWebServer");
+                LOGGER.debug("HTTPS configured for MockWebServer");
 
                 // Store certificates for parameter resolution
                 certificateResolver.createAndStoreSSLContext(context, handshakeCertificates.get());
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+            } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
                 String errorMessage = "Failed to configure HTTPS with available certificates";
                 LOGGER.error(e, errorMessage);
                 throw new IllegalStateException(errorMessage, e);
@@ -329,18 +315,18 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @throws DispatcherResolutionException if there is an error resolving the dispatcher
      */
     private void configureDispatcher(MockWebServer server, Object testInstance, ExtensionContext context) {
-        LOGGER.info("Configuring dispatcher for test class: %s", testInstance.getClass().getName());
+        LOGGER.debug("Configuring dispatcher for test class: %s", testInstance.getClass().getName());
 
         // Extract the current test method from the context
         Method testMethod = context.getTestMethod().orElse(null);
         if (testMethod != null) {
-            LOGGER.info("Using context-aware resolution for test method: %s", testMethod.getName());
+            LOGGER.debug("Using context-aware resolution for test method: %s", testMethod.getName());
         }
 
         Dispatcher dispatcher = dispatcherResolver.resolveDispatcher(
                 testInstance.getClass(), testInstance, testMethod);
         server.setDispatcher(dispatcher);
-        LOGGER.info("Configured dispatcher: %s", dispatcher.getClass().getName());
+        LOGGER.debug("Configured dispatcher: %s", dispatcher.getClass().getName());
     }
 
 
@@ -351,13 +337,13 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             var server = optionalMockWebServer.get();
             try {
                 if (server.getStarted()) {
-                    LOGGER.info("Shutting down MockWebServer at port %s", server.getPort());
+                    LOGGER.debug("Shutting down MockWebServer at port %s", server.getPort());
                     server.close();
                     LOGGER.debug("MockWebServer successfully shut down");
                 } else {
                     LOGGER.debug("Server was not started, no shutdown needed");
                 }
-            } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+            } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
                 LOGGER.error(e, "Failed to shutdown MockWebServer");
                 throw new IllegalStateException("Failed to properly shutdown MockWebServer", e);
             } finally {
@@ -373,12 +359,8 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @param context the extension context
      */
     private void remove(ExtensionContext context) {
-        try {
-            context.getStore(NAMESPACE).remove(context.getRequiredTestMethod());
-            LOGGER.debug("Removed MockWebServer from context");
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
-            LOGGER.warn("Failed to remove MockWebServer from context: %s", e.getMessage());
-        }
+        context.getStore(NAMESPACE).remove(SERVER_KEY);
+        LOGGER.debug("Removed MockWebServer from context");
     }
 
     /**
@@ -388,7 +370,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @param context       the extension context
      */
     private static void put(MockWebServer mockWebServer, ExtensionContext context) {
-        context.getStore(NAMESPACE).put(MockWebServer.class.getName(), mockWebServer);
+        context.getStore(NAMESPACE).put(SERVER_KEY, mockWebServer);
     }
 
     /**
@@ -398,28 +380,33 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
      * @return an Optional containing the MockWebServer instance if present
      */
     private Optional<MockWebServer> get(ExtensionContext context) {
-        return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(MockWebServer.class.getName()));
+        return Optional.ofNullable((MockWebServer) context.getStore(NAMESPACE).get(SERVER_KEY));
     }
 
 
     /**
-     * Extracts the class hierarchy for the given test instance.
+     * Extracts the class hierarchy for the given test instance, ordered most-specific first: the test
+     * class and its superclasses, then each enclosing class (for {@code @Nested} tests) and their
+     * superclasses. This ordering lets a {@code @Nested} class's own {@link EnableMockWebServer}
+     * annotation win over one on an enclosing class.
      *
      * @param testInstance the test instance
-     * @return a list of classes in the hierarchy
+     * @return a list of classes in the hierarchy, most-specific first
      */
     private List<Class<?>> extractClassHierarchy(Object testInstance) {
         List<Class<?>> classHierarchy = new ArrayList<>();
-        Class<?> testClass = testInstance.getClass();
 
-        // Add enclosing classes if present
-        Class<?> enclosingClass = testClass.getEnclosingClass();
-        if (enclosingClass != null) {
-            addClassHierarchy(enclosingClass, classHierarchy);
+        Class<?> enclosing = testInstance.getClass();
+        while (enclosing != null) {
+            Class<?> current = enclosing;
+            while (current != null && !Object.class.equals(current)) {
+                if (!classHierarchy.contains(current)) {
+                    classHierarchy.add(current);
+                }
+                current = current.getSuperclass();
+            }
+            enclosing = enclosing.getEnclosingClass();
         }
-
-        // Add the class hierarchy of the test class itself
-        addClassHierarchy(testClass, classHierarchy);
 
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Extracted class hierarchy from %s, resulting in:\n\t-%s",
@@ -428,20 +415,6 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
         }
 
         return classHierarchy;
-    }
-
-    /**
-     * Adds a class and its superclasses to the hierarchy list.
-     *
-     * @param clazz     the starting class
-     * @param hierarchy the list to add classes to
-     */
-    private void addClassHierarchy(Class<?> clazz, List<Class<?>> hierarchy) {
-        Class<?> current = clazz;
-        while (current != null && !Object.class.equals(current)) {
-            hierarchy.add(current);
-            current = current.getSuperclass();
-        }
     }
 
     @Override
@@ -490,28 +463,17 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
 
     /**
-     * Creates a URIBuilder initialized with the server's base URL.
+     * Creates a URIBuilder bound to the server's base URL.
+     * <p>
+     * The base URL is resolved lazily, at {@link URIBuilder#build()} time, from the current server
+     * state. This makes injection work with {@code manualStart=true}: the returned builder resolves
+     * correctly once the test has started the server.
      *
      * @param server the MockWebServer instance
      * @return a URIBuilder for the server
-     * @throws ParameterResolutionException if URL conversion fails
      */
     private URIBuilder resolveUrlBuilderParameter(MockWebServer server) {
-        try {
-            // Check if the server is already started
-            if (server.getStarted()) {
-                return URIBuilder.from(server.url("/").url());
-            } else {
-                // For manual start configuration, create a placeholder URIBuilder
-                // that will be updated when the server is actually started
-                LOGGER.debug("Creating placeholder URIBuilder for non-started server");
-                return URIBuilder.placeholder();
-            }
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
-            LOGGER.error(e, "Failed to create URIBuilder from MockWebServer URL");
-            throw new ParameterResolutionException(
-                    "Failed to create URIBuilder from MockWebServer URL: " + e.getMessage(), e);
-        }
+        return URIBuilder.from(() -> server.url("/").url());
     }
 
     /**

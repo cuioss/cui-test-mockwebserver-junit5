@@ -18,12 +18,14 @@ package de.cuioss.test.mockwebserver;
 import de.cuioss.tools.net.UrlHelper;
 import lombok.NonNull;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -53,25 +55,34 @@ import java.util.stream.Collectors;
  */
 public class URIBuilder {
 
-    private final URL baseUrl;
+    private URL baseUrl;
+    private final Supplier<URL> baseUrlSupplier;
     private final List<String> pathSegments = new ArrayList<>();
     private final Map<String, List<String>> queryParameters = new LinkedHashMap<>();
     private final boolean placeholder;
 
     private URIBuilder(URL baseUrl) {
         this.baseUrl = baseUrl;
+        this.baseUrlSupplier = null;
+        this.placeholder = false;
+    }
+
+    private URIBuilder(Supplier<URL> baseUrlSupplier) {
+        this.baseUrl = null;
+        this.baseUrlSupplier = baseUrlSupplier;
         this.placeholder = false;
     }
 
     /**
      * Creates a placeholder URIBuilder that can be used when the server is not yet started.
      * This is useful for manual server start configurations.
-     * 
+     *
      * @implNote When using a placeholder URIBuilder, you must start the server before calling
      * {@link #build()} or any other method that requires the base URL.
      */
     private URIBuilder() {
         this.baseUrl = null;
+        this.baseUrlSupplier = null;
         this.placeholder = true;
     }
 
@@ -86,6 +97,20 @@ public class URIBuilder {
     }
 
     /**
+     * Creates a new builder whose base URL is resolved lazily, on first use.
+     * <p>
+     * This supports servers that are started after parameter injection (e.g.
+     * {@code @EnableMockWebServer(manualStart = true)}): the base URL is obtained from the supplier
+     * the first time {@link #build()} (or another URL-dependent method) is called.
+     *
+     * @param baseUrlSupplier supplies the base URL on demand, must not be null
+     * @return a new builder instance
+     */
+    public static URIBuilder from(@NonNull Supplier<URL> baseUrlSupplier) {
+        return new URIBuilder(baseUrlSupplier);
+    }
+
+    /**
      * Creates a new builder with the given base URI.
      * This method converts the URI to a URL internally.
      *
@@ -96,9 +121,21 @@ public class URIBuilder {
     public static URIBuilder from(@NonNull URI baseUri) {
         try {
             return new URIBuilder(baseUri.toURL());
-        } /*~~(TODO: Catch specific not Exception. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (Exception e) {
+        } catch (MalformedURLException e) {
             throw new IllegalArgumentException("Could not convert URI to URL: " + baseUri, e);
         }
+    }
+
+    /**
+     * Resolves the base URL, invoking the supplier on first use for lazily-bound builders.
+     *
+     * @return the resolved base URL, or {@code null} for a placeholder builder
+     */
+    private URL resolveBaseUrl() {
+        if (baseUrl == null && baseUrlSupplier != null) {
+            baseUrl = baseUrlSupplier.get();
+        }
+        return baseUrl;
     }
 
     /**
@@ -197,21 +234,21 @@ public class URIBuilder {
             }
         }
 
-        if (baseUrl == null) {
+        if (resolveBaseUrl() == null) {
             throw new IllegalStateException("Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
         }
     }
 
     /**
      * Builds the URI with all configured path segments and query parameters.
-     * 
+     *
      * @return the constructed URI
      * @throws IllegalStateException if this is a placeholder URIBuilder or if baseUrl is null
      */
     public URI build() {
         validateBuilderState(false);
 
-        String baseUrlString = baseUrl.toString();
+        String baseUrlString = resolveBaseUrl().toString();
         StringBuilder uriBuilder = new StringBuilder();
 
         // Normalize base URL by removing trailing slash
@@ -262,10 +299,11 @@ public class URIBuilder {
         if (placeholder) {
             return "/";
         }
-        if (baseUrl == null) {
+        URL resolved = resolveBaseUrl();
+        if (resolved == null) {
             throw new IllegalStateException("Cannot access path with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
         }
-        return baseUrl.getPath();
+        return resolved.getPath();
     }
 
     /**
@@ -277,10 +315,11 @@ public class URIBuilder {
         if (placeholder) {
             return "http";
         }
-        if (baseUrl == null) {
+        URL resolved = resolveBaseUrl();
+        if (resolved == null) {
             throw new IllegalStateException("Cannot access scheme with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
         }
-        return baseUrl.getProtocol();
+        return resolved.getProtocol();
     }
 
     /**
@@ -292,10 +331,11 @@ public class URIBuilder {
         if (placeholder) {
             return -1; // -1 indicates no port is explicitly set
         }
-        if (baseUrl == null) {
+        URL resolved = resolveBaseUrl();
+        if (resolved == null) {
             throw new IllegalStateException("Cannot access port with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
         }
-        return baseUrl.getPort();
+        return resolved.getPort();
     }
 
     /**
