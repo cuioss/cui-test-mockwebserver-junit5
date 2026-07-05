@@ -22,6 +22,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.net.URI;
+import java.util.List;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -92,10 +93,10 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
                         new String[]{},
                         BASE_URL_NO_SLASH),
 
-                // Handle path segments with encoded special characters
-                Arguments.of("Should handle path segments with special characters",
+                // Percent-encode raw special characters in path segments (spaces)
+                Arguments.of("Should percent-encode special characters in path segments",
                         BASE_URL,
-                        new String[]{API_PATH, ENCODED_SPACES},
+                        new String[]{API_PATH, RAW_SPACES},
                         BASE_URL_NO_SLASH + "/" + API_PATH + "/" + ENCODED_SPACES)
         );
     }
@@ -205,6 +206,20 @@ class URIBuilderPathSegmentTest extends URIBuilderTestBase {
         assertUriPathBuilding(BASE_URL,
                 URIBuilder::addPathSegments,
                 BASE_URL_NO_SLASH);
+    }
+
+    @Test
+    @DisplayName("Should split a setPath value into individual segments")
+    void shouldSplitSetPathIntoSegments() {
+        // Given/When: a complete path string is set
+        URIBuilder builder = URIBuilder.from(URI.create(BASE_URL))
+                .setPath("/api/v2/users");
+
+        // Then: getPathSegments reports individual segments, consistent with addPathSegment semantics
+        assertEquals(List.of("api", "v2", "users"), builder.getPathSegments(),
+                "setPath should split on '/' into individual segments");
+        assertEquals(BASE_URL_NO_SLASH + "/api/v2/users", builder.build().toString(),
+                "The built URI should contain the full path");
     }
 
     @Test

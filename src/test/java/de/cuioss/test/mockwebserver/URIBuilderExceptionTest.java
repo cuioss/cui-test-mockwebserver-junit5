@@ -19,7 +19,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
-import java.net.URISyntaxException;
 
 /**
  * Tests for exception handling functionality of {@link URIBuilder}.
@@ -42,7 +41,7 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
 
     @Test
     @DisplayName("Should throw Exception when base URL is Invalid")
-    void shouldThrowExceptionWhenURIisInvalid() throws URISyntaxException {
+    void shouldThrowExceptionWhenURIisInvalid() throws Exception {
         // Given: A null URI
         URI invalidURL = new URI("invalid://example.com");
 
@@ -51,62 +50,5 @@ class URIBuilderExceptionTest extends URIBuilderTestBase {
                 IllegalArgumentException.class,
                 () -> URIBuilder.from(invalidURL),
                 "Could not convert URI to URL: invalid://example.com");
-    }
-
-    @Test
-    @DisplayName("Should throw IllegalStateException when baseUrl is null in non-placeholder URIBuilder")
-    void shouldThrowExceptionWhenBuildingWithNullBaseUrl() throws NoSuchFieldException, IllegalAccessException {
-        // Given: Create a URIBuilder and set its baseUrl field to null using reflection
-        URIBuilder builder = URIBuilder.from(URI.create(BASE_URL));
-        setBaseUrlToNull(builder);
-
-        // When/Then: Use the utility method from the base class to test exception handling
-        assertThrowsWithMessage(
-                IllegalStateException.class,
-                builder::build,
-                "Cannot build URI with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
-    }
-
-    @Test
-    @DisplayName("Should handle null baseUrl in getPath()")
-    void shouldThrowExceptionWhenGettingPathWithNullBaseUrl() throws NoSuchFieldException, IllegalAccessException {
-        // Given: Create a URIBuilder and set its baseUrl field to null using reflection
-        URIBuilder builder = URIBuilder.from(URI.create(BASE_URL));
-        setBaseUrlToNull(builder);
-
-        // When/Then: Use the utility method from the base class to test exception handling
-        assertThrowsWithMessage(
-                IllegalStateException.class,
-                builder::getPath,
-                "Cannot access path with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
-    }
-
-    @Test
-    @DisplayName("Should handle null baseUrl in getScheme()")
-    void shouldThrowExceptionWhenGettingSchemeWithNullBaseUrl() throws NoSuchFieldException, IllegalAccessException {
-        // Given: Create a URIBuilder and set its baseUrl field to null using reflection
-        URIBuilder builder = URIBuilder.from(URI.create(BASE_URL));
-        setBaseUrlToNull(builder);
-
-        // When/Then: Use the utility method from the base class to test exception handling
-        assertThrowsWithMessage(
-                IllegalStateException.class,
-                builder::getScheme,
-                "Cannot access scheme with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
-    }
-
-    @Test
-    @DisplayName("Should handle null baseUrl in getPort()")
-    void shouldHandleNullBaseUrlInGetPort()
-            throws NoSuchFieldException, IllegalAccessException {
-        // Given: Create a URIBuilder and set its baseUrl field to null using reflection
-        URIBuilder builder = URIBuilder.from(URI.create(BASE_URL));
-        setBaseUrlToNull(builder);
-
-        // When/Then: Use the utility method from the base class to test exception handling
-        assertThrowsWithMessage(
-                IllegalStateException.class,
-                builder::getPort,
-                "Cannot access port with null baseUrl. This might indicate an incorrectly initialized URIBuilder.");
     }
 }

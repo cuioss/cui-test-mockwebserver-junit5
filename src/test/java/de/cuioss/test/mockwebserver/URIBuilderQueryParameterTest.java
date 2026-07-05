@@ -71,10 +71,10 @@ class URIBuilderQueryParameterTest extends URIBuilderTestBase {
                         Map.of(PARAM_NAME, new String[]{VALUE1_PARAM, VALUE2_PARAM, VALUE3_PARAM}),
                         BASE_URL_NO_SLASH + "?" + PARAM_NAME + "=" + VALUE1_PARAM + "&" + PARAM_NAME + "=" + VALUE2_PARAM + "&" + PARAM_NAME + "=" + VALUE3_PARAM),
 
-                // Handle query parameters with encoded special characters
-                Arguments.of("Should handle query parameters with special characters",
+                // Percent-encode raw special characters in query values (spaces)
+                Arguments.of("Should percent-encode special characters in query values",
                         BASE_URL_NO_SLASH + "/" + API_PATH,
-                        Map.of(FILTER_PARAM, new String[]{ENCODED_NAME_SPACES}),
+                        Map.of(FILTER_PARAM, new String[]{RAW_NAME_SPACES}),
                         BASE_URL_NO_SLASH + "/" + API_PATH + "?" + FILTER_PARAM + "=" + ENCODED_NAME_SPACES)
         );
     }

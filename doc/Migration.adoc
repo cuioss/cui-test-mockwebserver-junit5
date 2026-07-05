@@ -295,6 +295,14 @@ Version 1.1 includes improved HTTPS support with easier certificate handling. Se
 
 The `@ModuleDispatcher` annotation and `ModuleDispatcherElement` interface have been enhanced for more flexible request handling. See link:ModuleDispatcher.adoc[Working with @ModuleDispatcher and ModuleDispatcherElement] for more details.
 
+== Behavioral Changes: URIBuilder Percent-Encoding
+
+`URIBuilder` now percent-encodes path segments and query parameter names/values per RFC 3986.
+
+* Raw special characters are now encoded automatically: `addQueryParameter("q", "a b")` produces `q=a%20b` instead of throwing, and values containing `&`, `=`, or `#` are encoded rather than silently altering the URI structure.
+* Consequently, **pass raw values** — a value that is already percent-encoded (for example `"a%20b"`) is now encoded again to `a%2520b`. Remove any manual encoding at call sites.
+* `setPath("/api/v2/users")` now splits the path into individual segments, so `getPathSegments()` reports `["api", "v2", "users"]` consistently with `addPathSegment`.
+
 == Breaking Changes in Version 1.4.0
 
 Version 1.4.0 introduces breaking changes by completely removing the deprecated `MockWebServerHolder` interface and related functionality that was deprecated in version 1.1.

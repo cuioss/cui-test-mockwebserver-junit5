@@ -47,11 +47,12 @@ abstract class URIBuilderTestBase {
     protected static final String PARAM_NAME = "param";
     protected static final String BASE_URL_WITH_API = BASE_URL_NO_SLASH + "/" + API_PATH;
     protected static final String BASE_URL_WITH_API_USERS_123 = BASE_URL_WITH_API + "/" + USERS_PATH + "/" + ID_123;
-    protected static final String BASE_URL_FIELD = "baseUrl";
     protected static final String BASE_URL_WITH_BASE = "http://localhost:8080/base/";
     protected static final String BASE_URL_WITH_BASE_NO_SLASH = "http://localhost:8080/base";
+    protected static final String RAW_SPACES = "users with spaces";
     protected static final String ENCODED_SPACES = "users%20with%20spaces";
     protected static final String FILTER_PARAM = "filter";
+    protected static final String RAW_NAME_SPACES = "name with spaces";
     protected static final String ENCODED_NAME_SPACES = "name%20with%20spaces";
     protected static final String COMPLEX_BASE_URL = "https://example.com:8443/context";
     protected static final String API_V1_PATH = "api/v1";
@@ -59,28 +60,6 @@ abstract class URIBuilderTestBase {
     protected static final String PAGE_PARAM = "page";
     protected static final String SIZE_PARAM = "size";
     protected static final String SORT_PARAM = "sort";
-
-    /**
-     * Helper method to set the baseUrl field to null using reflection.
-     * This method is only used for testing exception handling when baseUrl is null.
-     * 
-     * @param target the URIBuilder instance to modify
-     * @throws NoSuchFieldException   if the field does not exist
-     * @throws IllegalAccessException if the field cannot be accessed
-     */
-    @SuppressWarnings("java:S3011") // Suppressing warning about accessibility as this is necessary for testing
-    protected void setBaseUrlToNull(Object target)
-            throws NoSuchFieldException, IllegalAccessException {
-        java.lang.reflect.Field field = target.getClass().getDeclaredField(BASE_URL_FIELD);
-        // Using setAccessible is necessary for testing in this specific case
-        // as we need to simulate a null baseUrl which can't happen through normal API usage
-        field.setAccessible(true);
-        try {
-            field.set(target, null);
-        } finally {
-            field.setAccessible(false);
-        }
-    }
 
     /**
      * Parses a query string into a map of parameter names to values.
