@@ -28,6 +28,7 @@
  *   <li>Request Handling
  *     <ul>
  *       <li>{@link de.cuioss.test.mockwebserver.dispatcher} - Custom request dispatchers</li>
+ *       <li>{@link de.cuioss.test.mockwebserver.mockresponse} - Declarative {@code @MockResponseConfig} responses</li>
  *     </ul>
  *   </li>
  *   <li>HTTPS Support
@@ -78,11 +79,13 @@
  *   <li>{@link de.cuioss.test.mockwebserver.EnableMockWebServer} for server setup</li>
  *   <li>{@link de.cuioss.test.mockwebserver.MockWebServerExtension} for parameter injection</li>
  *   <li>{@link de.cuioss.test.mockwebserver.dispatcher} for request handling</li>
+ *   <li>{@link de.cuioss.test.mockwebserver.mockresponse} for declarative response configuration</li>
  *   <li>{@link de.cuioss.test.mockwebserver.ssl} for HTTPS configuration</li>
  * </ul>
  *
  * @author Oliver Wolff
  * @see de.cuioss.test.mockwebserver.dispatcher
+ * @see de.cuioss.test.mockwebserver.mockresponse
  * @see de.cuioss.test.mockwebserver.ssl
  * @see mockwebserver3.MockWebServer
  * @since 1.0

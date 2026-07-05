@@ -102,10 +102,10 @@ import javax.net.ssl.SSLContext;
  *         server.setDispatcher(new Dispatcher() {
  *             @Override
  *             public MockResponse dispatch(RecordedRequest request) {
- *                 if ("/api/data".equals(request.getPath())) {
- *                     return new MockResponse().setBody("Hello World");
+ *                 if ("/api/data".equals(request.getUrl().encodedPath())) {
+ *                     return new MockResponse.Builder().body("Hello World").build();
  *                 }
- *                 return new MockResponse().setResponseCode(404);
+ *                 return new MockResponse.Builder().code(404).build();
  *             }
  *         });
  *

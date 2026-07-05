@@ -32,6 +32,8 @@ compared to the original.
     <dependency>
         <groupId>de.cuioss.test</groupId>
         <artifactId>cui-test-mockwebserver-junit5</artifactId>
+        <!-- Use the latest release; see the Maven Central badge above -->
+        <version>x.y.z</version>
     </dependency>
 ----
 
@@ -87,14 +89,15 @@ class MockWebServerTest {
         // ...
     }
 
-    // This method will be called by the @ModuleDispatcher annotation
+    // The bare @ModuleDispatcher on the test method defers to this method to obtain the dispatcher
     ModuleDispatcherElement getModuleDispatcher() {
-        return new BaseAllAcceptDispatcher("/api/posts")
-                .withPostResponse(new mockwebserver3.MockResponse.Builder()
-                        .code(201)
-                        .addHeader("Content-Type", "application/json")
-                        .body("{\"id\":\"123\",\"status\":\"created\"}")
-                        .build());
+        var dispatcher = new BaseAllAcceptDispatcher("/api/posts");
+        dispatcher.setMethodToResult(new mockwebserver3.MockResponse.Builder()
+                .code(201)
+                .addHeader("Content-Type", "application/json")
+                .body("{\"id\":\"123\",\"status\":\"created\"}")
+                .build(), HttpMethodMapper.POST);
+        return dispatcher;
     }
 }
 ----
@@ -210,33 +213,33 @@ class ManualStartTest {
         // Now the server is running
         assertTrue(server.getStarted());
 
-        // The URIBuilder is updated with the server's port
+        // The injected URIBuilder resolves the server URL lazily, so it now builds valid URIs
         URI uri = uriBuilder.addPathSegment("api").build();
         assertEquals(server.getPort(), uri.getPort());
 
-        // Don't forget to shut down the server
-        server.shutdown();
+        // Manual closing is normally unnecessary: the extension closes the server in its
+        // afterEach callback. Call close() explicitly only if you need to stop it earlier.
+        server.close();
     }
 }
 ----
 
 ==== Manual Server Start Considerations
 
-When using `manualStart = true`, you need to be careful with the injected `URIBuilder` parameter:
+When using `manualStart = true`, the injected `URIBuilder` binds its base URL lazily:
 
-* Before the server is started, the injected `URIBuilder` is a placeholder that cannot be used to build URIs
-* If you try to build a URI from this placeholder, it will throw an `IllegalStateException`
-* You must create a proper `URIBuilder` *after* manually starting the server
+* The base URL is resolved from the server the first time you call `build()`, not at injection time
+* You can therefore use the injected `URIBuilder` directly, as long as you start the server *before* building any URI
+* There is no need to create a separate `URIBuilder` after starting the server
 
 [source,java]
 ----
-// INCORRECT - Will throw IllegalStateException if server not started
+// CORRECT - start the server first, then build from the injected URIBuilder
+server.start();
 URI uri = uriBuilder.addPathSegment("api").build();
 
-// CORRECT - Create a proper URIBuilder after starting the server
-server.start();
-URIBuilder properUriBuilder = URIBuilder.from(server.url("/").url());
-URI uri = properUriBuilder.addPathSegment("api").build();
+// INCORRECT - building before the server is started cannot resolve the base URL yet
+URI uri = uriBuilder.addPathSegment("api").build(); // server not started
 ----
 
 === HTTPS Support and Certificates

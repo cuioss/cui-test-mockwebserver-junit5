@@ -37,7 +37,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     &#64;Test
  *     void shouldTestWithServer(MockWebServer server) {
  *         // Use the server directly in your test
- *         server.enqueue(new MockResponse().setBody("Hello World"));
+ *         server.enqueue(new MockResponse.Builder().body("Hello World").build());
  *         // Make HTTP requests to server.url("/")
  *     }
  * }
@@ -51,8 +51,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *     &#64;Test
  *     void shouldTestWithCustomPort(MockWebServer server) {
  *         server.start(8080);
- *         // Test with specific port
- *         server.shutdown();
+ *         // Test with specific port; the extension closes the server automatically in afterEach
  *     }
  * }
  * </pre>
@@ -124,7 +123,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *   <li>Manual server control with {@link #manualStart()}</li>
  *   <li>Support for custom {@link mockwebserver3.Dispatcher} implementations</li>
  *   <li>HTTPS support with both self-signed and custom certificates</li>
- *   <li>Parameter resolving for {@link MockWebServer}, port, URL, {@link URIBuilder}, and {@link javax.net.ssl.SSLContext}</li>
+ *   <li>Parameter resolving for {@link MockWebServer}, {@link URIBuilder}, and {@link javax.net.ssl.SSLContext}</li>
  * </ul>
  *
  * @author Oliver Wolff

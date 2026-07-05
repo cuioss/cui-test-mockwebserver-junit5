@@ -30,7 +30,7 @@ import java.util.Optional;
  * <ul>
  *   <li>Type-safe HTTP method mapping</li>
  *   <li>Automatic method routing</li>
- *   <li>Support for GET, POST, PUT, DELETE methods</li>
+ *   <li>Support for GET, POST, PUT, DELETE, HEAD methods</li>
  *   <li>Null-safe request handling</li>
  * </ul>
  *

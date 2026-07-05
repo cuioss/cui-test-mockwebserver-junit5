@@ -87,7 +87,6 @@ For more complex scenarios, you can use the `@ModuleDispatcher` annotation and i
 
 [source,java]
 ----
-@ModuleDispatcher
 @EnableMockWebServer
 @ModuleDispatcher // No parameters means look for getModuleDispatcher() method
 class MyTest {
@@ -113,6 +112,7 @@ class MyTest {
                 return Set.of(HttpMethodMapper.GET);
             }
         };
+    }
 }
 ----
 
@@ -265,7 +265,7 @@ void testPostMethod(URIBuilder uriBuilder) {
 @MockResponseConfig(
     path = "/api/resource", 
     status = HttpServletResponse.SC_OK, 
-    headers = "Content-Type=application/json;ETag=W/123"
+    headers = {"Content-Type=application/json", "ETag=W/123"}
 )
 @Test
 void testResponseWithHeaders(URIBuilder uriBuilder) {

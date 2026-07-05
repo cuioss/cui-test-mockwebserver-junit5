@@ -45,10 +45,11 @@ import java.util.Set;
  *
  *     &#64;Override
  *     public Optional&lt;MockResponse&gt; handleGet(RecordedRequest request) {
- *         if (request.getPath().equals("/api/users/123")) {
- *             return Optional.of(new MockResponse()
- *                 .setResponseCode(200)
- *                 .setBody("{'id': '123', 'name': 'John'}"));
+ *         if (request.getUrl().encodedPath().equals("/api/users/123")) {
+ *             return Optional.of(new MockResponse.Builder()
+ *                 .code(200)
+ *                 .body("{'id': '123', 'name': 'John'}")
+ *                 .build());
  *         }
  *         return Optional.empty(); // Let other handlers try
  *     }
@@ -74,7 +75,7 @@ import java.util.Set;
  *   <li>Each dispatcher handles a specific URL path prefix</li>
  *   <li>Return {@link Optional#empty()} to allow other dispatchers to handle the request</li>
  *   <li>Can be combined using {@link CombinedDispatcher}</li>
- *   <li>Supports all standard HTTP methods (GET, POST, PUT, DELETE)</li>
+ *   <li>Supports all standard HTTP methods (GET, POST, PUT, DELETE, HEAD)</li>
  * </ul>
  *
  * @author Oliver Wolff
