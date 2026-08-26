@@ -35,6 +35,8 @@ class BaseAllAcceptDispatcherTest {
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_OK);
     }
 
     @Test
@@ -48,6 +50,8 @@ class BaseAllAcceptDispatcherTest {
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_OK);
     }
 
     @Test
@@ -61,18 +65,22 @@ class BaseAllAcceptDispatcherTest {
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_OK);
     }
 
     @Test
     void shouldModifyMethodsToForbidden() {
         var dispatcher = new BaseAllAcceptDispatcher(DEFAULT_PATH);
 
-        dispatcher.setMethodToResult(EndpointAnswerHandler.RESPONSE_FORBIDDEN, DELETE, GET, POST, PUT, HEAD);
+        dispatcher.setMethodToResult(EndpointAnswerHandler.RESPONSE_FORBIDDEN, DELETE, GET, POST, PUT, HEAD, PATCH, OPTIONS);
         assertMockResponse(dispatcher.handleDelete(DUMMY).get(), SC_FORBIDDEN);
         assertMockResponse(dispatcher.handleGet(DUMMY).get(), SC_FORBIDDEN);
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_FORBIDDEN);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_FORBIDDEN);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_FORBIDDEN);
     }
 
     @Test
@@ -85,6 +93,8 @@ class BaseAllAcceptDispatcherTest {
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_NOT_IMPLEMENTED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_NOT_IMPLEMENTED);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_NOT_IMPLEMENTED);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_NOT_IMPLEMENTED);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_NOT_IMPLEMENTED);
 
         // Reset
         dispatcher.reset();
@@ -93,6 +103,8 @@ class BaseAllAcceptDispatcherTest {
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_OK);
     }
 
     @Test
@@ -100,12 +112,14 @@ class BaseAllAcceptDispatcherTest {
         var dispatcher = new BaseAllAcceptDispatcher(DEFAULT_PATH);
 
         // When every method is listed as "given", none fall into the "all but given" set: defaults stay
-        dispatcher.setAllButGivenMethodToResult(EndpointAnswerHandler.RESPONSE_FORBIDDEN, DELETE, GET, POST, PUT, HEAD);
+        dispatcher.setAllButGivenMethodToResult(EndpointAnswerHandler.RESPONSE_FORBIDDEN, DELETE, GET, POST, PUT, HEAD, PATCH, OPTIONS);
         assertMockResponse(dispatcher.handleDelete(DUMMY).get(), SC_NO_CONTENT);
         assertMockResponse(dispatcher.handleGet(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_CREATED);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_OK);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_OK);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_OK);
     }
 
     @Test
@@ -119,6 +133,8 @@ class BaseAllAcceptDispatcherTest {
         assertMockResponse(dispatcher.handlePut(DUMMY).get(), SC_FORBIDDEN);
         assertMockResponse(dispatcher.handlePost(DUMMY).get(), SC_FORBIDDEN);
         assertMockResponse(dispatcher.handleHead(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handlePatch(DUMMY).get(), SC_FORBIDDEN);
+        assertMockResponse(dispatcher.handleOptions(DUMMY).get(), SC_FORBIDDEN);
     }
 
 }

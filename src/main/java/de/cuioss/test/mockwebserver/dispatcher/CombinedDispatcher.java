@@ -118,7 +118,7 @@ public class CombinedDispatcher extends Dispatcher {
         Optional<HttpMethodMapper> mapper = HttpMethodMapper.of(request);
         LOGGER.debug("Processing method '%s' with path '%s'", mapper.map(HttpMethodMapper::name).orElse("UNKNOWN"), path);
 
-        // Unknown/unsupported methods (e.g. OPTIONS, PATCH) fall through to the default response
+        // Unknown/unsupported methods (e.g. TRACE, CONNECT) fall through to the default response
         if (mapper.isPresent()) {
             for (ModuleDispatcherElement dispatcher : singleDispatcher) {
                 if (matchesBaseUrl(path, dispatcher.getBaseUrl())) {

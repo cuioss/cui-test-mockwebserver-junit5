@@ -35,7 +35,7 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  *
  * <h2>Features</h2>
  * <ul>
- *   <li>Pre-configured positive responses for GET, POST, PUT, DELETE</li>
+ *   <li>Pre-configured positive responses for GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS</li>
  *   <li>Per-method response customization</li>
  *   <li>Base URL path matching</li>
  *   <li>Response reset capability</li>
@@ -62,6 +62,8 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  *   <li>PUT: 201 Created</li>
  *   <li>DELETE: 204 No Content</li>
  *   <li>HEAD: 200 OK</li>
+ *   <li>PATCH: 200 OK</li>
+ *   <li>OPTIONS: 200 OK</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -94,6 +96,18 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     private final EndpointAnswerHandler headResult = EndpointAnswerHandler.forPositiveGetRequest();
 
     /**
+     * Handles PATCH requests, defaulting to a 200 OK response.
+     */
+    @Getter
+    private final EndpointAnswerHandler patchResult = EndpointAnswerHandler.forPositivePatchRequest();
+
+    /**
+     * Handles OPTIONS requests, defaulting to a 200 OK response.
+     */
+    @Getter
+    private final EndpointAnswerHandler optionsResult = EndpointAnswerHandler.forPositiveOptionsRequest();
+
+    /**
      * Resets all contained {@link EndpointAnswerHandler}s to their default responses.
      * This is useful when you need to clear any custom responses between tests.
      */
@@ -103,6 +117,8 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         putResult.resetToDefaultResponse();
         deleteResult.resetToDefaultResponse();
         headResult.resetToDefaultResponse();
+        patchResult.resetToDefaultResponse();
+        optionsResult.resetToDefaultResponse();
     }
 
     @Override
@@ -135,6 +151,16 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         return headResult.respond();
     }
 
+    @Override
+    public Optional<MockResponse> handlePatch(@NonNull RecordedRequest request) {
+        return patchResult.respond();
+    }
+
+    @Override
+    public Optional<MockResponse> handleOptions(@NonNull RecordedRequest request) {
+        return optionsResult.respond();
+    }
+
     /**
      * Sets the result for a certain method
      *
@@ -159,6 +185,12 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
                     break;
                 case HEAD:
                     headResult.setResponse(mockResponse);
+                    break;
+                case PATCH:
+                    patchResult.setResponse(mockResponse);
+                    break;
+                case OPTIONS:
+                    optionsResult.setResponse(mockResponse);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported HTTP method: " + element + ". Supported methods are: " + Arrays.toString(HttpMethodMapper.values()));

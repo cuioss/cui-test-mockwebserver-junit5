@@ -17,6 +17,8 @@ package de.cuioss.test.mockwebserver.dispatcher;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CODE_NOT_FOUND;
 import static de.cuioss.test.mockwebserver.dispatcher.CombinedDispatcher.HTTP_CODE_TEAPOT;
 import static de.cuioss.tools.collect.CollectionLiterals.mutableList;
@@ -71,17 +73,42 @@ class CombinedDispatcherTest {
 
     @Test
     void shouldReturnDefaultForUnsupportedMethod() {
-        // PATCH is not a supported HttpMethodMapper: it must fall through to the default response
+        // TRACE is not a mapped HttpMethodMapper: it must fall through to the default response
         // instead of throwing out of dispatch().
         var dispatcher = new CombinedDispatcher(okDispatcher);
-        var teapot = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("PATCH", AllOkDispatcher.BASE + "/x")));
+        var teapot = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("TRACE", AllOkDispatcher.BASE + "/x")));
         assertTrue(teapot.getStatus().contains(String.valueOf(HTTP_CODE_TEAPOT)),
                 "Unsupported method should yield the teapot default, was: " + teapot.getStatus());
 
         dispatcher.endWithTeapot(false);
-        var notFound = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("OPTIONS", AllOkDispatcher.BASE + "/x")));
+        var notFound = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("CONNECT", AllOkDispatcher.BASE + "/x")));
         assertTrue(notFound.getStatus().contains(String.valueOf(HTTP_CODE_NOT_FOUND)),
                 "Unsupported method should yield 404 when teapot is disabled, was: " + notFound.getStatus());
+    }
+
+    @Test
+    void shouldRoutePatchAndOptionsToTheirHandlers() {
+        // PATCH and OPTIONS are mapped constants, so dispatch() must reach handlePatch/handleOptions
+        // on the dispatcher element rather than falling through to the default response.
+        var dispatcher = new CombinedDispatcher(okDispatcher);
+
+        var patched = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("PATCH", AllOkDispatcher.BASE + "/x")));
+        assertTrue(patched.getStatus().contains(String.valueOf(SC_OK)),
+                "PATCH should reach handlePatch and yield 200, was: " + patched.getStatus());
+
+        var optioned = assertDoesNotThrow(() -> dispatcher.dispatch(DispatcherTestSupport.createRequest("OPTIONS", AllOkDispatcher.BASE + "/x")));
+        assertTrue(optioned.getStatus().contains(String.valueOf(SC_OK)),
+                "OPTIONS should reach handleOptions and yield 200, was: " + optioned.getStatus());
+    }
+
+    @Test
+    void shouldMapPatchAndOptionsMethodNames() {
+        assertEquals(Optional.of(HttpMethodMapper.PATCH),
+                HttpMethodMapper.of(DispatcherTestSupport.createRequest("PATCH", "/x")));
+        assertEquals(Optional.of(HttpMethodMapper.OPTIONS),
+                HttpMethodMapper.of(DispatcherTestSupport.createRequest("OPTIONS", "/x")));
+        assertEquals(Optional.empty(),
+                HttpMethodMapper.of(DispatcherTestSupport.createRequest("TRACE", "/x")));
     }
 
     @Test

@@ -75,7 +75,7 @@ import java.util.Set;
  *   <li>Each dispatcher handles a specific URL path prefix</li>
  *   <li>Return {@link Optional#empty()} to allow other dispatchers to handle the request</li>
  *   <li>Can be combined using {@link CombinedDispatcher}</li>
- *   <li>Supports all standard HTTP methods (GET, POST, PUT, DELETE, HEAD)</li>
+ *   <li>Supports all standard HTTP methods (GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS)</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -145,6 +145,28 @@ public interface ModuleDispatcherElement {
      *         or {@link Optional#empty()} to let other dispatchers handle it
      */
     default Optional<MockResponse> handleHead(@NonNull RecordedRequest request) {
+        return Optional.empty();
+    }
+
+    /**
+     * Handles HTTP PATCH requests.
+     *
+     * @param request the incoming request with path, headers, and body
+     * @return {@link Optional} containing the response if this dispatcher can handle the request,
+     *         or {@link Optional#empty()} to let other dispatchers handle it
+     */
+    default Optional<MockResponse> handlePatch(@NonNull RecordedRequest request) {
+        return Optional.empty();
+    }
+
+    /**
+     * Handles HTTP OPTIONS requests.
+     *
+     * @param request the incoming request with path, headers, and body
+     * @return {@link Optional} containing the response if this dispatcher can handle the request,
+     *         or {@link Optional#empty()} to let other dispatchers handle it
+     */
+    default Optional<MockResponse> handleOptions(@NonNull RecordedRequest request) {
         return Optional.empty();
     }
 

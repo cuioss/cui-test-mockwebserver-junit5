@@ -30,7 +30,7 @@ import java.util.Optional;
  * <ul>
  *   <li>Type-safe HTTP method mapping</li>
  *   <li>Automatic method routing</li>
- *   <li>Support for GET, POST, PUT, DELETE, HEAD methods</li>
+ *   <li>Support for GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS methods</li>
  *   <li>Null-safe request handling</li>
  * </ul>
  *
@@ -96,6 +96,24 @@ public enum HttpMethodMapper {
         public Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement, RecordedRequest request) {
             return dispatcherElement.handleHead(request);
         }
+    },
+    /**
+     * Handles HTTP PATCH requests by delegating to {@link ModuleDispatcherElement#handlePatch}.
+     */
+    PATCH {
+        @Override
+        public Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement, RecordedRequest request) {
+            return dispatcherElement.handlePatch(request);
+        }
+    },
+    /**
+     * Handles HTTP OPTIONS requests by delegating to {@link ModuleDispatcherElement#handleOptions}.
+     */
+    OPTIONS {
+        @Override
+        public Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement, RecordedRequest request) {
+            return dispatcherElement.handleOptions(request);
+        }
     };
 
     /**
@@ -113,7 +131,7 @@ public enum HttpMethodMapper {
     /**
      * Creates an HttpMethodMapper from a RecordedRequest's method.
      * <p>
-     * This lookup is total: an unsupported or unknown HTTP method (e.g. OPTIONS, PATCH, TRACE) yields
+     * This lookup is total: an unsupported or unknown HTTP method (e.g. TRACE, CONNECT) yields
      * an empty {@link Optional} rather than throwing, so callers can answer such requests with a
      * defined fallback instead of aborting the connection.
      *

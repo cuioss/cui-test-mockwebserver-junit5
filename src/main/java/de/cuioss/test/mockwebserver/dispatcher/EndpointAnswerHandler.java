@@ -289,6 +289,22 @@ public class EndpointAnswerHandler {
     }
 
     /**
+     * @return An {@link EndpointAnswerHandler} initialized with
+     * {@link #RESPONSE_OK}
+     */
+    public static EndpointAnswerHandler forPositivePatchRequest() {
+        return new EndpointAnswerHandler(RESPONSE_OK, HttpMethodMapper.PATCH).resetToDefaultResponse();
+    }
+
+    /**
+     * @return An {@link EndpointAnswerHandler} initialized with
+     * {@link #RESPONSE_OK}
+     */
+    public static EndpointAnswerHandler forPositiveOptionsRequest() {
+        return new EndpointAnswerHandler(RESPONSE_OK, HttpMethodMapper.OPTIONS).resetToDefaultResponse();
+    }
+
+    /**
      * Creates a handler that does not answer at all: {@link #respond()} returns {@link Optional#empty()},
      * so the request falls through to the next dispatcher.
      * <p>
