@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -53,7 +52,7 @@ class MockResponseTest {
 
         @Test
         @DisplayName("Should return configured response with text content")
-        void shouldReturnConfiguredResponse(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void shouldReturnConfiguredResponse(URIBuilder uriBuilder) throws Exception {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
@@ -85,7 +84,7 @@ class MockResponseTest {
 
         @Test
         @DisplayName("Should handle GET request with JSON content")
-        void shouldHandleGetRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void shouldHandleGetRequest(URIBuilder uriBuilder) throws Exception {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
@@ -108,7 +107,7 @@ class MockResponseTest {
 
         @Test
         @DisplayName("Should handle POST request with 201 status code")
-        void shouldHandlePostRequest(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void shouldHandlePostRequest(URIBuilder uriBuilder) throws Exception {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
@@ -140,7 +139,7 @@ class MockResponseTest {
 
         @Test
         @DisplayName("Should include custom headers in response")
-        void shouldIncludeCustomHeaders(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void shouldIncludeCustomHeaders(URIBuilder uriBuilder) throws Exception {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
@@ -175,7 +174,7 @@ class MockResponseTest {
 
             @Test
             @DisplayName("Should handle nested class annotations")
-            void shouldHandleNestedClassAnnotation(URIBuilder uriBuilder) throws IOException, InterruptedException {
+            void shouldHandleNestedClassAnnotation(URIBuilder uriBuilder) throws Exception {
                 // Arrange
                 HttpClient client = HttpClient.newBuilder()
                         .connectTimeout(TIMEOUT)
@@ -203,7 +202,7 @@ class MockResponseTest {
 
         @Test
         @MockResponseConfig(path = "/api/method", status = 200, textContent = "Method Response")
-        void shouldHandleMethodAnnotation(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void shouldHandleMethodAnnotation(URIBuilder uriBuilder) throws Exception {
             // Arrange
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)

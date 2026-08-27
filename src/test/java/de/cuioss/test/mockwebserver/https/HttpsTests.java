@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import okhttp3.tls.HandshakeCertificates;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -86,7 +85,7 @@ class HttpsTests {
 
         @Test
         @DisplayName("Should successfully connect to HTTPS server with extension-provided certificate")
-        void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
+        void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext) throws Exception {
             // Arrange
             assertNotNull(sslContext, SSL_CONTEXT_ASSERTION_MESSAGE);
             assertNotNull(serverURIBuilder, URL_BUILDER_ASSERTION_MESSAGE);
@@ -174,7 +173,7 @@ class HttpsTests {
 
         @Test
         @DisplayName("Should successfully connect to HTTPS server with test-provided certificate")
-        void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext, MockWebServer mockWebServer) throws IOException, InterruptedException {
+        void shouldConnectToHttpsServer(URIBuilder serverURIBuilder, SSLContext sslContext, MockWebServer mockWebServer) throws Exception {
             // Arrange
             assertNotNull(handshakeCertificates, "HandshakeCertificates should have been created by the test");
             assertNotNull(sslContext, SSL_CONTEXT_ASSERTION_MESSAGE);
@@ -222,7 +221,7 @@ class HttpsTests {
 
         @Test
         @DisplayName("Should successfully connect to HTTPS server with provider class certificate")
-        void shouldConnectToHttpsServer(MockWebServer server, URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
+        void shouldConnectToHttpsServer(MockWebServer server, URIBuilder serverURIBuilder, SSLContext sslContext) throws Exception {
             // Arrange
             assertNotNull(sslContext, SSL_CONTEXT_ASSERTION_MESSAGE);
             assertNotNull(serverURIBuilder, URL_BUILDER_ASSERTION_MESSAGE);
@@ -334,7 +333,7 @@ class HttpsTests {
 
         @Test
         @DisplayName("Should inject SSLContext parameter directly")
-        void shouldInjectSslContextParameter(URIBuilder serverURIBuilder, SSLContext sslContext) throws IOException, InterruptedException {
+        void shouldInjectSslContextParameter(URIBuilder serverURIBuilder, SSLContext sslContext) throws Exception {
             // Arrange
             assertNotNull(sslContext, SSL_CONTEXT_ASSERTION_MESSAGE);
             assertEquals(HTTPS_SCHEME, serverURIBuilder.getScheme(), HTTPS_SCHEME_ASSERTION_MESSAGE);

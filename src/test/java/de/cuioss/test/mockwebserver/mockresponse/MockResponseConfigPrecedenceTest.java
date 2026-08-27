@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,19 +54,19 @@ class MockResponseConfigPrecedenceTest {
 
     @Test
     @DisplayName("Method-level annotation overrides class-level for the same path and method")
-    void methodOverridesClass() throws NoSuchMethodException {
+    void methodOverridesClass() throws Exception {
         Method method = OverrideFixture.class.getDeclaredMethod("overriding");
         List<ModuleDispatcherElement> elements =
                 MockResponseConfigResolver.resolveFromAnnotations(OverrideFixture.class, method);
 
         assertEquals(1, elements.size(), "Duplicate path+method must be de-duplicated to a single element");
-        assertEquals("method-level", body(elements.get(0), "/data"),
+        assertEquals("method-level", body(elements.getFirst(), "/data"),
                 "The method-level annotation must win over the class-level one");
     }
 
     @Test
     @DisplayName("Distinct path+method combinations are all retained")
-    void distinctCombinationsRetained() throws NoSuchMethodException {
+    void distinctCombinationsRetained() throws Exception {
         Method method = DistinctFixture.class.getDeclaredMethod("distinct");
         List<ModuleDispatcherElement> elements =
                 MockResponseConfigResolver.resolveFromAnnotations(DistinctFixture.class, method);
@@ -81,7 +81,7 @@ class MockResponseConfigPrecedenceTest {
                 MockResponseConfigResolver.resolveFromAnnotations(DistinctFixture.class);
 
         assertEquals(1, elements.size(), "Legacy mode collects only the class-level annotation");
-        assertEquals("class", body(elements.get(0), "/class-only"),
+        assertEquals("class", body(elements.getFirst(), "/class-only"),
                 "Legacy mode must resolve the class-level annotation");
     }
 
