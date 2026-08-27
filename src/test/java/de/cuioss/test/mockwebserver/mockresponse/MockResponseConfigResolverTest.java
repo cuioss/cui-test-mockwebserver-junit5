@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ class MockResponseConfigResolverTest {
 
         @Test
         @DisplayName("Should resolve MockResponseConfig annotation on the context method")
-        void shouldResolveMethodAnnotation() throws NoSuchMethodException {
+        void shouldResolveMethodAnnotation() throws Exception {
             // Arrange - method-level annotations are resolved for the current test method (context aware)
             Method testMethod = ClassWithMethodAnnotation.class.getDeclaredMethod("testMethod");
 
@@ -108,7 +108,7 @@ class MockResponseConfigResolverTest {
 
         @Test
         @DisplayName("Should resolve annotations from the nested class and its enclosing class for a nested test method")
-        void shouldResolveNestedClassAnnotations() throws NoSuchMethodException {
+        void shouldResolveNestedClassAnnotations() throws Exception {
             // Arrange - resolve for a method declared in the nested class (context aware)
             Method testMethod = ClassWithNestedClassTest.NestedTestClass.class.getDeclaredMethod("nestedTest");
 
@@ -130,7 +130,7 @@ class MockResponseConfigResolverTest {
 
         @Test
         @DisplayName("Should resolve MockResponseConfig annotations on methods in nested classes")
-        void shouldResolveNestedClassMethodAnnotations() throws NoSuchMethodException {
+        void shouldResolveNestedClassMethodAnnotations() throws Exception {
             // Arrange
             Method testMethod = ClassWithNestedClassMethodTest.NestedTestClass.class.getDeclaredMethod("testMethod");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,11 +56,11 @@ public enum HttpMethodMapper {
      * Handles HTTP GET requests by delegating to {@link ModuleDispatcherElement#handleGet}.
      */
     GET {
-        @Override
-        public Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement, RecordedRequest request) {
-            return dispatcherElement.handleGet(request);
-        }
-    },
+    @Override
+    public Optional<MockResponse> handleMethod(ModuleDispatcherElement dispatcherElement, RecordedRequest request) {
+        return dispatcherElement.handleGet(request);
+    }
+},
     /**
      * Handles HTTP POST requests by delegating to {@link ModuleDispatcherElement#handlePost}.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ import de.cuioss.test.mockwebserver.URIBuilder;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -45,7 +44,7 @@ class MultipleAnnotationsTest {
     @MockResponseConfig(path = "/api/method-1", status = 200, textContent = "Method 1 Response")
     @MockResponseConfig(path = "/api/method-2", status = 201, textContent = "Method 2 Response")
     @MockResponseConfig(path = "/api/method-3", status = 202, textContent = "Method 3 Response")
-    void shouldHandleMultipleAnnotations(URIBuilder uriBuilder) throws IOException, InterruptedException {
+    void shouldHandleMultipleAnnotations(URIBuilder uriBuilder) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
                 .build();
@@ -94,7 +93,7 @@ class MultipleAnnotationsTest {
     @Test
     @DisplayName("Should not have access to annotations from other methods")
     @MockResponseConfig(path = "/api/other-method", status = 200, textContent = "Other Method Response")
-    void shouldNotHaveAccessToOtherMethodAnnotations(URIBuilder uriBuilder) throws IOException, InterruptedException {
+    void shouldNotHaveAccessToOtherMethodAnnotations(URIBuilder uriBuilder) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
                 .build();

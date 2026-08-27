@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -45,7 +44,7 @@ class ContextAwareMockResponseConfigTest {
     @Test
     @DisplayName("Should only access method A and class-level responses")
     @MockResponseConfig(path = "/api/method-a", status = 200, textContent = "Method A Response")
-    void shouldOnlyAccessMethodAAndClassLevelResponses(URIBuilder uriBuilder) throws IOException, InterruptedException {
+    void shouldOnlyAccessMethodAAndClassLevelResponses(URIBuilder uriBuilder) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
                 .build();
@@ -83,7 +82,7 @@ class ContextAwareMockResponseConfigTest {
     @Test
     @DisplayName("Should only access method B and class-level responses")
     @MockResponseConfig(path = "/api/method-b", status = 200, textContent = "Method B Response")
-    void shouldOnlyAccessMethodBAndClassLevelResponses(URIBuilder uriBuilder) throws IOException, InterruptedException {
+    void shouldOnlyAccessMethodBAndClassLevelResponses(URIBuilder uriBuilder) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
                 .build();
@@ -125,7 +124,7 @@ class ContextAwareMockResponseConfigTest {
         @Test
         @DisplayName("Should only access nested method and parent responses")
         @MockResponseConfig(path = "/api/nested-method", status = 200, textContent = "Nested Method Response")
-        void shouldOnlyAccessNestedMethodAndParentResponses(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void shouldOnlyAccessNestedMethodAndParentResponses(URIBuilder uriBuilder) throws Exception {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
                     .build();

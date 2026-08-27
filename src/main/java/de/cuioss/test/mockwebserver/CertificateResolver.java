@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -159,7 +159,7 @@ class CertificateResolver {
             }
 
             return Optional.empty();
-        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
             throw new IllegalStateException(
                     "Error resolving HandshakeCertificates from provider " + providerClass.getName(), e);
         }
@@ -175,7 +175,7 @@ class CertificateResolver {
     Object createProviderInstance(Class<?> providerClass) {
         try {
             return ReflectionUtils.newInstance(providerClass);
-        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
             throw new IllegalStateException(
                     "Could not create instance of provider class " + providerClass.getName(), e);
         }
@@ -232,7 +232,7 @@ class CertificateResolver {
                     config.getKeyAlgorithm(), config.getCertificateDuration());
 
             return Optional.of(certificates);
-        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
             LOGGER.error(e, "Failed to create self-signed certificates");
             return Optional.empty();
         }
@@ -291,7 +291,7 @@ class CertificateResolver {
             LOGGER.debug("Stored SSLContext for parameter resolution");
 
             return sslContext;
-        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
             String errorMessage = "Failed to create or store SSLContext";
             LOGGER.error(e, errorMessage);
             throw new IllegalStateException(errorMessage, e);

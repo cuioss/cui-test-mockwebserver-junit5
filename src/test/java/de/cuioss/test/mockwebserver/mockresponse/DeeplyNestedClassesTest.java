@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -44,7 +43,7 @@ class DeeplyNestedClassesTest {
     @Test
     @DisplayName("Outer class should only access its own annotations")
     @MockResponseConfig(path = "/api/outer-method", status = 200, textContent = "Outer Method Response")
-    void outerClassTest(URIBuilder uriBuilder) throws IOException, InterruptedException {
+    void outerClassTest(URIBuilder uriBuilder) throws Exception {
         HttpClient client = HttpClient.newBuilder()
                 .connectTimeout(TIMEOUT)
                 .build();
@@ -87,7 +86,7 @@ class DeeplyNestedClassesTest {
         @Test
         @DisplayName("Level 1 nested class should access its own annotations and outer class annotations")
         @MockResponseConfig(path = "/api/level1-method", status = 200, textContent = "Level 1 Method Response")
-        void level1Test(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void level1Test(URIBuilder uriBuilder) throws Exception {
             HttpClient client = HttpClient.newBuilder()
                     .connectTimeout(TIMEOUT)
                     .build();
@@ -149,7 +148,7 @@ class DeeplyNestedClassesTest {
             @Test
             @DisplayName("Level 2 nested class should access its own annotations and all ancestor class annotations")
             @MockResponseConfig(path = "/api/level2-method", status = 200, textContent = "Level 2 Method Response")
-            void level2Test(URIBuilder uriBuilder) throws IOException, InterruptedException {
+            void level2Test(URIBuilder uriBuilder) throws Exception {
                 HttpClient client = HttpClient.newBuilder()
                         .connectTimeout(TIMEOUT)
                         .build();
@@ -229,7 +228,7 @@ class DeeplyNestedClassesTest {
                 @Test
                 @DisplayName("Level 3 nested class should access its own annotations and all ancestor class annotations")
                 @MockResponseConfig(path = "/api/level3-method", status = 200, textContent = "Level 3 Method Response")
-                void level3Test(URIBuilder uriBuilder) throws IOException, InterruptedException {
+                void level3Test(URIBuilder uriBuilder) throws Exception {
                     HttpClient client = HttpClient.newBuilder()
                             .connectTimeout(TIMEOUT)
                             .build();

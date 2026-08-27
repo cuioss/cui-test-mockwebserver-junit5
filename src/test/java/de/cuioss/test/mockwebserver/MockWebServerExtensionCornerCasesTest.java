@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -59,7 +58,7 @@ class MockWebServerExtensionCornerCasesTest {
                 CUSTOM_HEADER_NAME + "=" + CUSTOM_HEADER_VALUE,
                 CONTENT_TYPE_HEADER + "=" + JSON_CONTENT_TYPE
         })
-        void shouldHandleCustomResponseHeaders(URIBuilder uriBuilder) throws IOException, InterruptedException {
+        void shouldHandleCustomResponseHeaders(URIBuilder uriBuilder) throws Exception {
 
             // Create HTTP client with timeout
             HttpClient client = HttpClient.newBuilder()

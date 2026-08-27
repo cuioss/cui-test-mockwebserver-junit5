@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ public class KeyMaterialUtil {
                     .heldCertificate(heldCertificate)
                     .addTrustedCertificate(heldCertificate.certificate())
                     .build();
-        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
             throw new IllegalStateException("Failed to create self-signed HandshakeCertificates", e);
         }
     }

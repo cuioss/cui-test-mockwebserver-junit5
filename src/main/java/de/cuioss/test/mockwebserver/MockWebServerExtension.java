@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -201,7 +201,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
             // We've successfully stored the server in context, so don't close it in the finally block
             server = null;
             LOGGER.debug("MockWebServer setup completed successfully");
-        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+        } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
             // Never continue silently: a swallowed setup failure surfaces later as a misleading
             // "No MockWebServer instance available" and hides the real cause.
             LOGGER.error(e, "Error during MockWebServer setup: %s", e.getMessage());
@@ -212,7 +212,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                 try {
                     server.close();
                     LOGGER.debug("Closed MockWebServer after a failed setup");
-                } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException closeEx) {
+                } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException closeEx) {
                     LOGGER.warn("Failed to close MockWebServer during exception handling: %s", closeEx.getMessage());
                 }
             }
@@ -291,7 +291,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
 
                 // Store certificates for parameter resolution
                 certificateResolver.createAndStoreSSLContext(context, handshakeCertificates.get());
-            } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+            } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
                 String errorMessage = "Failed to configure HTTPS with available certificates";
                 LOGGER.error(e, errorMessage);
                 throw new IllegalStateException(errorMessage, e);
@@ -343,7 +343,7 @@ public class MockWebServerExtension implements AfterEachCallback, BeforeEachCall
                 } else {
                     LOGGER.debug("Server was not started, no shutdown needed");
                 }
-            } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/catch (RuntimeException e) {
+            } /*~~(TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe)~~>*/ catch (RuntimeException e) {
                 LOGGER.error(e, "Failed to shutdown MockWebServer");
                 throw new IllegalStateException("Failed to properly shutdown MockWebServer", e);
             } finally {

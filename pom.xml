@@ -11,6 +11,10 @@
     <artifactId>cui-test-mockwebserver-junit5</artifactId>
     <version>1.6-SNAPSHOT</version>
     <packaging>jar</packaging>
+    <!-- Must be declared: <inceptionYear> is inherited, and the license plugin binds
+         the copyright ${year} to it. Without this, this project would report
+         cui-parent-pom's 2022 and restamp every header on each -Ppre-commit run. -->
+    <inceptionYear>2025</inceptionYear>
     <name>mockwebserver junit5 plugin</name>
     <description>A junit 5 extension for MockWebServer providing some convenience, compared to the original.
     </description>
@@ -30,7 +34,7 @@
         <system>GitHub Issues</system>
     </issueManagement>
     <properties>
-        <maven.compiler.release>17</maven.compiler.release>
+        <maven.compiler.release>21</maven.compiler.release>
         <maven.jar.plugin.automatic.module.name>de.cuioss.test.mockwebserver</maven.jar.plugin.automatic.module.name>
         <version.okhttp3>5.5.0</version.okhttp3>
         <version.jakarta.servlet-api>6.1.0</version.jakarta.servlet-api>
@@ -99,4 +103,20 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

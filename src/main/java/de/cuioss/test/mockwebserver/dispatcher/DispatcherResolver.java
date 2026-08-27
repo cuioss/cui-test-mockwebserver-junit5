@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 CUI-OpenSource-Software (info@cuioss.de)
+ * Copyright © 2025-present CUI-OpenSource-Software (info@cuioss.de)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -210,7 +210,9 @@ public class DispatcherResolver {
         try {
             Object target = Modifier.isStatic(method.getModifiers()) ? null : ReflectionUtils.newInstance(providerClass);
             return ReflectionUtils.invokeMethod(method, target);
-        } catch (RuntimeException e) {
+        }
+        /*TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe*/
+        catch (RuntimeException e) {
             throw new DispatcherResolutionException(
                     "Provider method %s.%s could not be invoked: %s".formatted(providerClass.getName(), methodName, e.getMessage()), e);
         }
@@ -253,7 +255,9 @@ public class DispatcherResolver {
         Object result;
         try {
             result = ReflectionUtils.invokeMethod(method, testInstance);
-        } catch (RuntimeException e) {
+        }
+        /*TODO: Catch specific not RuntimeException. Suppress: // cui-rewrite:disable InvalidExceptionUsageRecipe*/
+        catch (RuntimeException e) {
             throw new DispatcherResolutionException("getModuleDispatcher method threw an exception", e);
         }
         if (result == null) {
