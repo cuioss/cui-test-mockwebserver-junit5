@@ -21,7 +21,9 @@ import lombok.RequiredArgsConstructor;
 import mockwebserver3.MockResponse;
 import mockwebserver3.RecordedRequest;
 
-import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.EnumSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -35,7 +37,7 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  *
  * <h2>Features</h2>
  * <ul>
- *   <li>Pre-configured positive responses for GET, POST, PUT, DELETE</li>
+ *   <li>Pre-configured positive responses for GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS</li>
  *   <li>Per-method response customization</li>
  *   <li>Base URL path matching</li>
  *   <li>Response reset capability</li>
@@ -62,6 +64,8 @@ import static de.cuioss.tools.collect.CollectionLiterals.mutableSortedSet;
  *   <li>PUT: 201 Created</li>
  *   <li>DELETE: 204 No Content</li>
  *   <li>HEAD: 200 OK</li>
+ *   <li>PATCH: 200 OK</li>
+ *   <li>OPTIONS: 200 OK</li>
  * </ul>
  *
  * @author Oliver Wolff
@@ -94,15 +98,51 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
     private final EndpointAnswerHandler headResult = EndpointAnswerHandler.forPositiveGetRequest();
 
     /**
+     * Handles PATCH requests, defaulting to a 200 OK response.
+     */
+    @Getter
+    private final EndpointAnswerHandler patchResult = EndpointAnswerHandler.forPositivePatchRequest();
+
+    /**
+     * Handles OPTIONS requests, defaulting to a 200 OK response.
+     */
+    @Getter
+    private final EndpointAnswerHandler optionsResult = EndpointAnswerHandler.forPositiveOptionsRequest();
+
+    /**
+     * Registry binding every {@link HttpMethodMapper} constant to its handler. Declared after the
+     * per-method fields so they are initialised first. {@link #buildHandlerRegistry()} fails fast when
+     * a constant has no handler, so adding an {@link HttpMethodMapper} value without wiring it here is
+     * a construction-time error rather than a silent gap.
+     */
+    private final Map<HttpMethodMapper, EndpointAnswerHandler> handlerRegistry = buildHandlerRegistry();
+
+    private Map<HttpMethodMapper, EndpointAnswerHandler> buildHandlerRegistry() {
+        Map<HttpMethodMapper, EndpointAnswerHandler> registry = new EnumMap<>(HttpMethodMapper.class);
+        registry.put(HttpMethodMapper.GET, getResult);
+        registry.put(HttpMethodMapper.POST, postResult);
+        registry.put(HttpMethodMapper.PUT, putResult);
+        registry.put(HttpMethodMapper.DELETE, deleteResult);
+        registry.put(HttpMethodMapper.HEAD, headResult);
+        registry.put(HttpMethodMapper.PATCH, patchResult);
+        registry.put(HttpMethodMapper.OPTIONS, optionsResult);
+
+        Set<HttpMethodMapper> missing = EnumSet.allOf(HttpMethodMapper.class);
+        missing.removeAll(registry.keySet());
+        if (!missing.isEmpty()) {
+            throw new IllegalStateException(
+                    "No EndpointAnswerHandler registered for HTTP method(s): " + missing
+                            + ". Every HttpMethodMapper constant must be wired in buildHandlerRegistry().");
+        }
+        return registry;
+    }
+
+    /**
      * Resets all contained {@link EndpointAnswerHandler}s to their default responses.
      * This is useful when you need to clear any custom responses between tests.
      */
     public void reset() {
-        getResult.resetToDefaultResponse();
-        postResult.resetToDefaultResponse();
-        putResult.resetToDefaultResponse();
-        deleteResult.resetToDefaultResponse();
-        headResult.resetToDefaultResponse();
+        handlerRegistry.values().forEach(EndpointAnswerHandler::resetToDefaultResponse);
     }
 
     @Override
@@ -135,6 +175,16 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
         return headResult.respond();
     }
 
+    @Override
+    public Optional<MockResponse> handlePatch(@NonNull RecordedRequest request) {
+        return patchResult.respond();
+    }
+
+    @Override
+    public Optional<MockResponse> handleOptions(@NonNull RecordedRequest request) {
+        return optionsResult.respond();
+    }
+
     /**
      * Sets the result for a certain method
      *
@@ -144,25 +194,7 @@ public class BaseAllAcceptDispatcher implements ModuleDispatcherElement {
      */
     public void setMethodToResult(MockResponse mockResponse, HttpMethodMapper... mapper) {
         for (HttpMethodMapper element : mapper) {
-            switch (element) {
-                case GET:
-                    getResult.setResponse(mockResponse);
-                    break;
-                case POST:
-                    postResult.setResponse(mockResponse);
-                    break;
-                case PUT:
-                    putResult.setResponse(mockResponse);
-                    break;
-                case DELETE:
-                    deleteResult.setResponse(mockResponse);
-                    break;
-                case HEAD:
-                    headResult.setResponse(mockResponse);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unsupported HTTP method: " + element + ". Supported methods are: " + Arrays.toString(HttpMethodMapper.values()));
-            }
+            handlerRegistry.get(element).setResponse(mockResponse);
         }
     }
 
