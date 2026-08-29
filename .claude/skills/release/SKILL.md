@@ -148,13 +148,16 @@ gh pr checks <pr#> --repo cuioss/cui-test-mockwebserver-junit5 --watch
 
 ### Step 9 — Merge → the release starts automatically
 
+`main` is protected by the active `main-merge-queue` ruleset. The queue owns the merge
+strategy and deletes the branch itself (`delete_branch_on_merge=true`), so **never** pass
+`--delete-branch` — it is rejected:
+
 ```bash
-gh pr merge <pr#> --repo cuioss/cui-test-mockwebserver-junit5 --squash --delete-branch
+gh pr merge <pr#> --repo cuioss/cui-test-mockwebserver-junit5 --squash
 ```
 
-If the repo has a merge queue, `--delete-branch` is rejected and the queue picks the
-strategy — drop the flag and re-run. Merging the `project.yml` change fires `release.yml`;
-do **not** dispatch the release by hand unless the auto-trigger demonstrably did not fire.
+Merging the `project.yml` change fires `release.yml`; do **not** dispatch the release by
+hand unless the auto-trigger demonstrably did not fire.
 
 ### Step 10 — Wait for the Release workflow
 
@@ -220,6 +223,8 @@ collapsed or dropped, and a reminder that consumer-bump PRs will appear in `cuio
   Maven release goals.
 - Branch prefix **must** be one CI accepts, or the build check skips and the merge blocks.
 - Never merge a red PR; fix and re-wait.
+- Merge with `gh pr merge <pr#> --squash` — **never** `--delete-branch`; `main` sits
+  behind a merge queue that rejects it and deletes the branch itself.
 - Every review comment gets a reply **and** gets resolved — unresolved threads block the merge.
 - Verify the published release is **not a draft** and actually resolves from Maven Central.
 - Temporary files go under `.plan/temp/`.
