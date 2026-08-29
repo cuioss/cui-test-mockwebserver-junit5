@@ -50,19 +50,26 @@ before the wider org picks the change up.
 
 ### Step 1 — Determine the version number
 
-Read the `release` block in `.github/project.yml`:
-- `release.current-version` (currently `1.5.0`) — the **last released** version.
-- `release.next-version` (currently `1.6-SNAPSHOT`) — what `pom.xml` carries between releases.
+`.github/project.yml` is the single source of truth for both versions — read it, never
+assume:
 
-**The choice is genuinely open here** and the skill must not guess:
-`current-version` is `1.5.0` but the pom floats on `1.6-SNAPSHOT`, so `current-version` does
-**not** sit on the `next-version` line.
+```bash
+grep -E 'current-version|next-version' .github/project.yml
+```
 
-- **`1.6`** — strip `-SNAPSHOT`, starting the new minor line; `next-version` then
+- `release.current-version` — the **last released** version.
+- `release.next-version` — what `pom.xml` carries between releases.
+
+Derive the two candidates from those values:
+
+- **`next-version` minus `-SNAPSHOT`** — starts the new minor line; `next-version` then
   moves to the following minor.
-- **`1.5.1`** — continue the patch line; `next-version` stays `1.6-SNAPSHOT`.
+- **`current-version` with its patch incremented** — continues the patch line;
+  `next-version` stays unchanged.
 
-Both are defensible. **Ask the user** (AskUserQuestion) rather than picking one.
+Both are defensible. **Ask the user** (AskUserQuestion) rather than picking one; weigh the
+commits since the last tag (`git log --oneline <current-version>..main`) and mention any
+`feat:` work when presenting the options.
 
 ### Step 2 — Check for open PRs
 
@@ -87,14 +94,14 @@ The Maven CI workflow only triggers on `main, "feature/*", "fix/*", "chore/*", "
 check and blocks the merge:
 
 ```bash
-git checkout -b chore/release_1.6
+git checkout -b chore/release_<version>
 ```
 
 ### Step 5 — Update `.github/project.yml`
 
 - `current-version:` → the version determined in Step 1
 - `next-version:` → for a new minor line, the following minor + `-SNAPSHOT`; for a patch
-  release, **leave unchanged** (`1.6-SNAPSHOT`)
+  release, **leave unchanged**
 
 Leave everything else untouched. The README badges are dynamic endpoints — there is **no**
 per-release badge to hand-edit.
