@@ -9,7 +9,7 @@
     </parent>
     <groupId>de.cuioss.test</groupId>
     <artifactId>cui-test-mockwebserver-junit5</artifactId>
-    <version>1.6-SNAPSHOT</version>
+    <version>1.6</version>
     <packaging>jar</packaging>
     <!-- Must be declared: <inceptionYear> is inherited, and the license plugin binds
          the copyright ${year} to it. Without this, this project would report
@@ -27,7 +27,7 @@
         <developerConnection>
             scm:git:https://github.com/cuioss/cui-test-mockwebserver-junit5/
         </developerConnection>
-        <tag>HEAD</tag>
+        <tag>1.6</tag>
     </scm>
     <issueManagement>
         <url>https://github.com/cuioss/cui-test-mockwebserver-junit5/issues</url>
