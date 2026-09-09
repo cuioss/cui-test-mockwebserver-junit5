@@ -11,7 +11,9 @@ A JUnit 5 extension for OkHttp's `mockwebserver3.MockWebServer` that simplifies 
 ## Build Commands
 
 ```bash
-# Full pre-commit build (compile + tests + javadoc check) - USE THIS before committing
+# Full pre-commit build - AUTO-FIXES copyright headers and import order, then
+# compiles, tests and checks javadoc. USE THIS before committing, then review
+# what it changed and commit it
 ./mvnw -Ppre-commit clean install
 
 # Quick build with tests
