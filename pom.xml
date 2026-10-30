@@ -36,7 +36,7 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <maven.jar.plugin.automatic.module.name>de.cuioss.test.mockwebserver</maven.jar.plugin.automatic.module.name>
-        <version.okhttp3>5.5.0</version.okhttp3>
+        <version.okhttp3>5.5.1</version.okhttp3>
     </properties>
     <dependencyManagement>
         <dependencies>
